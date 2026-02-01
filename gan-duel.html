@@ -1,0 +1,779 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAN Duel - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg-primary: #030712; --bg-secondary: #0f172a; --bg-panel: #1e293b; --accent: #ef4444; --module-color: #f59e0b; --module-dim: rgba(245,158,11,0.15); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: #1e293b; --gen-color: #ef4444; --disc-color: #3b82f6; --real-color: #22c55e; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .header-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-secondary); display: flex; gap: 12px; }
+        .header-stats .hs-val { color: var(--module-color); }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .tooltip { position: absolute; pointer-events: none; background: rgba(15,23,42,0.92); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; color: var(--text-primary); z-index: 20; backdrop-filter: blur(6px); display: none; min-width: 160px; line-height: 1.55; }
+        .tooltip .tt-label { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .tooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .overlay-badge { position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.85); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-primary); backdrop-filter: blur(6px); z-index: 5; }
+        .controls { width: 360px; min-width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .controls::-webkit-scrollbar { width: 5px; }
+        .controls::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 0.9rem; color: var(--text-primary); line-height: 1.7; text-align: center; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 6px; }
+        .control-section h3 .ico { font-size: 0.85rem; }
+        .slider-group { margin-bottom: 0.65rem; }
+        .slider-group:last-child { margin-bottom: 0; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.2rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.74rem; }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+        .btn { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.76rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: #030712; border-color: var(--module-color); font-weight: 600; }
+        .btn-accent:hover { opacity: 0.85; color: #030712; }
+        .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.3rem 0.55rem; font-size: 0.68rem; }
+        select { width: 100%; padding: 0.45rem 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.76rem; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.76rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .stat:last-child { border-bottom: none; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.72rem; }
+        .chart-container { position: relative; width: 100%; height: 70px; border-radius: 8px; overflow: hidden; background: var(--bg-primary); }
+        .chart-container canvas { width: 100%; height: 100%; display: block; }
+        .explain-section { background: rgba(245,158,11,0.04); border-radius: 10px; padding: 0.9rem 1rem; border: 1px solid rgba(245,158,11,0.08); }
+        .explain-section h4 { font-size: 0.78rem; font-weight: 600; margin-bottom: 0.45rem; color: var(--text-primary); }
+        .explain-section p { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.35rem; }
+        .explain-section p:last-child { margin-bottom: 0; }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'Times New Roman', serif; font-style: italic; color: var(--text-primary); background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+        .explain-section ul { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; padding-left: 1.1rem; margin-bottom: 0.35rem; }
+        .explain-section li { margin-bottom: 0.2rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>GAN Duel</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                GAN Duel
+            </nav>
+        </div>
+        <div class="header-stats">
+            <span>Step: <span class="hs-val" id="hs-step">0</span></span>
+            <span>G loss: <span class="hs-val" id="hs-gloss">-</span></span>
+            <span>D loss: <span class="hs-val" id="hs-dloss">-</span></span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+            <div class="overlay-badge" id="badge-info">Pulsa Entrenar</div>
+        </div>
+
+        <aside class="controls">
+            <div class="equation-box">
+                min<sub>G</sub> max<sub>D</sub> E[log D(x)] + E[log(1-D(G(z)))]
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9654;</span> Entrenamiento</h3>
+                <div class="btn-group" style="margin-bottom: 0.5rem;">
+                    <button class="btn btn-accent" id="btn-train">Entrenar</button>
+                    <button class="btn" id="btn-step">+1 Paso</button>
+                    <button class="btn" id="btn-step100">+100</button>
+                    <button class="btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9881;</span> Configuracion</h3>
+                <select id="sel-dist">
+                    <option value="ring">Anillo</option>
+                    <option value="clusters">Dos clusters</option>
+                    <option value="spiral">Espiral</option>
+                    <option value="grid">Grid</option>
+                    <option value="gaussian">Gaussiana</option>
+                </select>
+                <div class="slider-group" style="margin-top: 0.5rem;">
+                    <label>LR Generador <span id="val-lrg">0.01</span></label>
+                    <input type="range" id="sl-lrg" min="-4" max="-1" step="0.1" value="-2">
+                </div>
+                <div class="slider-group">
+                    <label>LR Discriminador <span id="val-lrd">0.01</span></label>
+                    <input type="range" id="sl-lrd" min="-4" max="-1" step="0.1" value="-2">
+                </div>
+                <div class="slider-group">
+                    <label>Puntos por batch <span id="val-batch">64</span></label>
+                    <input type="range" id="sl-batch" min="16" max="256" step="16" value="64">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9776;</span> Loss</h3>
+                <div class="chart-container"><canvas id="loss-chart"></canvas></div>
+                <div style="display:flex;gap:12px;margin-top:4px;font-size:0.65rem;">
+                    <span style="color:var(--gen-color)">● G loss</span>
+                    <span style="color:var(--disc-color)">● D loss</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9888;</span> Estado</h3>
+                <div class="stat"><span>Paso</span><span class="stat-value" id="m-step">0</span></div>
+                <div class="stat"><span>G loss</span><span class="stat-value" id="m-gloss">-</span></div>
+                <div class="stat"><span>D loss</span><span class="stat-value" id="m-dloss">-</span></div>
+                <div class="stat"><span>D(real) medio</span><span class="stat-value" id="m-dreal">-</span></div>
+                <div class="stat"><span>D(fake) medio</span><span class="stat-value" id="m-dfake">-</span></div>
+                <div class="stat"><span>Mode collapse</span><span class="stat-value" id="m-collapse">No</span></div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9836;</span> Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" step="1" value="30">
+                </div>
+                <button class="btn btn-sm" id="btn-audio">Audio: ON</button>
+            </div>
+
+            <div class="explain-section">
+                <h4>¿Que es una GAN?</h4>
+                <p>Una <span class="hl">GAN</span> (Generative Adversarial Network) consta de dos redes que compiten:</p>
+                <ul>
+                    <li><span style="color:var(--gen-color)">Generador (G):</span> crea datos falsos a partir de ruido</li>
+                    <li><span style="color:var(--disc-color)">Discriminador (D):</span> intenta distinguir real de falso</li>
+                </ul>
+                <p>G mejora enganando a D, D mejora detectando a G. En equilibrio, G produce datos indistinguibles de los reales.</p>
+            </div>
+
+            <div class="explain-section">
+                <h4>Mode collapse</h4>
+                <p>Cuando el generador aprende a producir <span class="hl">solo un tipo</span> de muestra que engana al discriminador, ignorando toda la diversidad de la distribucion real. Los puntos rojos se agrupan en un solo lugar.</p>
+            </div>
+
+            <div class="explain-section">
+                <h4>Equilibrio de Nash</h4>
+                <p>El estado ideal donde G y D estan en equilibrio: <span class="eq">D(x) = 0.5</span> para todo x. El discriminador ya no puede distinguir real de falso. Las losses se estabilizan.</p>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+    // === CONFIG ===
+    const CONFIG = {
+        distribution: 'ring',
+        lrG: 0.01,
+        lrD: 0.01,
+        batchSize: 64,
+        volume: 0.3,
+        audioEnabled: true
+    };
+
+    // === CANVAS ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, dpr;
+
+    function resizeCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        W = rect.width; H = rect.height;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', () => { resizeCanvas(); drawLossChart(); });
+    resizeCanvas();
+
+    // === LOSS CHART ===
+    const lossCanvas = document.getElementById('loss-chart');
+    const lossCtx = lossCanvas.getContext('2d');
+    function resizeLossChart() {
+        const rect = lossCanvas.parentElement.getBoundingClientRect();
+        lossCanvas.width = rect.width * dpr; lossCanvas.height = 70 * dpr;
+        lossCanvas.style.width = rect.width + 'px'; lossCanvas.style.height = '70px';
+        lossCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    // === AUDIO ===
+    let audioContext = null, masterGain = null, compressor = null;
+    function initAudio() {
+        if (audioContext) return;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        compressor = audioContext.createDynamicsCompressor();
+        compressor.threshold.value = -20; compressor.ratio.value = 4;
+        compressor.connect(audioContext.destination);
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = CONFIG.volume;
+        masterGain.connect(compressor);
+    }
+    function playNote(freq, dur, vol = 0.04, delay = 0) {
+        if (!audioContext || !CONFIG.audioEnabled) return;
+        masterGain.gain.value = CONFIG.volume;
+        const now = audioContext.currentTime + delay;
+        const osc = audioContext.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = Math.max(80, Math.min(2000, freq));
+        const env = audioContext.createGain();
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(vol, now + 0.01);
+        env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(env); env.connect(masterGain);
+        osc.start(now); osc.stop(now + dur + 0.05);
+    }
+
+    // === DATA GENERATION ===
+    function sampleReal(n) {
+        const points = [];
+        for (let i = 0; i < n; i++) {
+            let x, y;
+            switch (CONFIG.distribution) {
+                case 'ring':
+                    const a = Math.random() * Math.PI * 2;
+                    const r = 0.7 + gaussianRandom() * 0.05;
+                    x = Math.cos(a) * r; y = Math.sin(a) * r;
+                    break;
+                case 'clusters':
+                    if (Math.random() < 0.5) { x = -0.5 + gaussianRandom() * 0.15; y = 0.5 + gaussianRandom() * 0.15; }
+                    else { x = 0.5 + gaussianRandom() * 0.15; y = -0.5 + gaussianRandom() * 0.15; }
+                    break;
+                case 'spiral':
+                    const t = Math.random() * 4 * Math.PI;
+                    const rs = 0.1 + t * 0.05;
+                    x = Math.cos(t) * rs + gaussianRandom() * 0.03;
+                    y = Math.sin(t) * rs + gaussianRandom() * 0.03;
+                    break;
+                case 'grid':
+                    const gi = Math.floor(Math.random() * 9);
+                    x = (gi % 3 - 1) * 0.5 + gaussianRandom() * 0.05;
+                    y = (Math.floor(gi / 3) - 1) * 0.5 + gaussianRandom() * 0.05;
+                    break;
+                case 'gaussian':
+                default:
+                    x = gaussianRandom() * 0.4; y = gaussianRandom() * 0.4;
+                    break;
+            }
+            points.push([x, y]);
+        }
+        return points;
+    }
+
+    function sampleNoise(n) {
+        const z = [];
+        for (let i = 0; i < n; i++) z.push([gaussianRandom(), gaussianRandom()]);
+        return z;
+    }
+
+    function gaussianRandom() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // === SIMPLE NEURAL NETWORKS ===
+    class SimpleNet {
+        constructor(layers) {
+            this.weights = [];
+            this.biases = [];
+            for (let i = 0; i < layers.length - 1; i++) {
+                const nIn = layers[i], nOut = layers[i + 1];
+                const scale = Math.sqrt(2 / nIn);
+                const w = [];
+                for (let j = 0; j < nOut; j++) {
+                    w[j] = new Float64Array(nIn);
+                    for (let k = 0; k < nIn; k++) w[j][k] = gaussianRandom() * scale;
+                }
+                this.weights.push(w);
+                this.biases.push(new Float64Array(nOut));
+            }
+        }
+
+        forward(x, returnAll) {
+            let h = Float64Array.from(x);
+            const activations = [h];
+            const preacts = [];
+            for (let l = 0; l < this.weights.length; l++) {
+                const w = this.weights[l]; const b = this.biases[l];
+                const out = new Float64Array(w.length);
+                for (let j = 0; j < w.length; j++) {
+                    let sum = b[j];
+                    for (let k = 0; k < h.length; k++) sum += w[j][k] * h[k];
+                    out[j] = sum;
+                }
+                preacts.push(out);
+                if (l < this.weights.length - 1) {
+                    // ReLU (or leaky)
+                    h = new Float64Array(out.length);
+                    for (let j = 0; j < out.length; j++) h[j] = out[j] > 0 ? out[j] : 0.01 * out[j];
+                } else {
+                    h = out;
+                }
+                activations.push(h);
+            }
+            if (returnAll) return { output: h, activations, preacts };
+            return h;
+        }
+
+        backward(dOutput, activations, preacts) {
+            const grads = { w: [], b: [] };
+            let delta = Float64Array.from(dOutput);
+
+            for (let l = this.weights.length - 1; l >= 0; l--) {
+                const act = activations[l];
+                const w = this.weights[l];
+
+                // Gradients for this layer
+                const dw = [];
+                const db = new Float64Array(w.length);
+                for (let j = 0; j < w.length; j++) {
+                    dw[j] = new Float64Array(act.length);
+                    db[j] = delta[j];
+                    for (let k = 0; k < act.length; k++) {
+                        dw[j][k] = delta[j] * act[k];
+                    }
+                }
+                grads.w.unshift(dw);
+                grads.b.unshift(db);
+
+                if (l > 0) {
+                    const newDelta = new Float64Array(act.length);
+                    for (let k = 0; k < act.length; k++) {
+                        let sum = 0;
+                        for (let j = 0; j < w.length; j++) sum += w[j][k] * delta[j];
+                        // Leaky ReLU derivative
+                        const pre = preacts[l - 1][k];
+                        newDelta[k] = sum * (pre > 0 ? 1 : 0.01);
+                    }
+                    delta = newDelta;
+                }
+            }
+            return grads;
+        }
+
+        update(grads, lr) {
+            for (let l = 0; l < this.weights.length; l++) {
+                for (let j = 0; j < this.weights[l].length; j++) {
+                    this.biases[l][j] -= lr * grads.b[l][j];
+                    for (let k = 0; k < this.weights[l][j].length; k++) {
+                        this.weights[l][j][k] -= lr * grads.w[l][j][k];
+                    }
+                }
+            }
+        }
+    }
+
+    // === GAN ===
+    let G, D;
+    let step = 0;
+    let gLossHistory = [], dLossHistory = [];
+    let fakePoints = [], realPoints = [];
+    let isTraining = false;
+    let lastGLoss = 0, lastDLoss = 0;
+    let avgDReal = 0, avgDFake = 0;
+
+    function sigmoid(x) { return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, x)))); }
+
+    function buildGAN() {
+        G = new SimpleNet([2, 16, 16, 2]); // noise → point
+        D = new SimpleNet([2, 16, 16, 1]); // point → real/fake score
+        step = 0;
+        gLossHistory = [];
+        dLossHistory = [];
+        fakePoints = [];
+        realPoints = sampleReal(CONFIG.batchSize);
+    }
+
+    function trainStep() {
+        const bs = CONFIG.batchSize;
+
+        // === Train Discriminator ===
+        let dLoss = 0;
+        const realBatch = sampleReal(bs);
+        const noiseBatch = sampleNoise(bs);
+        const fakeBatch = noiseBatch.map(z => {
+            const out = G.forward(z);
+            return [out[0], out[1]];
+        });
+
+        // D on real
+        let sumDReal = 0;
+        for (let i = 0; i < bs; i++) {
+            const { output, activations, preacts } = D.forward(realBatch[i], true);
+            const score = sigmoid(output[0]);
+            sumDReal += score;
+            const dLossReal = -1 / (score + 1e-8); // d/dScore of -log(score)
+            const dSigmoid = score * (1 - score);
+            const dOut = new Float64Array([dLossReal * dSigmoid / bs]);
+            const grads = D.backward(dOut, activations, preacts);
+            D.update(grads, CONFIG.lrD);
+            dLoss -= Math.log(score + 1e-8);
+        }
+        avgDReal = sumDReal / bs;
+
+        // D on fake
+        let sumDFake = 0;
+        for (let i = 0; i < bs; i++) {
+            const { output, activations, preacts } = D.forward(fakeBatch[i], true);
+            const score = sigmoid(output[0]);
+            sumDFake += score;
+            const dLossFake = 1 / (1 - score + 1e-8); // d/dScore of -log(1-score)
+            const dSigmoid = score * (1 - score);
+            const dOut = new Float64Array([dLossFake * dSigmoid / bs]);
+            const grads = D.backward(dOut, activations, preacts);
+            D.update(grads, CONFIG.lrD);
+            dLoss -= Math.log(1 - score + 1e-8);
+        }
+        avgDFake = sumDFake / bs;
+        dLoss /= (2 * bs);
+
+        // === Train Generator ===
+        let gLoss = 0;
+        const noiseForG = sampleNoise(bs);
+        for (let i = 0; i < bs; i++) {
+            const { output: gOut, activations: gActs, preacts: gPre } = G.forward(noiseForG[i], true);
+            const fakePoint = [gOut[0], gOut[1]];
+            const { output: dOut, activations: dActs, preacts: dPre } = D.forward(fakePoint, true);
+            const score = sigmoid(dOut[0]);
+            gLoss -= Math.log(score + 1e-8);
+
+            // Backprop through D to get gradient wrt fake point
+            const dGLoss = -1 / (score + 1e-8);
+            const dSig = score * (1 - score);
+            const dDOut = new Float64Array([dGLoss * dSig / bs]);
+            const dGrads = D.backward(dDOut, dActs, dPre);
+            // The gradient wrt the input of D = gradient wrt G's output
+            const dFakePoint = new Float64Array(2);
+            for (let k = 0; k < 2; k++) {
+                let sum = 0;
+                for (let j = 0; j < D.weights[0].length; j++) {
+                    sum += D.weights[0][j][k] * dDOut[0]; // simplified
+                }
+                dFakePoint[k] = sum;
+            }
+            const gGrads = G.backward(dFakePoint, gActs, gPre);
+            G.update(gGrads, CONFIG.lrG);
+        }
+        gLoss /= bs;
+
+        lastGLoss = gLoss;
+        lastDLoss = dLoss;
+
+        gLossHistory.push(gLoss);
+        dLossHistory.push(dLoss);
+        if (gLossHistory.length > 300) { gLossHistory.shift(); dLossHistory.shift(); }
+
+        // Update display points
+        realPoints = realBatch;
+        fakePoints = sampleNoise(bs).map(z => {
+            const out = G.forward(z);
+            return [out[0], out[1]];
+        });
+
+        step++;
+        updateMetrics();
+    }
+
+    function detectModeCollapse() {
+        if (fakePoints.length < 10) return false;
+        let mx = 0, my = 0;
+        for (const p of fakePoints) { mx += p[0]; my += p[1]; }
+        mx /= fakePoints.length; my /= fakePoints.length;
+        let variance = 0;
+        for (const p of fakePoints) variance += (p[0] - mx) ** 2 + (p[1] - my) ** 2;
+        variance /= fakePoints.length;
+        return variance < 0.01;
+    }
+
+    function updateMetrics() {
+        document.getElementById('hs-step').textContent = step;
+        document.getElementById('hs-gloss').textContent = lastGLoss.toFixed(3);
+        document.getElementById('hs-dloss').textContent = lastDLoss.toFixed(3);
+        document.getElementById('m-step').textContent = step;
+        document.getElementById('m-gloss').textContent = lastGLoss.toFixed(4);
+        document.getElementById('m-dloss').textContent = lastDLoss.toFixed(4);
+        document.getElementById('m-dreal').textContent = avgDReal.toFixed(3);
+        document.getElementById('m-dfake').textContent = avgDFake.toFixed(3);
+        const collapsed = detectModeCollapse();
+        document.getElementById('m-collapse').textContent = collapsed ? 'Si' : 'No';
+        document.getElementById('m-collapse').style.color = collapsed ? '#ef4444' : '#22c55e';
+        document.getElementById('badge-info').textContent = `Step ${step} · G:${lastGLoss.toFixed(2)} D:${lastDLoss.toFixed(2)}${collapsed ? ' · MODE COLLAPSE' : ''}`;
+    }
+
+    // === LOSS CHART ===
+    function drawLossChart() {
+        resizeLossChart();
+        const cw = lossCanvas.width / dpr;
+        const ch = lossCanvas.height / dpr;
+        lossCtx.clearRect(0, 0, cw, ch);
+        if (gLossHistory.length < 2) return;
+
+        let maxL = 0.1;
+        for (const l of gLossHistory) if (isFinite(l) && l > maxL) maxL = l;
+        for (const l of dLossHistory) if (isFinite(l) && l > maxL) maxL = l;
+        maxL = Math.min(maxL, 10);
+
+        const pad = { l: 4, r: 4, t: 3, b: 3 };
+        const pw = cw - pad.l - pad.r;
+        const ph = ch - pad.t - pad.b;
+
+        function drawLine(data, color) {
+            lossCtx.strokeStyle = color;
+            lossCtx.lineWidth = 1.5;
+            lossCtx.beginPath();
+            for (let i = 0; i < data.length; i++) {
+                const x = pad.l + i / (data.length - 1) * pw;
+                const v = Math.min(data[i], maxL);
+                const y = pad.t + ph - (isFinite(v) ? v / maxL : 1) * ph;
+                if (i === 0) lossCtx.moveTo(x, y); else lossCtx.lineTo(x, y);
+            }
+            lossCtx.stroke();
+        }
+
+        drawLine(gLossHistory, '#ef4444');
+        drawLine(dLossHistory, '#3b82f6');
+    }
+
+    // === DISCRIMINATOR HEATMAP (off-screen) ===
+    const heatmapSize = 50;
+    const heatmapCanvas = document.createElement('canvas');
+    heatmapCanvas.width = heatmapSize;
+    heatmapCanvas.height = heatmapSize;
+    const hmCtx = heatmapCanvas.getContext('2d');
+
+    function updateHeatmap() {
+        const imgData = hmCtx.createImageData(heatmapSize, heatmapSize);
+        const range = 1.5;
+        for (let y = 0; y < heatmapSize; y++) {
+            for (let x = 0; x < heatmapSize; x++) {
+                const px = (x / heatmapSize) * 2 * range - range;
+                const py = ((heatmapSize - 1 - y) / heatmapSize) * 2 * range - range;
+                const out = D.forward([px, py]);
+                const score = sigmoid(out[0]);
+
+                const idx = (y * heatmapSize + x) * 4;
+                // Green = real, Red = fake
+                imgData.data[idx] = Math.round((1 - score) * 200);
+                imgData.data[idx + 1] = Math.round(score * 200);
+                imgData.data[idx + 2] = 30;
+                imgData.data[idx + 3] = 60;
+            }
+        }
+        hmCtx.putImageData(imgData, 0, 0);
+    }
+
+    // === RENDERING ===
+    const tooltipEl = document.getElementById('tooltip');
+    let mouseX = -1, mouseY = -1;
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    });
+    canvas.addEventListener('mouseleave', () => {
+        mouseX = mouseY = -1;
+        tooltipEl.style.display = 'none';
+    });
+
+    function draw(time) {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, W, H);
+
+        // Plot area
+        const plotSize = Math.min(W * 0.85, H * 0.85);
+        const plotX = (W - plotSize) / 2;
+        const plotY = (H - plotSize) / 2;
+        const range = 1.5;
+
+        function toScreen(px, py) {
+            return [plotX + (px + range) / (2 * range) * plotSize, plotY + plotSize - (py + range) / (2 * range) * plotSize];
+        }
+
+        // Background heatmap
+        if (step > 0) {
+            if (step % 5 === 0 || step === 1) updateHeatmap();
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(heatmapCanvas, plotX, plotY, plotSize, plotSize);
+        }
+
+        // Border
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(plotX, plotY, plotSize, plotSize);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+        ctx.lineWidth = 0.5;
+        for (let i = 1; i < 6; i++) {
+            const t = i / 6;
+            ctx.beginPath();
+            ctx.moveTo(plotX + t * plotSize, plotY);
+            ctx.lineTo(plotX + t * plotSize, plotY + plotSize);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(plotX, plotY + t * plotSize);
+            ctx.lineTo(plotX + plotSize, plotY + t * plotSize);
+            ctx.stroke();
+        }
+
+        // Real points (green)
+        for (const p of realPoints) {
+            const [sx, sy] = toScreen(p[0], p[1]);
+            if (sx < plotX || sx > plotX + plotSize || sy < plotY || sy > plotY + plotSize) continue;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(34,197,94,0.7)';
+            ctx.fill();
+        }
+
+        // Fake points (red)
+        for (const p of fakePoints) {
+            const [sx, sy] = toScreen(p[0], p[1]);
+            if (sx < plotX || sx > plotX + plotSize || sy < plotY || sy > plotY + plotSize) continue;
+            ctx.beginPath();
+            ctx.arc(sx, sy, 3, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(239,68,68,0.7)';
+            ctx.fill();
+        }
+
+        // Legend
+        ctx.fillStyle = 'rgba(34,197,94,0.8)';
+        ctx.beginPath(); ctx.arc(plotX + 15, plotY + 15, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Real', plotX + 25, plotY + 19);
+
+        ctx.fillStyle = 'rgba(239,68,68,0.8)';
+        ctx.beginPath(); ctx.arc(plotX + 15, plotY + 32, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText('Generado', plotX + 25, plotY + 36);
+
+        // Heatmap legend
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = '9px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('D(x)→1: real', plotX + plotSize - 5, plotY + 15);
+        ctx.fillText('D(x)→0: fake', plotX + plotSize - 5, plotY + 28);
+
+        // Tooltip
+        if (mouseX >= plotX && mouseX <= plotX + plotSize && mouseY >= plotY && mouseY <= plotY + plotSize) {
+            const px = (mouseX - plotX) / plotSize * 2 * range - range;
+            const py = ((plotY + plotSize - mouseY) / plotSize) * 2 * range - range;
+            const out = D.forward([px, py]);
+            const score = sigmoid(out[0]);
+
+            tooltipEl.innerHTML = `
+                <div class="tt-label">Posicion</div>
+                <div>x: <span class="tt-val">${px.toFixed(3)}</span> y: <span class="tt-val">${py.toFixed(3)}</span></div>
+                <div>D(x): <span class="tt-val">${score.toFixed(4)}</span></div>
+                <div>${score > 0.5 ? '<span style="color:#22c55e">→ Real</span>' : '<span style="color:#ef4444">→ Fake</span>'}</div>
+            `;
+            tooltipEl.style.display = 'block';
+            let tx = mouseX + 14, ty = mouseY - 10;
+            if (tx + 170 > W) tx = mouseX - 180;
+            tooltipEl.style.left = tx + 'px';
+            tooltipEl.style.top = ty + 'px';
+        } else {
+            tooltipEl.style.display = 'none';
+        }
+    }
+
+    // === LOOP ===
+    let lastTime = 0;
+    function loop(time) {
+        lastTime = time;
+        if (isTraining) {
+            trainStep();
+            drawLossChart();
+            if (step % 20 === 0) {
+                const gFreq = 300 - Math.min(lastGLoss, 5) * 40;
+                playNote(gFreq, 0.08, 0.02);
+            }
+        }
+        draw(time);
+        requestAnimationFrame(loop);
+    }
+
+    // === EVENTS ===
+    document.getElementById('btn-train').addEventListener('click', function() {
+        initAudio();
+        isTraining = !isTraining;
+        this.textContent = isTraining ? 'Pausar' : 'Entrenar';
+    });
+
+    document.getElementById('btn-step').addEventListener('click', () => {
+        initAudio();
+        isTraining = false;
+        document.getElementById('btn-train').textContent = 'Entrenar';
+        trainStep();
+        drawLossChart();
+    });
+
+    document.getElementById('btn-step100').addEventListener('click', () => {
+        initAudio();
+        isTraining = false;
+        document.getElementById('btn-train').textContent = 'Entrenar';
+        for (let i = 0; i < 100; i++) trainStep();
+        drawLossChart();
+        playNote(440, 0.15, 0.03);
+    });
+
+    document.getElementById('btn-reset').addEventListener('click', () => {
+        isTraining = false;
+        document.getElementById('btn-train').textContent = 'Entrenar';
+        buildGAN();
+        drawLossChart();
+    });
+
+    document.getElementById('sel-dist').addEventListener('change', function() {
+        CONFIG.distribution = this.value;
+        buildGAN();
+        drawLossChart();
+    });
+
+    document.getElementById('sl-lrg').addEventListener('input', function() {
+        CONFIG.lrG = Math.pow(10, +this.value);
+        document.getElementById('val-lrg').textContent = CONFIG.lrG.toFixed(4);
+    });
+
+    document.getElementById('sl-lrd').addEventListener('input', function() {
+        CONFIG.lrD = Math.pow(10, +this.value);
+        document.getElementById('val-lrd').textContent = CONFIG.lrD.toFixed(4);
+    });
+
+    document.getElementById('sl-batch').addEventListener('input', function() {
+        CONFIG.batchSize = +this.value;
+        document.getElementById('val-batch').textContent = this.value;
+    });
+
+    document.getElementById('sl-vol').addEventListener('input', function() {
+        CONFIG.volume = +this.value / 100;
+        document.getElementById('val-vol').textContent = this.value + '%';
+    });
+
+    document.getElementById('btn-audio').addEventListener('click', function() {
+        CONFIG.audioEnabled = !CONFIG.audioEnabled;
+        this.textContent = 'Audio: ' + (CONFIG.audioEnabled ? 'ON' : 'OFF');
+    });
+
+    // === INIT ===
+    buildGAN();
+    realPoints = sampleReal(CONFIG.batchSize);
+    requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

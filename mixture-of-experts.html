@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mixture of Experts - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg-primary: #030712; --bg-secondary: #0f172a; --bg-panel: #1e293b; --accent: #ef4444; --module-color: #06b6d4; --module-dim: rgba(6,182,212,0.15); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; } .controls::-webkit-scrollbar-track { background: transparent; } .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 0.95rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-accent:hover { background: #0891b2; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(6,182,212,0.1); padding: 1px 5px; border-radius: 3px; }
+        .load-bar-container { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.35rem; }
+        .load-bar-label { font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; width: 18px; text-align: center; }
+        .load-bar-track { flex: 1; height: 8px; background: var(--bg-primary); border-radius: 4px; overflow: hidden; }
+        .load-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+        .load-bar-pct { font-size: 0.7rem; font-family: 'JetBrains Mono', monospace; width: 36px; text-align: right; color: var(--text-muted); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Mixture of Experts: Sparse Routing</h1>
+            <nav class="breadcrumb"><a href="../../_portal/index.html">EigenLab</a> / <a href="index.html">AI Visual Lab</a> / Mixture of Experts</nav>
+        </div>
+        <div class="mono" style="font-size:0.75rem;color:var(--text-secondary);">Points: <span id="stat-pts">0</span> | Experts: <span id="stat-exp">4</span> | Top-K: <span id="stat-topk">1</span></div>
+    </header>
+    <main class="main">
+        <div class="canvas-container"><canvas id="canvas"></canvas></div>
+        <aside class="controls">
+            <div class="equation-box">y = &Sigma;<sub>i</sub> g(x)<sub>i</sub> &middot; E<sub>i</sub>(x), &nbsp; g(x) = TopK(softmax(W<sub>g</sub>&middot;x))</div>
+            <div class="control-section">
+                <h3>&#9881; Router Configuration</h3>
+                <div class="slider-group">
+                    <label>Number of Experts <span id="val-nexp">4</span></label>
+                    <input type="range" id="sl-nexp" min="0" max="2" value="1" step="1">
+                </div>
+                <div class="btn-group" style="margin-bottom:0.75rem;">
+                    <button class="btn" id="btn-topk1">Top-1</button>
+                    <button class="btn btn-accent" id="btn-topk2">Top-2</button>
+                </div>
+                <div class="slider-group">
+                    <label>Temperature <span id="val-temp">1.00</span></label>
+                    <input type="range" id="sl-temp" min="5" max="300" value="100">
+                </div>
+                <div class="slider-group">
+                    <label>Load Balance Loss <span id="val-lbl">0.10</span></label>
+                    <input type="range" id="sl-lbl" min="0" max="100" value="10">
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>&#9654; Simulation</h3>
+                <div class="btn-group">
+                    <button class="btn btn-accent" id="btn-train">Train Step</button>
+                    <button class="btn" id="btn-auto">Auto-Train</button>
+                    <button class="btn" id="btn-clear">Clear Points</button>
+                    <button class="btn" id="btn-random">Random Points</button>
+                </div>
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-top:0.5rem;">Click canvas to add input points</p>
+            </div>
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volume <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <button class="btn" id="btn-mute">Mute</button>
+            </div>
+            <div class="control-section">
+                <h3>&#9878; Expert Load Balance</h3>
+                <div id="load-bars"></div>
+                <div class="stat" style="margin-top:0.5rem;"><span>Balance Entropy</span><span class="stat-value" id="val-entropy">-</span></div>
+                <div class="stat"><span>Max Load</span><span class="stat-value" id="val-maxload">-</span></div>
+            </div>
+            <div class="control-section">
+                <h3>&#128202; Metrics</h3>
+                <div class="stat"><span>Input Points</span><span class="stat-value" id="val-points">0</span></div>
+                <div class="stat"><span>Train Steps</span><span class="stat-value" id="val-steps">0</span></div>
+                <div class="stat"><span>Router Loss</span><span class="stat-value" id="val-rloss">0.000</span></div>
+                <div class="stat"><span>Expert Loss</span><span class="stat-value" id="val-eloss">0.000</span></div>
+                <div class="stat"><span>Total Loss</span><span class="stat-value" id="val-tloss">0.000</span></div>
+            </div>
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; Mixture of Experts</strong><br><br>
+                A <span class="hl">Mixture of Experts</span> layer routes each input to a subset of specialized <span class="hl">expert networks</span>. A learned <span class="hl">gating router</span> decides which experts process each input.<br><br>
+                <span class="eq">Router</span>: g(x) = TopK(softmax(W_g * x / T))<br>
+                <span class="eq">Output</span>: y = sum of g_i * E_i(x)<br><br>
+                <span class="hl">Top-1</span> sends each input to one expert (sparse). <span class="hl">Top-2</span> blends two experts (denser). A <span class="hl">load balance loss</span> prevents all inputs from collapsing to a single expert.
+            </div>
+        </aside>
+    </main>
+<script>
+// === CONFIG ===
+const CFG = { volume: 0.3, audioEnabled: true, topK: 1, temperature: 1.0, loadBalanceCoeff: 0.1, numExperts: 4, autoTrain: false };
+const EXPERT_OPTIONS = [2, 4, 8];
+const EXPERT_COLORS = [
+    [239, 68, 68],   // red
+    [34, 197, 94],    // green
+    [59, 130, 246],   // blue
+    [234, 179, 8],    // yellow
+    [168, 85, 247],   // purple
+    [249, 115, 22],   // orange
+    [236, 72, 153],   // pink
+    [20, 184, 166]    // teal
+];
+const EXPERT_NOTES = [261.63, 329.63, 392.00, 523.25, 587.33, 659.25, 783.99, 880.00];
+const EXPERT_TYPES = ['sine', 'triangle', 'square', 'sawtooth', 'sine', 'triangle', 'square', 'sawtooth'];
+
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// === AUDIO (lazy init) ===
+let audioCtx = null, masterGain = null, compressor = null;
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -24; compressor.knee.value = 30; compressor.ratio.value = 12;
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = CFG.volume;
+    masterGain.connect(compressor);
+    compressor.connect(audioCtx.destination);
+}
+function playExpertNote(expertIdx, vol = 0.08, dur = 0.25) {
+    if (!audioCtx || !CFG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = EXPERT_TYPES[expertIdx % EXPERT_TYPES.length];
+    osc.frequency.value = EXPERT_NOTES[expertIdx % EXPERT_NOTES.length];
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol * CFG.volume, now + 0.015);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass';
+    lp.frequency.value = 800 + expertIdx * 200;
+    osc.connect(lp); lp.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+function playRouterChord(indices, vol = 0.06, dur = 0.35) {
+    indices.forEach((idx, i) => {
+        setTimeout(() => playExpertNote(idx, vol, dur), i * 40);
+    });
+}
+
+// === MATH UTILITIES ===
+function softmax(logits, temp) {
+    const t = temp || 1.0;
+    const scaled = logits.map(l => l / t);
+    const maxL = Math.max(...scaled);
+    const exps = scaled.map(l => Math.exp(l - maxL));
+    const sum = exps.reduce((a, b) => a + b, 0);
+    return exps.map(e => e / sum);
+}
+
+function topK(probs, k) {
+    const indexed = probs.map((p, i) => ({ p, i }));
+    indexed.sort((a, b) => b.p - a.p);
+    const selected = indexed.slice(0, k);
+    const sumP = selected.reduce((s, v) => s + v.p, 0);
+    const result = new Array(probs.length).fill(0);
+    selected.forEach(v => { result[v.i] = v.p / sumP; });
+    return result;
+}
+
+function dot(a, b) { return a.reduce((s, v, i) => s + v * b[i], 0); }
+function vecAdd(a, b) { return a.map((v, i) => v + b[i]); }
+function vecScale(a, s) { return a.map(v => v * s); }
+function randNormal() { return Math.sqrt(-2 * Math.log(Math.random())) * Math.cos(2 * Math.PI * Math.random()); }
+
+// === MoE MODEL ===
+let routerW = [];  // numExperts x 2 (input dim = 2)
+let routerB = [];  // numExperts
+let expertW = [];  // numExperts x [2x2 weight matrix as flat array]
+let expertB = [];  // numExperts x 2
+let expertCenters = []; // numExperts x 2 (for visualization / target)
+
+let dataPoints = [];  // [{x, y}] normalized to [0, 1]
+let trainSteps = 0;
+let expertLoads = [];
+let lastGatingWeights = [];
+let heatmapCache = null;
+let heatmapDirty = true;
+
+function initModel() {
+    const N = CFG.numExperts;
+    routerW = []; routerB = []; expertW = []; expertB = []; expertCenters = [];
+    expertLoads = new Array(N).fill(0);
+    lastGatingWeights = [];
+
+    for (let i = 0; i < N; i++) {
+        routerW.push([randNormal() * 0.5, randNormal() * 0.5]);
+        routerB.push(randNormal() * 0.1);
+        expertW.push([1 + randNormal() * 0.3, randNormal() * 0.2, randNormal() * 0.2, 1 + randNormal() * 0.3]);
+        expertB.push([randNormal() * 0.1, randNormal() * 0.1]);
+        const angle = (2 * Math.PI * i) / N;
+        expertCenters.push([0.5 + 0.3 * Math.cos(angle), 0.5 + 0.3 * Math.sin(angle)]);
+    }
+    trainSteps = 0;
+    heatmapDirty = true;
+    updateLoadBars();
+}
+
+function routerForward(x) {
+    const N = CFG.numExperts;
+    const logits = [];
+    for (let i = 0; i < N; i++) {
+        logits.push(dot(routerW[i], x) + routerB[i]);
+    }
+    const probs = softmax(logits, CFG.temperature);
+    return topK(probs, CFG.topK);
+}
+
+function expertForward(expertIdx, x) {
+    const w = expertW[expertIdx];
+    const b = expertB[expertIdx];
+    return [
+        Math.tanh(w[0] * x[0] + w[1] * x[1] + b[0]),
+        Math.tanh(w[2] * x[0] + w[3] * x[1] + b[1])
+    ];
+}
+
+function moeForward(x) {
+    const gates = routerForward(x);
+    let output = [0, 0];
+    const N = CFG.numExperts;
+    for (let i = 0; i < N; i++) {
+        if (gates[i] > 0.001) {
+            const eOut = expertForward(i, x);
+            output = vecAdd(output, vecScale(eOut, gates[i]));
+        }
+    }
+    return { output, gates };
+}
+
+// === TRAINING ===
+function computeTarget(x) {
+    const N = CFG.numExperts;
+    let bestDist = Infinity, bestIdx = 0;
+    for (let i = 0; i < N; i++) {
+        const dx = x[0] - expertCenters[i][0];
+        const dy = x[1] - expertCenters[i][1];
+        const d = dx * dx + dy * dy;
+        if (d < bestDist) { bestDist = d; bestIdx = i; }
+    }
+    return bestIdx;
+}
+
+function trainStep() {
+    if (dataPoints.length === 0) return;
+    const lr = 0.02;
+    const N = CFG.numExperts;
+    let totalLoss = 0;
+    let routerLoss = 0;
+    let expertLoss = 0;
+    const batchLoads = new Array(N).fill(0);
+
+    for (const pt of dataPoints) {
+        const x = [pt.x, pt.y];
+        const logits = [];
+        for (let i = 0; i < N; i++) {
+            logits.push(dot(routerW[i], x) + routerB[i]);
+        }
+        const probs = softmax(logits, CFG.temperature);
+        const gates = topK(probs, CFG.topK);
+        const targetExpert = computeTarget(x);
+
+        // Expert output targets: each expert should map inputs near its center
+        for (let i = 0; i < N; i++) {
+            if (gates[i] > 0.001) {
+                batchLoads[i] += gates[i];
+                const eOut = expertForward(i, x);
+                const target = expertCenters[i];
+                const errX = eOut[0] - (target[0] * 2 - 1);
+                const errY = eOut[1] - (target[1] * 2 - 1);
+                expertLoss += errX * errX + errY * errY;
+
+                // Backprop through expert (simplified gradient)
+                const dOutX = 2 * errX * (1 - eOut[0] * eOut[0]);
+                const dOutY = 2 * errY * (1 - eOut[1] * eOut[1]);
+                expertW[i][0] -= lr * gates[i] * dOutX * x[0];
+                expertW[i][1] -= lr * gates[i] * dOutX * x[1];
+                expertW[i][2] -= lr * gates[i] * dOutY * x[0];
+                expertW[i][3] -= lr * gates[i] * dOutY * x[1];
+                expertB[i][0] -= lr * gates[i] * dOutX;
+                expertB[i][1] -= lr * gates[i] * dOutY;
+            }
+        }
+
+        // Router loss: encourage correct expert selection
+        const targetProb = probs[targetExpert];
+        routerLoss -= Math.log(targetProb + 1e-8);
+
+        // Router gradient
+        for (let i = 0; i < N; i++) {
+            const grad = probs[i] - (i === targetExpert ? 1 : 0);
+            routerW[i][0] -= lr * grad * x[0] / CFG.temperature;
+            routerW[i][1] -= lr * grad * x[1] / CFG.temperature;
+            routerB[i] -= lr * grad / CFG.temperature;
+        }
+    }
+
+    // Load balance loss (auxiliary)
+    if (CFG.loadBalanceCoeff > 0) {
+        const totalLoad = batchLoads.reduce((a, b) => a + b, 0) || 1;
+        const idealLoad = totalLoad / N;
+        for (let i = 0; i < N; i++) {
+            const loadImbalance = (batchLoads[i] - idealLoad) / totalLoad;
+            for (let j = 0; j < 2; j++) {
+                routerW[i][j] -= lr * CFG.loadBalanceCoeff * loadImbalance * 0.5;
+            }
+            routerB[i] -= lr * CFG.loadBalanceCoeff * loadImbalance * 0.5;
+        }
+    }
+
+    // Update loads
+    const totalLoad = batchLoads.reduce((a, b) => a + b, 0) || 1;
+    for (let i = 0; i < N; i++) {
+        expertLoads[i] = expertLoads[i] * 0.8 + (batchLoads[i] / totalLoad) * 0.2;
+    }
+
+    trainSteps++;
+    heatmapDirty = true;
+
+    totalLoss = routerLoss / dataPoints.length + expertLoss / dataPoints.length;
+    document.getElementById('val-steps').textContent = trainSteps;
+    document.getElementById('val-rloss').textContent = (routerLoss / dataPoints.length).toFixed(3);
+    document.getElementById('val-eloss').textContent = (expertLoss / dataPoints.length).toFixed(3);
+    document.getElementById('val-tloss').textContent = totalLoss.toFixed(3);
+    updateLoadBars();
+}
+
+// === LOAD BALANCE UI ===
+function buildLoadBars() {
+    const container = document.getElementById('load-bars');
+    container.innerHTML = '';
+    for (let i = 0; i < CFG.numExperts; i++) {
+        const c = EXPERT_COLORS[i];
+        const row = document.createElement('div');
+        row.className = 'load-bar-container';
+        row.innerHTML = `<span class="load-bar-label" style="color:rgb(${c[0]},${c[1]},${c[2]})">E${i}</span>` +
+            `<div class="load-bar-track"><div class="load-bar-fill" id="lb-fill-${i}" style="width:0%;background:rgb(${c[0]},${c[1]},${c[2]})"></div></div>` +
+            `<span class="load-bar-pct" id="lb-pct-${i}">0%</span>`;
+        container.appendChild(row);
+    }
+}
+
+function updateLoadBars() {
+    const N = CFG.numExperts;
+    const maxL = Math.max(...expertLoads, 0.01);
+    let ent = 0;
+    for (let i = 0; i < N; i++) {
+        const pct = Math.round(expertLoads[i] * 100);
+        const el = document.getElementById(`lb-fill-${i}`);
+        const elP = document.getElementById(`lb-pct-${i}`);
+        if (el) { el.style.width = (expertLoads[i] / maxL * 100) + '%'; }
+        if (elP) { elP.textContent = pct + '%'; }
+        if (expertLoads[i] > 0.001) ent -= expertLoads[i] * Math.log2(expertLoads[i]);
+    }
+    document.getElementById('val-entropy').textContent = ent.toFixed(3);
+    document.getElementById('val-maxload').textContent = (maxL * 100).toFixed(1) + '%';
+}
+
+// === HEATMAP ===
+const HMAP_RES = 64;
+let heatmapData = null;
+
+function computeHeatmap() {
+    const N = CFG.numExperts;
+    heatmapData = new Array(HMAP_RES * HMAP_RES);
+    for (let hy = 0; hy < HMAP_RES; hy++) {
+        for (let hx = 0; hx < HMAP_RES; hx++) {
+            const x = [(hx + 0.5) / HMAP_RES, (hy + 0.5) / HMAP_RES];
+            const gates = routerForward(x);
+            heatmapData[hy * HMAP_RES + hx] = gates;
+        }
+    }
+    heatmapDirty = false;
+}
+
+// === DRAWING ===
+let time = 0;
+const HMAP_AREA = { x: 0, y: 0, w: 0, h: 0 };
+
+function draw() {
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(6,182,212,0.02)';
+    ctx.lineWidth = 1;
+    for (let gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+    for (let gy = 0; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+    const N = CFG.numExperts;
+    const margin = 30;
+    const mapSize = Math.min(W * 0.55, H - 120, 480);
+    const mapX = margin;
+    const mapY = 50;
+    HMAP_AREA.x = mapX; HMAP_AREA.y = mapY; HMAP_AREA.w = mapSize; HMAP_AREA.h = mapSize;
+
+    // --- Heatmap ---
+    if (heatmapDirty) computeHeatmap();
+    const cellW = mapSize / HMAP_RES;
+    const cellH = mapSize / HMAP_RES;
+
+    for (let hy = 0; hy < HMAP_RES; hy++) {
+        for (let hx = 0; hx < HMAP_RES; hx++) {
+            const gates = heatmapData[hy * HMAP_RES + hx];
+            let r = 0, g = 0, b = 0;
+            for (let i = 0; i < N; i++) {
+                if (gates[i] > 0.001) {
+                    const c = EXPERT_COLORS[i];
+                    r += c[0] * gates[i];
+                    g += c[1] * gates[i];
+                    b += c[2] * gates[i];
+                }
+            }
+            ctx.fillStyle = `rgba(${Math.round(r)},${Math.round(g)},${Math.round(b)},0.35)`;
+            ctx.fillRect(mapX + hx * cellW, mapY + hy * cellH, cellW + 0.5, cellH + 0.5);
+        }
+    }
+
+    // Heatmap border
+    ctx.strokeStyle = 'rgba(6,182,212,0.15)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(mapX, mapY, mapSize, mapSize);
+
+    // Axis labels
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.textAlign = 'center';
+    ctx.fillText('x\u2081', mapX + mapSize / 2, mapY + mapSize + 18);
+    ctx.save();
+    ctx.translate(mapX - 14, mapY + mapSize / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('x\u2082', 0, 0);
+    ctx.restore();
+
+    // Title
+    ctx.font = 'bold 13px Inter';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'left';
+    ctx.fillText('Router Decision Heatmap (click to add points)', mapX, mapY - 12);
+
+    // --- Data points ---
+    for (const pt of dataPoints) {
+        const px = mapX + pt.x * mapSize;
+        const py = mapY + pt.y * mapSize;
+        const { gates } = moeForward([pt.x, pt.y]);
+        let bestIdx = 0, bestVal = 0;
+        gates.forEach((g, i) => { if (g > bestVal) { bestVal = g; bestIdx = i; } });
+        const c = EXPERT_COLORS[bestIdx];
+        ctx.beginPath();
+        ctx.arc(px, py, 4, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.9)`;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    }
+
+    // --- Router + Expert Network Diagram ---
+    const netX = mapX + mapSize + 60;
+    const netY = mapY + 20;
+    const netW = W - netX - 30;
+    const netH = mapSize - 40;
+    const routerCx = netX + netW / 2;
+    const routerCy = netY + netH / 2;
+    const expertRadius = Math.min(netW, netH) * 0.35;
+    const routerNodeR = 22;
+    const expertNodeR = 18;
+
+    ctx.font = 'bold 11px Inter';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'center';
+    ctx.fillText('Router-Expert Network', routerCx, netY - 5);
+
+    // Expert nodes positions
+    const expertPositions = [];
+    for (let i = 0; i < N; i++) {
+        const angle = (2 * Math.PI * i) / N - Math.PI / 2;
+        expertPositions.push({
+            x: routerCx + expertRadius * Math.cos(angle),
+            y: routerCy + expertRadius * Math.sin(angle)
+        });
+    }
+
+    // Connections: router -> experts (thickness = load)
+    for (let i = 0; i < N; i++) {
+        const ep = expertPositions[i];
+        const load = expertLoads[i] || (1 / N);
+        const c = EXPERT_COLORS[i];
+        const thickness = 1 + load * 8;
+        const alpha = 0.15 + load * 0.6;
+
+        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+        ctx.lineWidth = thickness;
+        ctx.beginPath();
+        ctx.moveTo(routerCx, routerCy);
+        ctx.lineTo(ep.x, ep.y);
+        ctx.stroke();
+
+        // Arrowhead
+        const angle = Math.atan2(ep.y - routerCy, ep.x - routerCx);
+        const arrowDist = expertRadius - expertNodeR - 2;
+        const ax = routerCx + arrowDist * Math.cos(angle);
+        const ay = routerCy + arrowDist * Math.sin(angle);
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(ax - 8 * Math.cos(angle - 0.3), ay - 8 * Math.sin(angle - 0.3));
+        ctx.lineTo(ax - 8 * Math.cos(angle + 0.3), ay - 8 * Math.sin(angle + 0.3));
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    // Router node
+    ctx.beginPath();
+    ctx.arc(routerCx, routerCy, routerNodeR, 0, Math.PI * 2);
+    const pulse = 0.6 + 0.4 * Math.sin(time * 2);
+    ctx.fillStyle = `rgba(6,182,212,${0.15 + pulse * 0.1})`;
+    ctx.fill();
+    ctx.strokeStyle = `rgba(6,182,212,${0.5 + pulse * 0.3})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.font = 'bold 10px JetBrains Mono';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText('G(x)', routerCx, routerCy);
+
+    // Expert nodes
+    for (let i = 0; i < N; i++) {
+        const ep = expertPositions[i];
+        const c = EXPERT_COLORS[i];
+        const load = expertLoads[i] || (1 / N);
+        const glow = load * 15;
+
+        ctx.beginPath();
+        ctx.arc(ep.x, ep.y, expertNodeR, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.2)`;
+        ctx.shadowColor = `rgb(${c[0]},${c[1]},${c[2]})`;
+        ctx.shadowBlur = glow;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.7)`;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.font = 'bold 9px JetBrains Mono';
+        ctx.fillStyle = `rgb(${c[0]},${c[1]},${c[2]})`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(`E${i}`, ep.x, ep.y);
+
+        // Load percentage below
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.6)`;
+        ctx.fillText(Math.round(load * 100) + '%', ep.x, ep.y + expertNodeR + 10);
+    }
+    ctx.textBaseline = 'alphabetic';
+
+    // --- Combined output visualization (bottom right) ---
+    const outY = mapY + mapSize + 35;
+    const outX = mapX;
+    const outW = mapSize;
+    const outH = H - outY - 20;
+
+    if (outH > 50) {
+        ctx.font = 'bold 11px Inter';
+        ctx.fillStyle = '#67e8f9';
+        ctx.textAlign = 'left';
+        ctx.fillText('Expert Specialization (output space)', outX, outY - 6);
+
+        // Draw small expert output maps
+        const miniSize = Math.min((outW - (N - 1) * 8) / N, outH - 20, 80);
+        const miniRes = 12;
+        const miniCellW = miniSize / miniRes;
+        const miniCellH = miniSize / miniRes;
+
+        for (let e = 0; e < N; e++) {
+            const mx = outX + e * (miniSize + 8);
+            const my = outY + 4;
+            const c = EXPERT_COLORS[e];
+
+            for (let hy = 0; hy < miniRes; hy++) {
+                for (let hx = 0; hx < miniRes; hx++) {
+                    const x = [(hx + 0.5) / miniRes, (hy + 0.5) / miniRes];
+                    const eOut = expertForward(e, x);
+                    const mag = Math.sqrt(eOut[0] * eOut[0] + eOut[1] * eOut[1]);
+                    const alpha = Math.min(0.8, mag * 0.5);
+                    ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},${alpha})`;
+                    ctx.fillRect(mx + hx * miniCellW, my + hy * miniCellH, miniCellW + 0.5, miniCellH + 0.5);
+                }
+            }
+
+            ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.3)`;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(mx, my, miniSize, miniSize);
+
+            ctx.font = '8px JetBrains Mono';
+            ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.7)`;
+            ctx.textAlign = 'center';
+            ctx.fillText(`E${e}`, mx + miniSize / 2, my + miniSize + 12);
+        }
+    }
+
+    // --- Gating weights for last hovered/clicked point ---
+    if (lastGatingWeights.length > 0) {
+        const gwX = netX;
+        const gwY = netY + netH + 30;
+        if (gwY + 50 < H) {
+            ctx.font = '9px JetBrains Mono';
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.textAlign = 'left';
+            ctx.fillText('Last routing weights:', gwX, gwY);
+            const barW = netW / N - 4;
+            for (let i = 0; i < N && i < lastGatingWeights.length; i++) {
+                const c = EXPERT_COLORS[i];
+                const bx = gwX + i * (barW + 4);
+                const bh = lastGatingWeights[i] * 30;
+                ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.6)`;
+                ctx.fillRect(bx, gwY + 38 - bh, barW, bh);
+                ctx.strokeStyle = `rgba(${c[0]},${c[1]},${c[2]},0.3)`;
+                ctx.strokeRect(bx, gwY + 8, barW, 30);
+                ctx.fillStyle = `rgba(${c[0]},${c[1]},${c[2]},0.8)`;
+                ctx.font = '7px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(lastGatingWeights[i].toFixed(2), bx + barW / 2, gwY + 48);
+            }
+        }
+    }
+
+    time += 0.016;
+}
+
+// === INTERACTION ===
+canvas.addEventListener('click', (e) => {
+    initAudio();
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const { x: hx, y: hy, w: hw, h: hh } = HMAP_AREA;
+
+    if (mx >= hx && mx <= hx + hw && my >= hy && my <= hy + hh) {
+        const px = (mx - hx) / hw;
+        const py = (my - hy) / hh;
+        dataPoints.push({ x: px, y: py });
+        document.getElementById('val-points').textContent = dataPoints.length;
+        document.getElementById('stat-pts').textContent = dataPoints.length;
+
+        // Route and sonify
+        const { gates } = moeForward([px, py]);
+        lastGatingWeights = gates;
+        const activeExperts = [];
+        gates.forEach((g, i) => { if (g > 0.01) activeExperts.push(i); });
+        playRouterChord(activeExperts, 0.08, 0.3);
+    }
+});
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const { x: hx, y: hy, w: hw, h: hh } = HMAP_AREA;
+
+    if (mx >= hx && mx <= hx + hw && my >= hy && my <= hy + hh) {
+        const px = (mx - hx) / hw;
+        const py = (my - hy) / hh;
+        const { gates } = moeForward([px, py]);
+        lastGatingWeights = gates;
+    }
+});
+
+// === CONTROLS ===
+document.getElementById('sl-nexp').addEventListener('input', (e) => {
+    const idx = parseInt(e.target.value);
+    CFG.numExperts = EXPERT_OPTIONS[idx];
+    document.getElementById('val-nexp').textContent = CFG.numExperts;
+    document.getElementById('stat-exp').textContent = CFG.numExperts;
+    initModel();
+    buildLoadBars();
+});
+
+document.getElementById('btn-topk1').addEventListener('click', () => {
+    CFG.topK = 1;
+    document.getElementById('btn-topk1').classList.add('btn-accent');
+    document.getElementById('btn-topk2').classList.remove('btn-accent');
+    document.getElementById('stat-topk').textContent = '1';
+    heatmapDirty = true;
+});
+document.getElementById('btn-topk2').addEventListener('click', () => {
+    CFG.topK = 2;
+    document.getElementById('btn-topk2').classList.add('btn-accent');
+    document.getElementById('btn-topk1').classList.remove('btn-accent');
+    document.getElementById('stat-topk').textContent = '2';
+    heatmapDirty = true;
+});
+
+document.getElementById('sl-temp').addEventListener('input', (e) => {
+    CFG.temperature = parseInt(e.target.value) / 100;
+    document.getElementById('val-temp').textContent = CFG.temperature.toFixed(2);
+    heatmapDirty = true;
+});
+
+document.getElementById('sl-lbl').addEventListener('input', (e) => {
+    CFG.loadBalanceCoeff = parseInt(e.target.value) / 100;
+    document.getElementById('val-lbl').textContent = CFG.loadBalanceCoeff.toFixed(2);
+});
+
+document.getElementById('btn-train').addEventListener('click', () => {
+    initAudio();
+    for (let i = 0; i < 10; i++) trainStep();
+    // Sonify balance state
+    const maxL = Math.max(...expertLoads);
+    if (maxL > 0.6) {
+        // Imbalanced - dominant instrument
+        const domIdx = expertLoads.indexOf(maxL);
+        playExpertNote(domIdx, 0.15, 0.5);
+    } else {
+        // Balanced - ensemble chord
+        const active = [];
+        expertLoads.forEach((l, i) => { if (l > 0.1) active.push(i); });
+        playRouterChord(active, 0.06, 0.4);
+    }
+});
+
+let autoTrainInterval = null;
+document.getElementById('btn-auto').addEventListener('click', () => {
+    initAudio();
+    if (CFG.autoTrain) {
+        CFG.autoTrain = false;
+        clearInterval(autoTrainInterval);
+        document.getElementById('btn-auto').textContent = 'Auto-Train';
+        document.getElementById('btn-auto').classList.remove('btn-accent');
+    } else {
+        CFG.autoTrain = true;
+        document.getElementById('btn-auto').textContent = 'Stop';
+        document.getElementById('btn-auto').classList.add('btn-accent');
+        autoTrainInterval = setInterval(() => {
+            for (let i = 0; i < 5; i++) trainStep();
+            // Periodic sonification
+            if (trainSteps % 20 === 0) {
+                const maxL = Math.max(...expertLoads);
+                if (maxL > 0.5) {
+                    playExpertNote(expertLoads.indexOf(maxL), 0.06, 0.15);
+                } else {
+                    const best = expertLoads.indexOf(maxL);
+                    playExpertNote(best, 0.04, 0.1);
+                }
+            }
+        }, 60);
+    }
+});
+
+document.getElementById('btn-clear').addEventListener('click', () => {
+    dataPoints = [];
+    trainSteps = 0;
+    expertLoads = new Array(CFG.numExperts).fill(0);
+    lastGatingWeights = [];
+    heatmapDirty = true;
+    document.getElementById('val-points').textContent = 0;
+    document.getElementById('stat-pts').textContent = 0;
+    document.getElementById('val-steps').textContent = 0;
+    updateLoadBars();
+});
+
+document.getElementById('btn-random').addEventListener('click', () => {
+    initAudio();
+    const count = 30 + Math.floor(Math.random() * 20);
+    for (let i = 0; i < count; i++) {
+        dataPoints.push({ x: Math.random(), y: Math.random() });
+    }
+    document.getElementById('val-points').textContent = dataPoints.length;
+    document.getElementById('stat-pts').textContent = dataPoints.length;
+    heatmapDirty = true;
+    playRouterChord([0, 1, 2, 3].slice(0, Math.min(CFG.numExperts, 4)), 0.05, 0.3);
+});
+
+document.getElementById('sl-vol').addEventListener('input', (e) => {
+    CFG.volume = parseInt(e.target.value) / 100;
+    document.getElementById('val-vol').textContent = e.target.value + '%';
+    if (masterGain) masterGain.gain.value = CFG.volume;
+});
+
+document.getElementById('btn-mute').addEventListener('click', () => {
+    CFG.audioEnabled = !CFG.audioEnabled;
+    document.getElementById('btn-mute').textContent = CFG.audioEnabled ? 'Mute' : 'Unmute';
+});
+
+// Set initial Top-K button state
+document.getElementById('btn-topk1').classList.add('btn-accent');
+document.getElementById('btn-topk2').classList.remove('btn-accent');
+
+// === INIT ===
+initModel();
+buildLoadBars();
+
+// Seed with some initial points
+for (let i = 0; i < 20; i++) {
+    dataPoints.push({ x: Math.random(), y: Math.random() });
+}
+document.getElementById('val-points').textContent = dataPoints.length;
+document.getElementById('stat-pts').textContent = dataPoints.length;
+
+function loop() { draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

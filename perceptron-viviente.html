@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perceptrón Viviente - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --accent-dim: rgba(239, 68, 68, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+            --class0: #3b82f6;
+            --class1: #ef4444;
+            --boundary: #fbbf24;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .header-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-secondary); display: flex; gap: 12px; }
+        .header-stats .hs-val { color: var(--accent); }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; cursor: crosshair; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; min-width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .controls::-webkit-scrollbar { width: 5px; }
+        .controls::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .equation-box { background: var(--accent-dim); border-left: 3px solid var(--accent); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.1rem; color: var(--text-primary); line-height: 1.7; text-align: center; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 6px; }
+        .control-section h3 .ico { font-size: 0.85rem; }
+        .slider-group { margin-bottom: 0.65rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.2rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 0.74rem; }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px rgba(239,68,68,0.4); }
+        .btn { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.76rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-accent { background: var(--accent); color: white; border-color: var(--accent); font-weight: 500; }
+        .btn-accent:hover { opacity: 0.85; color: white; }
+        .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.3rem 0.55rem; font-size: 0.68rem; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.76rem; padding: 0.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .stat:last-child { border-bottom: none; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 0.74rem; }
+        select { width: 100%; padding: 0.45rem 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.76rem; }
+        .class-toggle { display: flex; gap: 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); }
+        .class-toggle button { flex: 1; padding: 0.45rem; border: none; font-family: 'Inter', sans-serif; font-size: 0.76rem; cursor: pointer; transition: all 0.2s; color: var(--text-secondary); background: var(--bg-primary); }
+        .class-toggle button.active-0 { background: rgba(59,130,246,0.2); color: var(--class0); font-weight: 500; }
+        .class-toggle button.active-1 { background: rgba(239,68,68,0.2); color: var(--class1); font-weight: 500; }
+        .info-text { font-size: 0.7rem; color: var(--text-muted); line-height: 1.55; }
+        .explain-section { background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.04); border-radius: 10px; padding: 0.85rem; }
+        .explain-section h4 { font-size: 0.72rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.4rem; }
+        .explain-section p { font-size: 0.7rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 0.4rem; }
+        .explain-section p:last-child { margin-bottom: 0; }
+        .explain-section .highlight { color: var(--accent); font-weight: 500; }
+        .explain-section .hl-blue { color: var(--class0); }
+        .explain-section .hl-yellow { color: var(--boundary); }
+        .loss-chart-container { height: 50px; background: var(--bg-primary); border-radius: 6px; overflow: hidden; position: relative; }
+        .loss-chart-container canvas { width: 100%; height: 100%; }
+        .loss-chart-label { position: absolute; top: 3px; left: 6px; font-size: 0.6rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Perceptron Viviente</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                Perceptron Viviente
+            </nav>
+        </div>
+        <div class="header-stats">
+            <span>Epoch <span class="hs-val" id="stat-epoch">0</span></span>
+            <span>Acc <span class="hs-val" id="stat-accuracy">--</span></span>
+            <span>Error <span class="hs-val" id="stat-error">--</span></span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <aside class="controls">
+            <div class="equation-box">
+                y = sign(w<sub>1</sub>x<sub>1</sub> + w<sub>2</sub>x<sub>2</sub> + b)
+            </div>
+
+            <!-- Explanation -->
+            <div class="explain-section">
+                <h4>Que es un perceptron?</h4>
+                <p>El perceptron es la <span class="highlight">neurona artificial mas simple</span>: toma dos entradas (x<sub>1</sub>, x<sub>2</sub>), las multiplica por pesos (w<sub>1</sub>, w<sub>2</sub>), suma un sesgo (b) y decide: si la suma es positiva, predice <span class="highlight">clase 1</span> (rojo); si es negativa, <span class="highlight">clase 0</span> (azul).</p>
+                <p>La <span class="hl-yellow">linea amarilla</span> es la <strong>frontera de decision</strong>: separa el plano en dos regiones. El entrenamiento ajusta los pesos para que esta linea clasifique correctamente todos los puntos.</p>
+                <p>Prueba el preset <strong>XOR</strong> para ver un caso que el perceptron <em>no puede resolver</em> — necesitarias una red mas profunda.</p>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#x2022;</span> Dataset</h3>
+                <div class="class-toggle" style="margin-bottom: 0.6rem;">
+                    <button id="btn-class0" class="active-0" onclick="setDrawClass(0)">Clase 0 (azul)</button>
+                    <button id="btn-class1" onclick="setDrawClass(1)">Clase 1 (rojo)</button>
+                </div>
+                <select id="sel-preset" onchange="loadPreset(this.value)" style="margin-bottom: 0.5rem;">
+                    <option value="">Presets de datos...</option>
+                    <option value="linear">Lineal separable</option>
+                    <option value="diagonal">Diagonal</option>
+                    <option value="vertical">Vertical</option>
+                    <option value="clusters">Clusters</option>
+                    <option value="xor">XOR (no separable)</option>
+                    <option value="clear">Limpiar todo</option>
+                </select>
+                <p class="info-text">Click izq: anadir punto &middot; Arrastrar: mover &middot; Click der: eliminar</p>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#x2699;</span> Parametros</h3>
+                <div class="slider-group">
+                    <label>Learning rate (&eta;) <span id="val-lr">0.100</span></label>
+                    <input type="range" id="sl-lr" min="0.001" max="1" step="0.001" value="0.1"
+                        oninput="CONFIG.learningRate=+this.value; document.getElementById('val-lr').textContent=(+this.value).toFixed(3)">
+                </div>
+                <div class="slider-group">
+                    <label>w<sub>1</sub> <span id="val-w1">0.00</span></label>
+                    <input type="range" id="sl-w1" min="-3" max="3" step="0.01" value="0"
+                        oninput="perceptron.w1=+this.value; document.getElementById('val-w1').textContent=(+this.value).toFixed(2)">
+                </div>
+                <div class="slider-group">
+                    <label>w<sub>2</sub> <span id="val-w2">0.00</span></label>
+                    <input type="range" id="sl-w2" min="-3" max="3" step="0.01" value="0"
+                        oninput="perceptron.w2=+this.value; document.getElementById('val-w2').textContent=(+this.value).toFixed(2)">
+                </div>
+                <div class="slider-group">
+                    <label>bias (b) <span id="val-b">0.00</span></label>
+                    <input type="range" id="sl-b" min="-3" max="3" step="0.01" value="0"
+                        oninput="perceptron.bias=+this.value; document.getElementById('val-b').textContent=(+this.value).toFixed(2)">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#x25B6;</span> Entrenamiento</h3>
+                <div class="btn-group" style="margin-bottom: 0.6rem;">
+                    <button class="btn btn-accent" id="btn-train" onclick="toggleAutoTrain()">Entrenar</button>
+                    <button class="btn" onclick="trainStep()">1 Paso</button>
+                    <button class="btn" onclick="trainEpochManual()">1 Epoch</button>
+                    <button class="btn" onclick="resetWeights()">Reset</button>
+                </div>
+                <div class="slider-group">
+                    <label>Velocidad <span id="val-speed">5</span> ep/s</label>
+                    <input type="range" id="sl-speed" min="1" max="50" step="1" value="5"
+                        oninput="CONFIG.trainSpeed=+this.value; document.getElementById('val-speed').textContent=this.value">
+                </div>
+                <!-- Loss mini-chart -->
+                <div class="loss-chart-container">
+                    <canvas id="lossChart"></canvas>
+                    <span class="loss-chart-label">loss history</span>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#x266B;</span> Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" step="1" value="30"
+                        oninput="CONFIG.volume=+this.value/100; document.getElementById('val-vol').textContent=this.value+'%'">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm" id="btn-audio" onclick="toggleAudio()">Audio: ON</button>
+                    <select id="sel-wave" style="width:auto;flex:1" onchange="CONFIG.waveform=this.value">
+                        <option value="sine">Sine</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="square">Square</option>
+                        <option value="sawtooth">Sawtooth</option>
+                    </select>
+                </div>
+                <p class="info-text" style="margin-top: 0.4rem;">Error alto = disonancia &middot; Convergencia = acorde mayor</p>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#x2261;</span> Valores en tiempo real</h3>
+                <div class="stat"><span>Epoch</span><span class="stat-value" id="v-epoch">0</span></div>
+                <div class="stat"><span>Accuracy</span><span class="stat-value" id="v-acc">--</span></div>
+                <div class="stat"><span>Error rate</span><span class="stat-value" id="v-error">--</span></div>
+                <div class="stat"><span>w<sub>1</sub></span><span class="stat-value" id="v-w1">0.000</span></div>
+                <div class="stat"><span>w<sub>2</sub></span><span class="stat-value" id="v-w2">0.000</span></div>
+                <div class="stat"><span>bias</span><span class="stat-value" id="v-bias">0.000</span></div>
+                <div class="stat"><span>||w||</span><span class="stat-value" id="v-wnorm">0.000</span></div>
+                <div class="stat"><span>Puntos</span><span class="stat-value" id="v-pts">0</span></div>
+                <div class="stat"><span>Misclasificados</span><span class="stat-value" id="v-mis">0</span></div>
+            </div>
+
+            <!-- Learning Rule Explanation -->
+            <div class="explain-section">
+                <h4>Regla de aprendizaje del perceptron</h4>
+                <p>Para cada punto mal clasificado, el perceptron actualiza sus pesos:</p>
+                <p style="font-family:'JetBrains Mono',monospace; font-size:0.68rem; color:var(--accent); text-align:center; padding:0.3rem 0;">
+                    w<sub>i</sub> &larr; w<sub>i</sub> + &eta; &middot; (target &minus; pred) &middot; x<sub>i</sub>
+                </p>
+                <p>Si &eta; (learning rate) es grande, la linea salta mucho. Si es pequeno, converge lentamente. <strong>Teorema de convergencia</strong>: si los datos son linealmente separables, el perceptron <em>siempre</em> converge.</p>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+    // === CONFIG ===
+    const CONFIG = {
+        learningRate: 0.1,
+        volume: 0.3,
+        audioEnabled: true,
+        waveform: 'sine',
+        trainSpeed: 5,
+        autoTrain: false,
+        drawClass: 0
+    };
+
+    // === CANVAS ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, dpr;
+
+    // Off-screen canvas for smooth decision region
+    let regionCanvas = null;
+    let regionCtx = null;
+    let regionDirty = true;
+
+    function resizeCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        W = rect.width;
+        H = rect.height;
+        canvas.width = W * dpr;
+        canvas.height = H * dpr;
+        canvas.style.width = W + 'px';
+        canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        // Off-screen for region rendering
+        regionCanvas = document.createElement('canvas');
+        regionCanvas.width = Math.ceil(W / 4);
+        regionCanvas.height = Math.ceil(H / 4);
+        regionCtx = regionCanvas.getContext('2d');
+        regionDirty = true;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // === LOSS CHART ===
+    const lossChartEl = document.getElementById('lossChart');
+    const lossCtx = lossChartEl.getContext('2d');
+    const lossHistory = [];
+    const accHistory = [];
+    const MAX_HISTORY = 200;
+
+    function resizeLossChart() {
+        const rect = lossChartEl.parentElement.getBoundingClientRect();
+        const d = window.devicePixelRatio || 1;
+        lossChartEl.width = rect.width * d;
+        lossChartEl.height = rect.height * d;
+        lossChartEl.style.width = rect.width + 'px';
+        lossChartEl.style.height = rect.height + 'px';
+        lossCtx.setTransform(d, 0, 0, d, 0, 0);
+    }
+    window.addEventListener('resize', resizeLossChart);
+    setTimeout(resizeLossChart, 50);
+
+    function drawLossChart() {
+        const cw = lossChartEl.parentElement.getBoundingClientRect().width;
+        const ch = lossChartEl.parentElement.getBoundingClientRect().height;
+        lossCtx.clearRect(0, 0, cw, ch);
+
+        if (lossHistory.length < 2) return;
+
+        // Error line (red)
+        lossCtx.strokeStyle = 'rgba(239,68,68,0.7)';
+        lossCtx.lineWidth = 1.5;
+        lossCtx.beginPath();
+        for (let i = 0; i < lossHistory.length; i++) {
+            const x = i / (MAX_HISTORY - 1) * cw;
+            const y = ch - lossHistory[i] * ch * 0.9 - 2;
+            if (i === 0) lossCtx.moveTo(x, y); else lossCtx.lineTo(x, y);
+        }
+        lossCtx.stroke();
+
+        // Accuracy line (green)
+        lossCtx.strokeStyle = 'rgba(34,197,94,0.6)';
+        lossCtx.lineWidth = 1;
+        lossCtx.beginPath();
+        for (let i = 0; i < accHistory.length; i++) {
+            const x = i / (MAX_HISTORY - 1) * cw;
+            const y = ch - accHistory[i] * ch * 0.9 - 2;
+            if (i === 0) lossCtx.moveTo(x, y); else lossCtx.lineTo(x, y);
+        }
+        lossCtx.stroke();
+    }
+
+    // === COORDINATE SYSTEM ===
+    const MARGIN = 50;
+    function dataToCanvas(dx, dy) {
+        const plotW = W - MARGIN * 2;
+        const plotH = H - MARGIN * 2;
+        return [MARGIN + (dx + 1) / 2 * plotW, MARGIN + (1 - dy) / 2 * plotH];
+    }
+    function canvasToData(cx, cy) {
+        const plotW = W - MARGIN * 2;
+        const plotH = H - MARGIN * 2;
+        return [((cx - MARGIN) / plotW) * 2 - 1, 1 - ((cy - MARGIN) / plotH) * 2];
+    }
+
+    // === AUDIO (Lazy Init) ===
+    let audioContext = null;
+    let masterGain = null;
+
+    function initAudio() {
+        if (audioContext) return;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = CONFIG.volume;
+        masterGain.connect(audioContext.destination);
+    }
+
+    function playNote(frequency, duration, volume = 0.2) {
+        if (!audioContext || !CONFIG.audioEnabled) return;
+        masterGain.gain.value = CONFIG.volume;
+        const now = audioContext.currentTime;
+        const osc = audioContext.createOscillator();
+        osc.type = CONFIG.waveform;
+        osc.frequency.value = frequency;
+        const env = audioContext.createGain();
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(volume, now + 0.012);
+        env.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        const filter = audioContext.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.value = Math.min(frequency * 4, 8000);
+        filter.Q.value = 0.7;
+        osc.connect(filter);
+        filter.connect(env);
+        env.connect(masterGain);
+        osc.start(now);
+        osc.stop(now + duration + 0.05);
+    }
+
+    function playChord(frequencies, duration, volume = 0.1) {
+        frequencies.forEach((f, i) => setTimeout(() => playNote(f, duration, volume), i * 15));
+    }
+
+    function sonifyError(error) {
+        const base = 261.63;
+        if (error > 0.5) {
+            playChord([base, base * Math.pow(2, 6 / 12)], 0.3, 0.07);
+        } else if (error > 0.2) {
+            playChord([base, base * Math.pow(2, 3 / 12)], 0.25, 0.07);
+        } else if (error > 0) {
+            playChord([base, base * 1.5], 0.25, 0.07);
+        } else {
+            playChord([base, base * Math.pow(2, 4 / 12), base * 1.5], 0.5, 0.09);
+        }
+    }
+    function sonifyUpdate() { playNote(880, 0.04, 0.04); }
+    function sonifyMisclass() { playNote(110, 0.12, 0.08); }
+    function sonifyConvergence() {
+        const C = 261.63;
+        playChord([C, C * Math.pow(2, 4 / 12), C * 1.5, C * 2], 0.8, 0.1);
+    }
+
+    // === PERCEPTRON ===
+    const perceptron = {
+        w1: 0, w2: 0, bias: 0,
+        predict(x1, x2) { return (this.w1 * x1 + this.w2 * x2 + this.bias) >= 0 ? 1 : 0; },
+        rawOutput(x1, x2) { return this.w1 * x1 + this.w2 * x2 + this.bias; },
+        train(x1, x2, target) {
+            const pred = this.predict(x1, x2);
+            const err = target - pred;
+            if (err !== 0) {
+                this.w1 += CONFIG.learningRate * err * x1;
+                this.w2 += CONFIG.learningRate * err * x2;
+                this.bias += CONFIG.learningRate * err;
+                regionDirty = true;
+                return true;
+            }
+            return false;
+        }
+    };
+
+    // === STATE ===
+    let points = [];
+    let epoch = 0;
+    let lastAccuracy = 0;
+    let lastErrorRate = 0;
+    let converged = false;
+    let highlightMisclassified = [];
+    let hoveredPoint = -1;
+
+    function computeAccuracy() {
+        if (points.length === 0) return { accuracy: 0, errorRate: 0 };
+        let correct = 0;
+        const misclass = [];
+        for (let i = 0; i < points.length; i++) {
+            if (perceptron.predict(points[i].x, points[i].y) === points[i].cls) correct++;
+            else misclass.push(i);
+        }
+        highlightMisclassified = misclass;
+        return { accuracy: correct / points.length, errorRate: 1 - correct / points.length };
+    }
+
+    function trainEpoch() {
+        if (points.length === 0) return;
+        const indices = points.map((_, i) => i);
+        for (let i = indices.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [indices[i], indices[j]] = [indices[j], indices[i]];
+        }
+        let updated = false;
+        for (const idx of indices) {
+            const p = points[idx];
+            if (perceptron.train(p.x, p.y, p.cls)) updated = true;
+        }
+        epoch++;
+        const stats = computeAccuracy();
+        lastAccuracy = stats.accuracy;
+        lastErrorRate = stats.errorRate;
+
+        // Record history
+        lossHistory.push(lastErrorRate);
+        accHistory.push(lastAccuracy);
+        if (lossHistory.length > MAX_HISTORY) { lossHistory.shift(); accHistory.shift(); }
+
+        if (lastAccuracy === 1 && !converged && points.length > 0) {
+            converged = true;
+            sonifyConvergence();
+        } else if (updated) {
+            sonifyError(lastErrorRate);
+        }
+        updateSliders();
+        updateStats();
+        drawLossChart();
+    }
+
+    function trainStep() {
+        initAudio();
+        if (points.length === 0) return;
+        const p = points[Math.floor(Math.random() * points.length)];
+        const wasUpdated = perceptron.train(p.x, p.y, p.cls);
+        if (wasUpdated) { sonifyUpdate(); converged = false; }
+        const stats = computeAccuracy();
+        lastAccuracy = stats.accuracy;
+        lastErrorRate = stats.errorRate;
+        updateSliders();
+        updateStats();
+    }
+
+    function trainEpochManual() {
+        initAudio();
+        trainEpoch();
+    }
+
+    function updateSliders() {
+        document.getElementById('sl-w1').value = Math.max(-3, Math.min(3, perceptron.w1));
+        document.getElementById('val-w1').textContent = perceptron.w1.toFixed(2);
+        document.getElementById('sl-w2').value = Math.max(-3, Math.min(3, perceptron.w2));
+        document.getElementById('val-w2').textContent = perceptron.w2.toFixed(2);
+        document.getElementById('sl-b').value = Math.max(-3, Math.min(3, perceptron.bias));
+        document.getElementById('val-b').textContent = perceptron.bias.toFixed(2);
+    }
+
+    function updateStats() {
+        const hasP = points.length > 0;
+        document.getElementById('v-epoch').textContent = epoch;
+        document.getElementById('v-acc').textContent = hasP ? (lastAccuracy * 100).toFixed(1) + '%' : '--';
+        document.getElementById('v-error').textContent = hasP ? lastErrorRate.toFixed(3) : '--';
+        document.getElementById('v-w1').textContent = perceptron.w1.toFixed(3);
+        document.getElementById('v-w2').textContent = perceptron.w2.toFixed(3);
+        document.getElementById('v-bias').textContent = perceptron.bias.toFixed(3);
+        document.getElementById('v-wnorm').textContent = Math.hypot(perceptron.w1, perceptron.w2).toFixed(3);
+        document.getElementById('v-pts').textContent = points.length;
+        document.getElementById('v-mis').textContent = highlightMisclassified.length;
+        document.getElementById('stat-epoch').textContent = epoch;
+        document.getElementById('stat-accuracy').textContent = hasP ? (lastAccuracy * 100).toFixed(0) + '%' : '--';
+        document.getElementById('stat-error').textContent = hasP ? lastErrorRate.toFixed(2) : '--';
+    }
+
+    // === AUTO TRAINING ===
+    function toggleAutoTrain() {
+        initAudio();
+        CONFIG.autoTrain = !CONFIG.autoTrain;
+        document.getElementById('btn-train').textContent = CONFIG.autoTrain ? 'Detener' : 'Entrenar';
+        if (CONFIG.autoTrain) converged = false;
+    }
+
+    // === PRESETS ===
+    function loadPreset(name) {
+        points = []; epoch = 0; converged = false; highlightMisclassified = [];
+        lossHistory.length = 0; accHistory.length = 0;
+        const N = 40;
+        switch (name) {
+            case 'linear':
+                for (let i = 0; i < N; i++) { const x = Math.random()*2-1, y = Math.random()*2-1; points.push({x,y,cls:y>0.3*x+0.1?1:0}); } break;
+            case 'diagonal':
+                for (let i = 0; i < N; i++) { const x = Math.random()*2-1, y = Math.random()*2-1; points.push({x,y,cls:x+y>0?1:0}); } break;
+            case 'vertical':
+                for (let i = 0; i < N; i++) { const x = Math.random()*2-1, y = Math.random()*2-1; points.push({x,y,cls:x>0.2?1:0}); } break;
+            case 'clusters':
+                for (let i = 0; i < N/2; i++) {
+                    points.push({x:-0.5+(Math.random()-0.5)*0.5, y:-0.5+(Math.random()-0.5)*0.5, cls:0});
+                    points.push({x:0.5+(Math.random()-0.5)*0.5, y:0.5+(Math.random()-0.5)*0.5, cls:1});
+                } break;
+            case 'xor':
+                for (let i = 0; i < N; i++) { const x = Math.random()*2-1, y = Math.random()*2-1; points.push({x,y,cls:(x>0)!==(y>0)?1:0}); } break;
+            case 'clear': break;
+        }
+        resetWeights();
+        document.getElementById('sel-preset').value = '';
+    }
+
+    function resetWeights() {
+        perceptron.w1 = (Math.random()-0.5)*0.5;
+        perceptron.w2 = (Math.random()-0.5)*0.5;
+        perceptron.bias = (Math.random()-0.5)*0.5;
+        epoch = 0; converged = false; highlightMisclassified = [];
+        regionDirty = true;
+        const s = computeAccuracy();
+        lastAccuracy = s.accuracy; lastErrorRate = s.errorRate;
+        updateSliders(); updateStats(); drawLossChart();
+    }
+
+    function setDrawClass(c) {
+        CONFIG.drawClass = c;
+        document.getElementById('btn-class0').className = c === 0 ? 'active-0' : '';
+        document.getElementById('btn-class1').className = c === 1 ? 'active-1' : '';
+    }
+
+    function toggleAudio() {
+        CONFIG.audioEnabled = !CONFIG.audioEnabled;
+        document.getElementById('btn-audio').textContent = 'Audio: ' + (CONFIG.audioEnabled ? 'ON' : 'OFF');
+    }
+
+    // === MOUSE ===
+    let dragging = null;
+
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+        const [dx, dy] = canvasToData(cx, cy);
+        for (let i = 0; i < points.length; i++) {
+            const [px, py] = dataToCanvas(points[i].x, points[i].y);
+            if (Math.hypot(cx - px, cy - py) < 14) { dragging = points[i]; return; }
+        }
+        if (dx >= -1.05 && dx <= 1.05 && dy >= -1.05 && dy <= 1.05) {
+            initAudio();
+            points.push({ x: Math.max(-1,Math.min(1,dx)), y: Math.max(-1,Math.min(1,dy)), cls: CONFIG.drawClass });
+            converged = false; regionDirty = true;
+            const s = computeAccuracy(); lastAccuracy = s.accuracy; lastErrorRate = s.errorRate; updateStats();
+            playNote(CONFIG.drawClass === 0 ? 523.25 : 329.63, 0.08, 0.06);
+        }
+    });
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+        if (dragging) {
+            const [dx, dy] = canvasToData(cx, cy);
+            dragging.x = Math.max(-1,Math.min(1,dx));
+            dragging.y = Math.max(-1,Math.min(1,dy));
+            converged = false; regionDirty = true;
+            const s = computeAccuracy(); lastAccuracy = s.accuracy; lastErrorRate = s.errorRate;
+        } else {
+            // Hover detection
+            hoveredPoint = -1;
+            for (let i = 0; i < points.length; i++) {
+                const [px, py] = dataToCanvas(points[i].x, points[i].y);
+                if (Math.hypot(cx - px, cy - py) < 14) { hoveredPoint = i; break; }
+            }
+        }
+    });
+    canvas.addEventListener('mouseup', () => { dragging = null; });
+    canvas.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const cx = e.clientX - rect.left, cy = e.clientY - rect.top;
+        let minD = Infinity, minI = -1;
+        for (let i = 0; i < points.length; i++) {
+            const [px, py] = dataToCanvas(points[i].x, points[i].y);
+            const d = Math.hypot(cx - px, cy - py);
+            if (d < 20 && d < minD) { minD = d; minI = i; }
+        }
+        if (minI >= 0) {
+            points.splice(minI, 1); converged = false; regionDirty = true;
+            const s = computeAccuracy(); lastAccuracy = s.accuracy; lastErrorRate = s.errorRate; updateStats();
+        }
+    });
+
+    // === RENDERING ===
+
+    function renderRegion() {
+        if (!regionCanvas) return;
+        const rw = regionCanvas.width, rh = regionCanvas.height;
+        const imgData = regionCtx.createImageData(rw, rh);
+        const d = imgData.data;
+
+        for (let j = 0; j < rh; j++) {
+            for (let i = 0; i < rw; i++) {
+                const cx = i / rw * W, cy = j / rh * H;
+                const [dx, dy] = canvasToData(cx, cy);
+                const raw = perceptron.rawOutput(dx, dy);
+                // Smooth sigmoid mapping
+                const sig = 1 / (1 + Math.exp(-raw * 4));
+                const idx = (j * rw + i) * 4;
+
+                // Blue region (class 0) → Red region (class 1) with rich gradients
+                const r = Math.round(15 + sig * 55);
+                const g = Math.round(8 + (1 - Math.abs(sig - 0.5) * 2) * 12);
+                const b = Math.round(35 + (1 - sig) * 55);
+                d[idx] = r; d[idx+1] = g; d[idx+2] = b; d[idx+3] = 180;
+            }
+        }
+        regionCtx.putImageData(imgData, 0, 0);
+        regionDirty = false;
+    }
+
+    function drawGrid() {
+        // Smooth decision region background
+        if (regionDirty) renderRegion();
+        if (regionCanvas) {
+            ctx.imageSmoothingEnabled = true;
+            ctx.imageSmoothingQuality = 'high';
+            ctx.drawImage(regionCanvas, 0, 0, W, H);
+        }
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+        ctx.lineWidth = 1;
+        for (let v = -1; v <= 1; v += 0.5) {
+            const [x1, y1] = dataToCanvas(v, -1);
+            const [x2, y2] = dataToCanvas(v, 1);
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            const [x3, y3] = dataToCanvas(-1, v);
+            const [x4, y4] = dataToCanvas(1, v);
+            ctx.beginPath(); ctx.moveTo(x3, y3); ctx.lineTo(x4, y4); ctx.stroke();
+        }
+
+        // Axes at 0
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1;
+        const [ox1, oy1] = dataToCanvas(0, -1); const [ox2, oy2] = dataToCanvas(0, 1);
+        ctx.beginPath(); ctx.moveTo(ox1, oy1); ctx.lineTo(ox2, oy2); ctx.stroke();
+        const [ax1, ay1] = dataToCanvas(-1, 0); const [ax2, ay2] = dataToCanvas(1, 0);
+        ctx.beginPath(); ctx.moveTo(ax1, ay1); ctx.lineTo(ax2, ay2); ctx.stroke();
+
+        // Labels
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        for (let v = -1; v <= 1; v += 0.5) {
+            if (v === 0) continue;
+            const [x] = dataToCanvas(v, -1);
+            ctx.fillText(v.toFixed(1), x, H - MARGIN + 16);
+            const [, y] = dataToCanvas(-1, v);
+            ctx.textAlign = 'right';
+            ctx.fillText(v.toFixed(1), MARGIN - 6, y + 3);
+            ctx.textAlign = 'center';
+        }
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText('x\u2081', W / 2, H - MARGIN + 30);
+        ctx.save();
+        ctx.translate(MARGIN - 30, H / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('x\u2082', 0, 0);
+        ctx.restore();
+    }
+
+    function drawDecisionBoundary(time) {
+        const { w1, w2, bias } = perceptron;
+        const norm = Math.hypot(w1, w2);
+        if (norm < 0.001) return;
+
+        // Boundary glow
+        const pulse = 0.7 + 0.3 * Math.sin(time * 0.003);
+
+        // Compute line endpoints clipped to data range [-1.2, 1.2]
+        const pts = [];
+        if (Math.abs(w2) > 0.0001) {
+            for (const xv of [-1.2, 1.2]) {
+                const yv = -(w1 * xv + bias) / w2;
+                pts.push([xv, yv]);
+            }
+        } else {
+            const xv = -bias / w1;
+            pts.push([xv, -1.2]); pts.push([xv, 1.2]);
+        }
+
+        const [s0, s1] = [dataToCanvas(pts[0][0], pts[0][1]), dataToCanvas(pts[1][0], pts[1][1])];
+
+        // Glow layer
+        ctx.strokeStyle = `rgba(251,191,36,${0.15 * pulse})`;
+        ctx.lineWidth = 10;
+        ctx.beginPath(); ctx.moveTo(s0[0], s0[1]); ctx.lineTo(s1[0], s1[1]); ctx.stroke();
+        ctx.strokeStyle = `rgba(251,191,36,${0.3 * pulse})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(s0[0], s0[1]); ctx.lineTo(s1[0], s1[1]); ctx.stroke();
+
+        // Main line
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.beginPath(); ctx.moveTo(s0[0], s0[1]); ctx.lineTo(s1[0], s1[1]); ctx.stroke();
+
+        // Weight vector arrow (normal to boundary)
+        const [ox, oy] = dataToCanvas(0, 0);
+        const sc = 0.35;
+        const nw1 = w1 / norm * sc, nw2 = w2 / norm * sc;
+        const [ex, ey] = dataToCanvas(nw1, nw2);
+        ctx.strokeStyle = 'rgba(251,191,36,0.35)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 4]);
+        ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey); ctx.stroke();
+        ctx.setLineDash([]);
+        // Arrowhead
+        const angle = Math.atan2(oy - ey, ox - ex);
+        ctx.fillStyle = 'rgba(251,191,36,0.45)';
+        ctx.beginPath();
+        ctx.moveTo(ex, ey);
+        ctx.lineTo(ex + 9 * Math.cos(angle + 0.35), ey + 9 * Math.sin(angle + 0.35));
+        ctx.lineTo(ex + 9 * Math.cos(angle - 0.35), ey + 9 * Math.sin(angle - 0.35));
+        ctx.fill();
+        // Label
+        ctx.fillStyle = 'rgba(251,191,36,0.5)';
+        ctx.font = '9px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('w', ex + 6, ey - 4);
+    }
+
+    function drawPoints(time) {
+        for (let i = 0; i < points.length; i++) {
+            const p = points[i];
+            const [cx, cy] = dataToCanvas(p.x, p.y);
+            const isMisclass = highlightMisclassified.includes(i);
+            const isHovered = hoveredPoint === i;
+            const color = p.cls === 0 ? '#3b82f6' : '#ef4444';
+            const pred = perceptron.predict(p.x, p.y);
+
+            // Shadow
+            ctx.beginPath();
+            ctx.arc(cx + 1, cy + 2, 8, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.fill();
+
+            // Misclass glow
+            if (isMisclass) {
+                const pulse = 0.5 + 0.5 * Math.sin(time * 0.006);
+                const grd = ctx.createRadialGradient(cx, cy, 4, cx, cy, 18 + pulse * 6);
+                grd.addColorStop(0, 'rgba(251,191,36,0.25)');
+                grd.addColorStop(1, 'rgba(251,191,36,0)');
+                ctx.fillStyle = grd;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 18 + pulse * 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // Hover ring
+            if (isHovered) {
+                ctx.beginPath();
+                ctx.arc(cx, cy, 14, 0, Math.PI * 2);
+                ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            // Point gradient
+            const grd = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, 8);
+            grd.addColorStop(0, color === '#3b82f6' ? '#60a5fa' : '#f87171');
+            grd.addColorStop(1, color);
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fillStyle = grd;
+            ctx.fill();
+
+            // Border
+            ctx.strokeStyle = isMisclass ? '#fbbf24' : 'rgba(255,255,255,0.25)';
+            ctx.lineWidth = isMisclass ? 2 : 1;
+            ctx.stroke();
+
+            // Wrong prediction X
+            if (pred !== p.cls) {
+                ctx.strokeStyle = '#fbbf24';
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.moveTo(cx - 3, cy - 3); ctx.lineTo(cx + 3, cy + 3); ctx.stroke();
+                ctx.beginPath(); ctx.moveTo(cx + 3, cy - 3); ctx.lineTo(cx - 3, cy + 3); ctx.stroke();
+            }
+        }
+
+        // Hover tooltip
+        if (hoveredPoint >= 0 && hoveredPoint < points.length) {
+            const p = points[hoveredPoint];
+            const [cx, cy] = dataToCanvas(p.x, p.y);
+            const pred = perceptron.predict(p.x, p.y);
+            const raw = perceptron.rawOutput(p.x, p.y);
+            const boxW = 155, boxH = 52;
+            const bx = cx + 16, by = cy - boxH - 5;
+
+            ctx.fillStyle = 'rgba(15,23,42,0.92)';
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(bx, by, boxW, boxH, 6);
+            ctx.fill(); ctx.stroke();
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`x=(${p.x.toFixed(2)}, ${p.y.toFixed(2)})`, bx + 8, by + 14);
+            ctx.fillText(`clase=${p.cls}  pred=${pred}`, bx + 8, by + 28);
+            ctx.fillStyle = pred === p.cls ? '#22c55e' : '#ef4444';
+            ctx.fillText(`raw=${raw.toFixed(3)}  ${pred === p.cls ? 'OK' : 'MISS'}`, bx + 8, by + 42);
+        }
+    }
+
+    function drawOverlay() {
+        const { w1, w2, bias } = perceptron;
+        // Equation on canvas
+        ctx.fillStyle = 'rgba(251,191,36,0.6)';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`${w1>=0?' ':''}${w1.toFixed(2)}x\u2081 ${w2>=0?'+ ':'- '}${Math.abs(w2).toFixed(2)}x\u2082 ${bias>=0?'+ ':'- '}${Math.abs(bias).toFixed(2)} = 0`, MARGIN + 6, MARGIN - 8);
+
+        // Legend top-right
+        const lx = W - MARGIN - 5, ly = MARGIN + 8;
+        ctx.textAlign = 'right';
+
+        ctx.beginPath(); ctx.arc(lx - 55, ly, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillText('Clase 0', lx - 63, ly + 3);
+
+        ctx.beginPath(); ctx.arc(lx - 55, ly + 16, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#ef4444'; ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillText('Clase 1', lx - 63, ly + 19);
+
+        // Convergence badge
+        if (converged && points.length > 0) {
+            ctx.fillStyle = 'rgba(34,197,94,0.15)';
+            ctx.strokeStyle = '#22c55e';
+            ctx.lineWidth = 1;
+            const bw = 120, bh = 28;
+            const bx = W / 2 - bw / 2, by = H - MARGIN - bh - 10;
+            ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#22c55e';
+            ctx.font = '12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('CONVERGIDO', W / 2, by + 18);
+        }
+
+        // XOR warning
+        if (CONFIG.autoTrain && epoch > 200 && lastAccuracy < 1 && points.length > 0) {
+            ctx.fillStyle = 'rgba(239,68,68,0.1)';
+            ctx.strokeStyle = 'rgba(239,68,68,0.5)';
+            ctx.lineWidth = 1;
+            const bw = 220, bh = 24;
+            const bx = W / 2 - bw / 2, by = H - MARGIN - bh - 10;
+            ctx.beginPath(); ctx.roundRect(bx, by, bw, bh, 8); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = '#f87171';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('No linealmente separable?', W / 2, by + 16);
+        }
+    }
+
+    // === MAIN LOOP ===
+    let lastTime = 0;
+    let trainAccum = 0;
+
+    function loop(time) {
+        const dt = Math.min((time - lastTime) / 1000, 0.1);
+        lastTime = time;
+
+        if (CONFIG.autoTrain && points.length > 0) {
+            trainAccum += dt * CONFIG.trainSpeed;
+            while (trainAccum >= 1) {
+                trainEpoch();
+                trainAccum -= 1;
+                if (lastAccuracy === 1) {
+                    CONFIG.autoTrain = false;
+                    document.getElementById('btn-train').textContent = 'Entrenar';
+                    break;
+                }
+            }
+        }
+
+        ctx.clearRect(0, 0, W, H);
+        drawGrid();
+        drawDecisionBoundary(time);
+        drawPoints(time);
+        drawOverlay();
+
+        requestAnimationFrame(loop);
+    }
+
+    // === INIT ===
+    loadPreset('linear');
+    updateSliders();
+    updateStats();
+    resizeLossChart();
+    requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

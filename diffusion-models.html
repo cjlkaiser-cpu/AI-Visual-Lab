@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffusion Models - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg-primary: #030712; --bg-secondary: #0f172a; --bg-panel: #1e293b; --accent: #ef4444; --module-color: #06b6d4; --module-dim: rgba(6,182,212,0.15); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; } .controls::-webkit-scrollbar-track { background: transparent; } .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(6,182,212,0.1); padding: 1px 5px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Diffusion Models: De Ruido a Arte</h1>
+            <nav class="breadcrumb"><a href="../../_portal/index.html">EigenLab</a> / <a href="index.html">AI Visual Lab</a> / Diffusion Models</nav>
+        </div>
+        <div class="mono" style="font-size:0.75rem;color:var(--text-secondary);">Paso: <span id="stat-step">0/50</span> | Varianza: <span id="stat-var">-</span></div>
+    </header>
+    <main class="main">
+        <div class="canvas-container"><canvas id="canvas"></canvas></div>
+        <aside class="controls">
+            <div class="equation-box">x<sub>t</sub> = &radic;&alpha;&#772;<sub>t</sub> · x<sub>0</sub> + &radic;(1-&alpha;&#772;<sub>t</sub>) · &epsilon;</div>
+            <div class="control-section">
+                <h3>&#9881; Control</h3>
+                <select id="sel-target">
+                    <option value="digit3">Digito 3</option>
+                    <option value="cross">Cruz</option>
+                    <option value="circle">Circulo</option>
+                    <option value="heart">Corazon</option>
+                </select>
+                <div class="slider-group" style="margin-top:0.75rem;">
+                    <label>Pasos T <span id="val-steps">50</span></label>
+                    <input type="range" id="sl-steps" min="10" max="100" value="50">
+                </div>
+                <div class="slider-group">
+                    <label>Paso actual <span id="val-t">0</span></label>
+                    <input type="range" id="sl-t" min="0" max="50" value="0">
+                </div>
+                <select id="sel-schedule">
+                    <option value="linear">Schedule: Lineal</option>
+                    <option value="cosine">Schedule: Coseno</option>
+                </select>
+                <div class="btn-group" style="margin-top:0.75rem;">
+                    <button class="btn btn-accent" id="btn-denoise">&#9654; Denoise (Reverse)</button>
+                    <button class="btn" id="btn-noise">Añadir Ruido (Forward)</button>
+                    <button class="btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <button class="btn" id="btn-mute">Silenciar</button>
+            </div>
+            <div class="control-section">
+                <h3>&#128202; Metricas</h3>
+                <div class="stat"><span>Paso t</span><span class="stat-value" id="val-current-t">0</span></div>
+                <div class="stat"><span>Varianza ruido</span><span class="stat-value" id="val-noise-var">0.000</span></div>
+                <div class="stat"><span>SNR (dB)</span><span class="stat-value" id="val-snr">∞</span></div>
+                <div class="stat"><span>Entropia</span><span class="stat-value" id="val-entropy">-</span></div>
+            </div>
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; De Ruido a Arte</strong><br><br>
+                Los <span class="hl">modelos de difusion</span> aprenden a revertir un proceso de destruccion: se añade ruido gaussiano progresivamente (<span class="hl">forward</span>) y se entrena una red para quitarlo (<span class="hl">reverse</span>).<br><br>
+                <span class="eq">Forward</span>: x_t = √ᾱ_t · x_0 + √(1-ᾱ_t) · ε<br>
+                <span class="eq">Reverse</span>: x_{t-1} = denoiser(x_t, t)<br><br>
+                El <span class="hl">schedule</span> controla cuanto ruido se añade en cada paso. Lineal es simple; <span class="hl">coseno</span> preserva mas estructura al inicio.
+            </div>
+        </aside>
+    </main>
+<script>
+const CONFIG = { volume: 0.3, audioEnabled: true };
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+let audioCtx = null, masterGain = null;
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain(); masterGain.gain.value = CONFIG.volume;
+    const comp = audioCtx.createDynamicsCompressor();
+    masterGain.connect(comp); comp.connect(audioCtx.destination);
+}
+function playNote(freq, dur, vol = 0.1, type = 'sine') {
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator(); osc.type = type; osc.frequency.value = freq;
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now); env.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    const lp = audioCtx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 1500 + freq;
+    osc.connect(lp); lp.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+
+// === TARGET IMAGES (16x16) ===
+const SZ = 16;
+const TARGETS = {};
+
+function makeTarget(name) {
+    const img = new Array(SZ * SZ).fill(0);
+    if (name === 'digit3') {
+        const pat = [
+            '..####..........',
+            '.......##.......',
+            '........#.......',
+            '.......#........',
+            '......##........',
+            '.....###........',
+            '........#.......',
+            '.........#......',
+            '.........#......',
+            '........#.......',
+            '......##........',
+            '..####..........',
+            '................',
+            '................',
+            '................',
+            '................'
+        ];
+        for (let r = 0; r < SZ; r++) for (let c = 0; c < SZ; c++) if (pat[r] && pat[r][c] === '#') img[r * SZ + c] = 1;
+    } else if (name === 'cross') {
+        for (let r = 0; r < SZ; r++) for (let c = 0; c < SZ; c++) {
+            if ((Math.abs(r - 7.5) < 2) || (Math.abs(c - 7.5) < 2)) img[r * SZ + c] = 1;
+        }
+    } else if (name === 'circle') {
+        for (let r = 0; r < SZ; r++) for (let c = 0; c < SZ; c++) {
+            const d = Math.sqrt((r - 7.5) ** 2 + (c - 7.5) ** 2);
+            if (d > 4 && d < 6.5) img[r * SZ + c] = 1;
+        }
+    } else if (name === 'heart') {
+        for (let r = 0; r < SZ; r++) for (let c = 0; c < SZ; c++) {
+            const x = (c - 7.5) / 6, y = (7.5 - r) / 6;
+            const eq = (x * x + y * y - 1) ** 3 - x * x * y * y * y;
+            if (eq < 0) img[r * SZ + c] = 1;
+        }
+    }
+    return img;
+}
+
+['digit3', 'cross', 'circle', 'heart'].forEach(n => TARGETS[n] = makeTarget(n));
+
+// === DIFFUSION ===
+let T = 50;
+let schedule = 'linear';
+let currentTarget = 'digit3';
+let x0 = [...TARGETS.digit3]; // clean image
+let xt = [...x0]; // current noisy image
+let currentT = 0; // 0 = clean, T = pure noise
+let animating = false;
+let animDir = 0; // 1 = forward (add noise), -1 = reverse (denoise)
+let time = 0;
+
+function betaSchedule(t, T) {
+    if (schedule === 'cosine') {
+        const s = 0.008;
+        const f = (tt) => Math.cos((tt / T + s) / (1 + s) * Math.PI / 2) ** 2;
+        const alpha_bar_t = f(t) / f(0);
+        const alpha_bar_prev = t > 0 ? f(t - 1) / f(0) : 1;
+        return Math.min(0.999, 1 - alpha_bar_t / alpha_bar_prev);
+    }
+    // Linear
+    const beta_start = 0.0001, beta_end = 0.02;
+    return beta_start + (beta_end - beta_start) * t / T;
+}
+
+function alphaBarT(t) {
+    let ab = 1;
+    for (let i = 0; i < t; i++) ab *= (1 - betaSchedule(i, T));
+    return ab;
+}
+
+function applyNoise(x0, t) {
+    const ab = alphaBarT(t);
+    return x0.map(v => {
+        const signal = Math.sqrt(ab) * v;
+        const noise = Math.sqrt(1 - ab) * gaussianRandom();
+        return signal + noise;
+    });
+}
+
+function gaussianRandom() {
+    const u1 = Math.random(), u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+}
+
+// Simplified denoiser: weighted blend toward x0
+function denoiseStep(xt, t) {
+    const ab = alphaBarT(t);
+    const abPrev = t > 1 ? alphaBarT(t - 1) : 1;
+    const blend = Math.sqrt(abPrev);
+    return xt.map((v, i) => {
+        const pred = (v - Math.sqrt(1 - ab) * (v - x0[i])) / Math.sqrt(ab);
+        return blend * pred + Math.sqrt(1 - abPrev) * gaussianRandom() * 0.3;
+    });
+}
+
+function setStep(t) {
+    currentT = Math.max(0, Math.min(T, t));
+    if (currentT === 0) { xt = [...x0]; }
+    else { xt = applyNoise(x0, currentT); }
+    document.getElementById('sl-t').value = currentT;
+    document.getElementById('sl-t').max = T;
+    document.getElementById('val-t').textContent = currentT;
+    document.getElementById('val-current-t').textContent = currentT;
+    document.getElementById('stat-step').textContent = `${currentT}/${T}`;
+
+    const ab = alphaBarT(currentT);
+    const noiseVar = 1 - ab;
+    document.getElementById('val-noise-var').textContent = noiseVar.toFixed(3);
+    document.getElementById('stat-var').textContent = noiseVar.toFixed(3);
+    const snr = ab > 0.001 ? (10 * Math.log10(ab / (1 - ab))).toFixed(1) : '-∞';
+    document.getElementById('val-snr').textContent = snr;
+
+    const entropy = -xt.reduce((s, v) => { const p = Math.abs(v); return s + (p > 0.01 ? p * Math.log2(p) : 0); }, 0) / xt.length;
+    document.getElementById('val-entropy').textContent = entropy.toFixed(3);
+}
+
+function resetDiffusion() {
+    x0 = [...TARGETS[currentTarget]];
+    currentT = 0;
+    xt = [...x0];
+    animating = false;
+    setStep(0);
+}
+
+// === DRAWING ===
+function drawImage(data, x, y, sz, cellSz, label) {
+    const side = Math.sqrt(data.length);
+    for (let r = 0; r < side; r++) {
+        for (let c = 0; c < side; c++) {
+            const val = data[r * side + c];
+            const clamped = Math.max(0, Math.min(1, val));
+            ctx.fillStyle = `rgba(6,182,212,${clamped * 0.9})`;
+            ctx.fillRect(x + c * cellSz, y + r * cellSz, cellSz - 0.5, cellSz - 0.5);
+        }
+    }
+    if (label) {
+        ctx.font = '11px JetBrains Mono';
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, x + side * cellSz / 2, y - 8);
+    }
+}
+
+function drawHistogram(data, x, y, w, h) {
+    const bins = 20;
+    const counts = new Array(bins).fill(0);
+    const min = -1, max = 2;
+    const range = max - min;
+
+    for (const v of data) {
+        const bin = Math.floor((Math.max(min, Math.min(max - 0.001, v)) - min) / range * bins);
+        if (bin >= 0 && bin < bins) counts[bin]++;
+    }
+
+    const maxCount = Math.max(...counts) || 1;
+    const barW = w / bins;
+
+    ctx.fillStyle = 'rgba(255,255,255,0.03)';
+    ctx.fillRect(x, y, w, h);
+
+    for (let i = 0; i < bins; i++) {
+        const barH = (counts[i] / maxCount) * h * 0.9;
+        const alpha = 0.3 + (counts[i] / maxCount) * 0.5;
+        ctx.fillStyle = `rgba(6,182,212,${alpha})`;
+        ctx.fillRect(x + i * barW + 1, y + h - barH, barW - 2, barH);
+    }
+
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Distribucion de pixeles', x + w / 2, y - 4);
+}
+
+function drawScheduleChart(x, y, w, h) {
+    ctx.fillStyle = 'rgba(255,255,255,0.02)';
+    ctx.fillRect(x, y, w, h);
+
+    // Alpha bar curve
+    ctx.strokeStyle = 'rgba(6,182,212,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let t = 0; t <= T; t++) {
+        const ab = alphaBarT(t);
+        const px = x + t / T * w;
+        const py = y + (1 - ab) * h;
+        if (t === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+
+    // Current position
+    const cx = x + currentT / T * w;
+    const cy = y + (1 - alphaBarT(currentT)) * h;
+    ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = '#06b6d4';
+    ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 10;
+    ctx.fill(); ctx.shadowBlur = 0;
+
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'center';
+    ctx.fillText(`Schedule (${schedule})`, x + w / 2, y - 4);
+    ctx.fillText('t=0', x, y + h + 12);
+    ctx.fillText(`t=${T}`, x + w, y + h + 12);
+}
+
+function draw() {
+    ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, W, H);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(6,182,212,0.02)';
+    for (let gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+    for (let gy = 0; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+    // Title
+    ctx.font = 'bold 14px Inter';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'left';
+    ctx.fillText(currentT === 0 ? 'Imagen Limpia (x₀)' : currentT >= T ? 'Ruido Puro (x_T)' : `Paso t=${currentT}`, 30, 30);
+
+    // Main image (large)
+    const mainSz = Math.min(W * 0.5, H * 0.6, 400);
+    const cellSz = mainSz / SZ;
+    const mainX = (W * 0.55 - mainSz) / 2 + 30;
+    const mainY = 60;
+    drawImage(xt, mainX, mainY, SZ, cellSz, `t = ${currentT}`);
+
+    // Border
+    ctx.strokeStyle = 'rgba(6,182,212,0.2)';
+    ctx.lineWidth = 1;
+    ctx.strokeRect(mainX - 1, mainY - 1, SZ * cellSz + 2, SZ * cellSz + 2);
+
+    // Timeline of steps at bottom
+    const tlY = mainY + SZ * cellSz + 30;
+    const tlSteps = 8;
+    const miniSz = 5;
+    const tlW = Math.min(W * 0.55, tlSteps * (SZ * miniSz + 10));
+    const tlX = mainX;
+
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Timeline: Forward Process (añadir ruido)', tlX, tlY - 5);
+
+    for (let i = 0; i < tlSteps; i++) {
+        const t = Math.round(i / (tlSteps - 1) * T);
+        const stepImg = applyNoise(x0, t);
+        const sx = tlX + i * (SZ * miniSz + 10);
+        drawImage(stepImg, sx, tlY + 5, SZ, miniSz);
+
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillStyle = t === currentT ? '#06b6d4' : 'rgba(255,255,255,0.2)';
+        ctx.textAlign = 'center';
+        ctx.fillText(`t=${t}`, sx + SZ * miniSz / 2, tlY + SZ * miniSz + 18);
+
+        // Highlight current
+        if (Math.abs(t - currentT) < T / tlSteps / 2) {
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(sx - 2, tlY + 3, SZ * miniSz + 4, SZ * miniSz + 4);
+        }
+    }
+
+    // Right side: histogram and schedule
+    const rightX = W * 0.6;
+    const chartW = W - rightX - 30;
+
+    drawHistogram(xt, rightX, 60, chartW, 120);
+    drawScheduleChart(rightX, 220, chartW, 100);
+
+    // Clean image reference (small)
+    const refSz = 4;
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Original (x₀)', rightX, 350);
+    drawImage(x0, rightX, 358, SZ, refSz);
+
+    // Arrow showing direction
+    const arrowY = mainY + SZ * cellSz / 2;
+    if (animating) {
+        const arrowX = mainX + SZ * cellSz + 15;
+        ctx.font = '16px Inter';
+        ctx.fillStyle = animDir > 0 ? 'rgba(239,68,68,0.5)' : 'rgba(34,197,94,0.5)';
+        ctx.textAlign = 'center';
+        ctx.fillText(animDir > 0 ? '→ Ruido' : '← Limpio', arrowX + 30, arrowY);
+    }
+
+    time += 0.016;
+}
+
+// === ANIMATION ===
+let animInterval = null;
+function startAnimation(dir) {
+    initAudio();
+    animating = true;
+    animDir = dir;
+
+    if (dir > 0 && currentT >= T) setStep(0);
+    if (dir < 0 && currentT <= 0) setStep(T);
+
+    clearInterval(animInterval);
+    animInterval = setInterval(() => {
+        const newT = currentT + dir;
+        if (newT < 0 || newT > T) {
+            clearInterval(animInterval);
+            animating = false;
+            if (dir < 0) playNote(523.25, 0.4, 0.12);
+            return;
+        }
+
+        if (dir < 0) {
+            xt = denoiseStep(xt, currentT);
+            currentT = newT;
+        } else {
+            currentT = newT;
+            xt = applyNoise(x0, currentT);
+        }
+        setStep(currentT);
+
+        // Sound: lowpass opens as image clears
+        const clarity = 1 - currentT / T;
+        const freq = 200 + clarity * 600;
+        if (Math.random() < 0.3) playNote(freq, 0.1, 0.05 + clarity * 0.08, clarity > 0.5 ? 'sine' : 'sawtooth');
+    }, 80);
+}
+
+// === CONTROLS ===
+document.getElementById('btn-denoise').addEventListener('click', () => startAnimation(-1));
+document.getElementById('btn-noise').addEventListener('click', () => startAnimation(1));
+document.getElementById('btn-reset').addEventListener('click', () => { clearInterval(animInterval); resetDiffusion(); });
+document.getElementById('sel-target').addEventListener('change', (e) => { currentTarget = e.target.value; resetDiffusion(); });
+document.getElementById('sl-steps').addEventListener('input', (e) => {
+    T = parseInt(e.target.value);
+    document.getElementById('val-steps').textContent = T;
+    document.getElementById('sl-t').max = T;
+    resetDiffusion();
+});
+document.getElementById('sl-t').addEventListener('input', (e) => { setStep(parseInt(e.target.value)); xt = currentT === 0 ? [...x0] : applyNoise(x0, currentT); });
+document.getElementById('sel-schedule').addEventListener('change', (e) => { schedule = e.target.value; if (currentT > 0) xt = applyNoise(x0, currentT); });
+document.getElementById('sl-vol').addEventListener('input', (e) => { CONFIG.volume = e.target.value / 100; document.getElementById('val-vol').textContent = e.target.value + '%'; if (masterGain) masterGain.gain.value = CONFIG.volume; });
+document.getElementById('btn-mute').addEventListener('click', () => { CONFIG.audioEnabled = !CONFIG.audioEnabled; document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio'; });
+
+resetDiffusion();
+function loop() { draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

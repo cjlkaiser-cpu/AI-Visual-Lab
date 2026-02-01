@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activation Function Orchestra - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --accent-dim: rgba(239, 68, 68, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .header-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-secondary); display: flex; gap: 12px; }
+        .header-stats .hs-val { color: var(--accent); }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .tooltip { position: absolute; pointer-events: none; background: rgba(15,23,42,0.92); border: 1px solid rgba(239,68,68,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; color: var(--text-primary); z-index: 20; backdrop-filter: blur(6px); display: none; min-width: 180px; line-height: 1.5; }
+        .tooltip .tt-label { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .tooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--accent); }
+        .controls { width: 360px; min-width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .controls::-webkit-scrollbar { width: 5px; }
+        .controls::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .equation-box { background: var(--accent-dim); border-left: 3px solid var(--accent); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1rem; color: var(--text-primary); line-height: 1.7; text-align: center; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 6px; }
+        .control-section h3 .ico { font-size: 0.85rem; }
+        .slider-group { margin-bottom: 0.65rem; }
+        .slider-group:last-child { margin-bottom: 0; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.2rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--accent); font-size: 0.74rem; }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--accent); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px rgba(239,68,68,0.4); }
+        .btn { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.76rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+        .btn-accent { background: var(--accent); color: white; border-color: var(--accent); font-weight: 500; }
+        .btn-accent:hover { opacity: 0.85; color: white; }
+        .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.3rem 0.55rem; font-size: 0.68rem; }
+        select { width: 100%; padding: 0.45rem 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.76rem; }
+        .legend-item { display: flex; align-items: center; gap: 8px; font-size: 0.72rem; padding: 3px 0; color: var(--text-secondary); }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; box-shadow: 0 0 4px currentColor; }
+        .legend-eq { font-family: 'Times New Roman', serif; font-style: italic; font-size: 0.76rem; }
+        .field-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.74rem; color: var(--text-secondary); margin-top: 4px; }
+        .field-toggle input[type="checkbox"] { accent-color: var(--accent); }
+        .explain-section { background: rgba(239,68,68,0.04); border-radius: 10px; padding: 0.9rem 1rem; border: 1px solid rgba(239,68,68,0.08); }
+        .explain-section h4 { font-size: 0.78rem; font-weight: 600; margin-bottom: 0.45rem; color: var(--text-primary); }
+        .explain-section p { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.35rem; }
+        .explain-section p:last-child { margin-bottom: 0; }
+        .explain-section .hl { color: var(--accent); font-weight: 500; }
+        .explain-section .eq { font-family: 'Times New Roman', serif; font-style: italic; color: var(--text-primary); background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Activation Function Orchestra</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                Activation Function Orchestra
+            </nav>
+        </div>
+        <div class="header-stats">
+            <span>Input: <span class="hs-val" id="hs-input">sine</span></span>
+            <span>f: <span class="hs-val" id="hs-freq">1.0</span> Hz</span>
+            <span>A: <span class="hs-val" id="hs-amp">2.0</span></span>
+            <span>x: <span class="hs-val" id="hs-val">0.000</span></span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+
+        <aside class="controls">
+            <div class="equation-box">
+                a = &sigma;(z) &nbsp;&mdash;&nbsp; 8 funciones en paralelo
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">📡</span> Senal de entrada</h3>
+                <select id="sel-input" onchange="setInput(this.value)" style="margin-bottom: 0.65rem;">
+                    <option value="sine">Seno</option>
+                    <option value="square">Cuadrada</option>
+                    <option value="triangle">Triangulo</option>
+                    <option value="sawtooth">Rampa</option>
+                    <option value="noise">Ruido</option>
+                    <option value="chirp">Chirp (sweep)</option>
+                </select>
+                <div class="slider-group">
+                    <label>Frecuencia <span id="val-freq">1.0</span> Hz</label>
+                    <input type="range" id="sl-freq" min="0.1" max="5" step="0.1" value="1"
+                        oninput="CONFIG.freq=+this.value; document.getElementById('val-freq').textContent=(+this.value).toFixed(1); document.getElementById('hs-freq').textContent=(+this.value).toFixed(1)">
+                </div>
+                <div class="slider-group">
+                    <label>Amplitud <span id="val-amp">2.0</span></label>
+                    <input type="range" id="sl-amp" min="0.1" max="10" step="0.1" value="2"
+                        oninput="CONFIG.amplitude=+this.value; document.getElementById('val-amp').textContent=(+this.value).toFixed(1); document.getElementById('hs-amp').textContent=(+this.value).toFixed(1)">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-sm" onclick="setAmplitude(10)">Explosion</button>
+                    <button class="btn btn-sm" onclick="setAmplitude(0.5)">Suave</button>
+                    <button class="btn btn-sm" onclick="setAmplitude(2)">Normal</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">👁</span> Visualizacion</h3>
+                <div class="slider-group">
+                    <label>Velocidad <span id="val-speed">1.0</span>x</label>
+                    <input type="range" id="sl-speed" min="0.1" max="5" step="0.1" value="1"
+                        oninput="CONFIG.timeScale=+this.value; document.getElementById('val-speed').textContent=(+this.value).toFixed(1)">
+                </div>
+                <div class="field-toggle">
+                    <input type="checkbox" id="chk-deriv" checked onchange="CONFIG.showDerivative=this.checked">
+                    <label for="chk-deriv">Mostrar derivadas (linea punteada)</label>
+                </div>
+                <div class="field-toggle">
+                    <input type="checkbox" id="chk-static" onchange="CONFIG.showStatic=this.checked">
+                    <label for="chk-static">Mostrar curva estatica f(x)</label>
+                </div>
+                <div class="field-toggle">
+                    <input type="checkbox" id="chk-fill" checked onchange="CONFIG.showFill=this.checked">
+                    <label for="chk-fill">Relleno bajo curva</label>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">🔊</span> Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">25%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" step="1" value="25"
+                        oninput="CONFIG.volume=+this.value/100; document.getElementById('val-vol').textContent=this.value+'%'">
+                </div>
+                <button class="btn btn-sm" id="btn-audio" onclick="toggleAudio()">Audio: OFF</button>
+                <p style="font-size:0.66rem; color:var(--text-muted); line-height:1.4; margin-top:6px;">Cada funcion tiene un timbre distinto. Saturacion = detuning audible.</p>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">σ</span> Funciones</h3>
+                <div class="legend-item"><div class="legend-dot" style="background:#ef4444;color:#ef4444"></div><span class="legend-eq">Sigmoid: 1/(1+e<sup>-x</sup>)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#3b82f6;color:#3b82f6"></div><span class="legend-eq">Tanh: tanh(x)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#22c55e;color:#22c55e"></div><span class="legend-eq">ReLU: max(0, x)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#f59e0b;color:#f59e0b"></div><span class="legend-eq">Leaky ReLU: max(0.01x, x)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#a855f7;color:#a855f7"></div><span class="legend-eq">ELU: x&gt;0 ? x : α(e<sup>x</sup>-1)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#06b6d4;color:#06b6d4"></div><span class="legend-eq">Swish: x·σ(x)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#ec4899;color:#ec4899"></div><span class="legend-eq">GELU: x·Φ(x)</span></div>
+                <div class="legend-item"><div class="legend-dot" style="background:#84cc16;color:#84cc16"></div><span class="legend-eq">Mish: x·tanh(softplus(x))</span></div>
+            </div>
+
+            <div class="explain-section">
+                <h4>¿Que son las funciones de activacion?</h4>
+                <p>Las <span class="hl">funciones de activacion</span> son la fuente de <span class="hl">no-linealidad</span> en redes neuronales. Sin ellas, una red profunda seria equivalente a una sola capa lineal — no podria aprender patrones complejos.</p>
+                <p>Cada neurona calcula <span class="eq">a = σ(w·x + b)</span>, donde σ es la funcion de activacion. La eleccion de σ afecta como fluyen los gradientes, que tan rapido aprende la red, y que tipo de funciones puede representar.</p>
+            </div>
+
+            <div class="explain-section">
+                <h4>Saturacion vs zona muerta</h4>
+                <p><span class="hl">Saturacion</span> (Sigmoid, Tanh): cuando |x| es grande, la derivada → 0. Los gradientes se "aplastan" y el aprendizaje se detiene. Es el clasico <span class="hl">vanishing gradient</span>.</p>
+                <p><span class="hl">Zona muerta</span> (ReLU): cuando x &lt; 0, la salida es 0 y la derivada es 0. La neurona "muere" y nunca se recupera. Leaky ReLU, ELU y las demas variantes solucionan esto.</p>
+                <p><span class="hl">Swish, GELU, Mish</span>: funciones modernas suaves y no monotonas. Permiten un ligero rango negativo, lo que puede ayudar al aprendizaje. GELU es la activacion estandar en Transformers.</p>
+            </div>
+
+            <div class="explain-section">
+                <h4>Guia practica</h4>
+                <p><span class="hl">Redes convencionales</span> → ReLU (o Leaky ReLU) en capas ocultas + Sigmoid/Softmax en salida.</p>
+                <p><span class="hl">Transformers</span> → GELU en las capas feed-forward.</p>
+                <p><span class="hl">Redes recurrentes</span> → Tanh en las celdas + Sigmoid en las gates.</p>
+                <p>Prueba a subir la <span class="hl">amplitud</span> para ver como reaccionan ante señales fuertes. Observa que funciones mantienen gradientes utiles (derivada ≠ 0) y cuales se saturan.</p>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+    // ═══════════════════════════════════════════════════
+    //  CONFIG
+    // ═══════════════════════════════════════════════════
+    const CONFIG = {
+        freq: 1.0,
+        amplitude: 2.0,
+        inputType: 'sine',
+        timeScale: 1.0,
+        showDerivative: true,
+        showStatic: false,
+        showFill: true,
+        volume: 0.25,
+        audioEnabled: false,
+        audioPlaying: false
+    };
+
+    // ═══════════════════════════════════════════════════
+    //  CANVAS SETUP
+    // ═══════════════════════════════════════════════════
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, dpr;
+
+    function resizeCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        W = rect.width; H = rect.height;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // ═══════════════════════════════════════════════════
+    //  ACTIVATION FUNCTIONS
+    // ═══════════════════════════════════════════════════
+    const sigmoid = x => 1 / (1 + Math.exp(-Math.max(-20, Math.min(20, x))));
+    const softplus = x => Math.log(1 + Math.exp(Math.min(20, x)));
+
+    const funcs = [
+        {
+            name: 'Sigmoid', color: '#ef4444',
+            f: x => sigmoid(x),
+            df: x => { const s = sigmoid(x); return s * (1 - s); },
+            range: [0, 1], waveType: 'sine',
+            desc: 'Squashes to (0,1). Classic but saturates.'
+        },
+        {
+            name: 'Tanh', color: '#3b82f6',
+            f: x => Math.tanh(x),
+            df: x => 1 - Math.tanh(x) ** 2,
+            range: [-1, 1], waveType: 'sine',
+            desc: 'Zero-centered. Saturates at extremes.'
+        },
+        {
+            name: 'ReLU', color: '#22c55e',
+            f: x => Math.max(0, x),
+            df: x => x > 0 ? 1 : 0,
+            range: null, waveType: 'sawtooth',
+            desc: 'Simple, fast. Dead neurons when x<0.'
+        },
+        {
+            name: 'Leaky ReLU', color: '#f59e0b',
+            f: x => x > 0 ? x : 0.01 * x,
+            df: x => x > 0 ? 1 : 0.01,
+            range: null, waveType: 'sawtooth',
+            desc: 'Fixes dead neurons with small negative slope.'
+        },
+        {
+            name: 'ELU', color: '#a855f7',
+            f: x => x > 0 ? x : Math.exp(Math.min(20, x)) - 1,
+            df: x => x > 0 ? 1 : Math.exp(Math.min(20, x)),
+            range: null, waveType: 'triangle',
+            desc: 'Smooth negative region. Zero-mean outputs.'
+        },
+        {
+            name: 'Swish', color: '#06b6d4',
+            f: x => x * sigmoid(x),
+            df: x => { const s = sigmoid(x); return s + x * s * (1 - s); },
+            range: null, waveType: 'triangle',
+            desc: 'Self-gated. Smooth, non-monotonic.'
+        },
+        {
+            name: 'GELU', color: '#ec4899',
+            f: x => 0.5 * x * (1 + Math.tanh(Math.sqrt(2 / Math.PI) * (x + 0.044715 * x * x * x))),
+            df: x => {
+                const c = Math.sqrt(2 / Math.PI);
+                const inner = c * (x + 0.044715 * x ** 3);
+                const t = Math.tanh(inner);
+                const sech2 = 1 - t * t;
+                return 0.5 * (1 + t) + 0.5 * x * sech2 * c * (1 + 3 * 0.044715 * x * x);
+            },
+            range: null, waveType: 'triangle',
+            desc: 'Transformer standard. Gaussian gating.'
+        },
+        {
+            name: 'Mish', color: '#84cc16',
+            f: x => x * Math.tanh(softplus(x)),
+            df: x => {
+                const sp = softplus(x);
+                const tsp = Math.tanh(sp);
+                const sig = sigmoid(x);
+                return tsp + x * sig * (1 - tsp * tsp);
+            },
+            range: null, waveType: 'triangle',
+            desc: 'Smooth, self-regularizing. Non-monotonic.'
+        }
+    ];
+
+    // ═══════════════════════════════════════════════════
+    //  INPUT SIGNAL
+    // ═══════════════════════════════════════════════════
+    function inputSignal(t) {
+        const A = CONFIG.amplitude;
+        const f = CONFIG.freq;
+        const phase = t * f * 2 * Math.PI;
+        switch (CONFIG.inputType) {
+            case 'sine': return A * Math.sin(phase);
+            case 'square': return A * Math.sign(Math.sin(phase));
+            case 'triangle': return A * (2 * Math.abs(2 * (t * f - Math.floor(t * f + 0.5))) - 1);
+            case 'sawtooth': return A * (2 * (t * f - Math.floor(t * f)) - 1);
+            case 'noise': return A * (Math.random() * 2 - 1);
+            case 'chirp': return A * Math.sin(phase * (1 + t * 0.3));
+        }
+    }
+
+    function setInput(val) {
+        CONFIG.inputType = val;
+        document.getElementById('hs-input').textContent = val;
+    }
+
+    function setAmplitude(val) {
+        CONFIG.amplitude = val;
+        document.getElementById('sl-amp').value = val;
+        document.getElementById('val-amp').textContent = val.toFixed(1);
+        document.getElementById('hs-amp').textContent = val.toFixed(1);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  AUDIO ENGINE
+    // ═══════════════════════════════════════════════════
+    let audioContext = null;
+    let masterGain = null;
+    let oscillators = [];
+
+    function initAudio() {
+        if (audioContext) return;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = CONFIG.volume;
+        const comp = audioContext.createDynamicsCompressor();
+        comp.threshold.value = -24;
+        comp.ratio.value = 6;
+        masterGain.connect(comp);
+        comp.connect(audioContext.destination);
+    }
+
+    function startAudio() {
+        initAudio();
+        stopAudio();
+        const baseFreq = 220;
+        for (let i = 0; i < funcs.length; i++) {
+            const osc = audioContext.createOscillator();
+            osc.type = funcs[i].waveType;
+            osc.frequency.value = baseFreq * (i + 1) / 2;
+            const gain = audioContext.createGain();
+            gain.gain.value = 0;
+            const pan = audioContext.createStereoPanner();
+            pan.pan.value = (i / (funcs.length - 1)) * 1.6 - 0.8;
+            const filter = audioContext.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.value = 800 + i * 200;
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(pan);
+            pan.connect(masterGain);
+            osc.start();
+            oscillators.push({ osc, gain, pan, filter, index: i });
+        }
+        CONFIG.audioPlaying = true;
+    }
+
+    function stopAudio() {
+        for (const o of oscillators) { try { o.osc.stop(); } catch (e) {} }
+        oscillators = [];
+        CONFIG.audioPlaying = false;
+    }
+
+    function updateAudio(inputVal) {
+        if (!CONFIG.audioPlaying || !audioContext) return;
+        masterGain.gain.value = CONFIG.volume;
+        const now = audioContext.currentTime;
+        for (const o of oscillators) {
+            const func = funcs[o.index];
+            const output = func.f(inputVal);
+            const vol = Math.min(0.12, Math.abs(output) * 0.04);
+            o.gain.gain.setTargetAtTime(vol, now, 0.02);
+            const deriv = Math.abs(func.df(inputVal));
+            const freqBase = 220 * (o.index + 1) / 2;
+            const detune = deriv < 0.1 ? (1 - deriv / 0.1) * 25 : 0;
+            o.osc.frequency.setTargetAtTime(freqBase + detune, now, 0.02);
+        }
+    }
+
+    function toggleAudio() {
+        if (CONFIG.audioEnabled) {
+            CONFIG.audioEnabled = false;
+            stopAudio();
+            document.getElementById('btn-audio').textContent = 'Audio: OFF';
+            document.getElementById('btn-audio').className = 'btn btn-sm';
+        } else {
+            CONFIG.audioEnabled = true;
+            startAudio();
+            document.getElementById('btn-audio').textContent = 'Audio: ON';
+            document.getElementById('btn-audio').className = 'btn btn-sm btn-accent';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  HISTORY BUFFERS
+    // ═══════════════════════════════════════════════════
+    let simTime = 0;
+    const HISTORY_LEN = 250;
+    let inputHistory = new Float32Array(HISTORY_LEN);
+    let outputHistories = funcs.map(() => new Float32Array(HISTORY_LEN));
+    let derivHistories = funcs.map(() => new Float32Array(HISTORY_LEN));
+    let histIdx = 0;
+
+    // ═══════════════════════════════════════════════════
+    //  HOVER
+    // ═══════════════════════════════════════════════════
+    let hoveredCell = -1;
+
+    function getCellBounds() {
+        const inputHeight = 72;
+        const gap = 8;
+        const cols = 4, rows = 2;
+        const cellW = (W - gap * (cols + 1)) / cols;
+        const cellH = (H - inputHeight - gap * (rows + 2)) / rows;
+        const bounds = [];
+        for (let fi = 0; fi < funcs.length; fi++) {
+            const col = fi % cols;
+            const row = Math.floor(fi / cols);
+            bounds.push({
+                x: gap + col * (cellW + gap),
+                y: inputHeight + gap * 2 + row * (cellH + gap),
+                w: cellW, h: cellH
+            });
+        }
+        return bounds;
+    }
+
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+        const bounds = getCellBounds();
+        const tt = document.getElementById('tooltip');
+        hoveredCell = -1;
+
+        for (let i = 0; i < bounds.length; i++) {
+            const b = bounds[i];
+            if (mx >= b.x && mx <= b.x + b.w && my >= b.y && my <= b.y + b.h) {
+                hoveredCell = i;
+                const func = funcs[i];
+                const lastOut = outputHistories[i][(histIdx + HISTORY_LEN - 1) % HISTORY_LEN];
+                const lastDeriv = derivHistories[i][(histIdx + HISTORY_LEN - 1) % HISTORY_LEN];
+                const isSaturated = Math.abs(lastDeriv) < 0.05 && Math.abs(inputHistory[(histIdx + HISTORY_LEN - 1) % HISTORY_LEN]) > 1;
+                tt.innerHTML = `
+                    <div><span class="tt-label">Funcion</span> <span style="color:${func.color};font-weight:600">${func.name}</span></div>
+                    <div><span class="tt-label">Salida</span> <span class="tt-val">${lastOut.toFixed(5)}</span></div>
+                    <div><span class="tt-label">Derivada</span> <span class="tt-val">${lastDeriv.toFixed(5)}</span></div>
+                    <div><span class="tt-label">Estado</span> <span class="tt-val">${isSaturated ? '⚠ Saturado' : '✓ Activo'}</span></div>
+                    <div style="margin-top:4px;font-size:0.64rem;color:var(--text-muted)">${func.desc}</div>
+                `;
+                tt.style.left = Math.min(mx + 16, W - 200) + 'px';
+                tt.style.top = Math.max(my - 90, 10) + 'px';
+                tt.style.display = 'block';
+                return;
+            }
+        }
+        tt.style.display = 'none';
+    });
+
+    canvas.addEventListener('mouseleave', () => {
+        hoveredCell = -1;
+        document.getElementById('tooltip').style.display = 'none';
+    });
+
+    // ═══════════════════════════════════════════════════
+    //  DRAWING
+    // ═══════════════════════════════════════════════════
+    function draw(time) {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, W, H);
+
+        const inputHeight = 72;
+        const gap = 8;
+        const cols = 4, rows = 2;
+        const cellW = (W - gap * (cols + 1)) / cols;
+        const cellH = (H - inputHeight - gap * (rows + 2)) / rows;
+
+        // --- Input signal strip ---
+        const inputY = gap;
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.roundRect(gap, inputY, W - gap * 2, inputHeight, 8);
+        ctx.fill();
+
+        const currentInput = inputHistory[(histIdx + HISTORY_LEN - 1) % HISTORY_LEN];
+        const inputMid = inputY + inputHeight / 2;
+        const inputScale = (inputHeight - 24) / 2 / Math.max(1, CONFIG.amplitude);
+
+        // Input fill
+        if (CONFIG.showFill) {
+            ctx.beginPath();
+            for (let i = 0; i < HISTORY_LEN; i++) {
+                const idx = (histIdx + i) % HISTORY_LEN;
+                const x = gap + 10 + i / HISTORY_LEN * (W - gap * 2 - 20);
+                const y = inputMid - inputHistory[idx] * inputScale;
+                if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            const lastX = gap + 10 + (HISTORY_LEN - 1) / HISTORY_LEN * (W - gap * 2 - 20);
+            ctx.lineTo(lastX, inputMid);
+            ctx.lineTo(gap + 10, inputMid);
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(251,191,36,0.08)';
+            ctx.fill();
+        }
+
+        // Input line
+        ctx.strokeStyle = '#fbbf24';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < HISTORY_LEN; i++) {
+            const idx = (histIdx + i) % HISTORY_LEN;
+            const x = gap + 10 + i / HISTORY_LEN * (W - gap * 2 - 20);
+            const y = inputMid - inputHistory[idx] * inputScale;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Glow on input line
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        for (let i = 0; i < HISTORY_LEN; i++) {
+            const idx = (histIdx + i) % HISTORY_LEN;
+            const x = gap + 10 + i / HISTORY_LEN * (W - gap * 2 - 20);
+            const y = inputMid - inputHistory[idx] * inputScale;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        // Current value marker
+        const markerX = gap + 10 + (HISTORY_LEN - 1) / HISTORY_LEN * (W - gap * 2 - 20);
+        const markerY = inputMid - currentInput * inputScale;
+        ctx.save();
+        ctx.shadowColor = '#fbbf24';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(markerX, markerY, 4, 0, Math.PI * 2);
+        ctx.fillStyle = '#fbbf24';
+        ctx.fill();
+        ctx.restore();
+
+        // Zero line
+        ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(gap + 10, inputMid);
+        ctx.lineTo(W - gap - 10, inputMid);
+        ctx.stroke();
+
+        // Input label
+        ctx.fillStyle = 'rgba(251,191,36,0.6)';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`INPUT: ${CONFIG.inputType} | x = ${currentInput.toFixed(3)}`, gap + 10, inputY + 13);
+
+        // --- Function cells ---
+        for (let fi = 0; fi < funcs.length; fi++) {
+            const col = fi % cols;
+            const row = Math.floor(fi / cols);
+            const cellX = gap + col * (cellW + gap);
+            const cellY = inputHeight + gap * 2 + row * (cellH + gap);
+            const func = funcs[fi];
+
+            // Cell background
+            ctx.fillStyle = hoveredCell === fi ? '#111827' : '#0f172a';
+            ctx.beginPath();
+            ctx.roundRect(cellX, cellY, cellW, cellH, 8);
+            ctx.fill();
+
+            // Cell border
+            ctx.strokeStyle = hoveredCell === fi ? func.color + '60' : func.color + '25';
+            ctx.lineWidth = hoveredCell === fi ? 1.5 : 1;
+            ctx.stroke();
+
+            const midY = cellY + cellH / 2 + 5;
+            const plotH = cellH - 50;
+            const plotScale = plotH / 2 / Math.max(1, CONFIG.amplitude * 1.1);
+
+            // Static function curve (background)
+            if (CONFIG.showStatic) {
+                ctx.strokeStyle = func.color + '18';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                for (let px = 0; px < cellW - 12; px++) {
+                    const x = (px / (cellW - 12) - 0.5) * CONFIG.amplitude * 4;
+                    const y = midY - func.f(x) * plotScale;
+                    const cy = Math.max(cellY + 18, Math.min(cellY + cellH - 5, y));
+                    if (px === 0) ctx.moveTo(cellX + 6 + px, cy); else ctx.lineTo(cellX + 6 + px, cy);
+                }
+                ctx.stroke();
+            }
+
+            // Zero line
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(cellX + 6, midY);
+            ctx.lineTo(cellX + cellW - 6, midY);
+            ctx.stroke();
+
+            // Output fill
+            if (CONFIG.showFill) {
+                ctx.beginPath();
+                for (let i = 0; i < HISTORY_LEN; i++) {
+                    const idx = (histIdx + i) % HISTORY_LEN;
+                    const x = cellX + 6 + i / HISTORY_LEN * (cellW - 12);
+                    const y = midY - outputHistories[fi][idx] * plotScale;
+                    const cy = Math.max(cellY + 18, Math.min(cellY + cellH - 5, y));
+                    if (i === 0) ctx.moveTo(x, cy); else ctx.lineTo(x, cy);
+                }
+                const lastOutX = cellX + 6 + (HISTORY_LEN - 1) / HISTORY_LEN * (cellW - 12);
+                ctx.lineTo(lastOutX, midY);
+                ctx.lineTo(cellX + 6, midY);
+                ctx.closePath();
+                ctx.fillStyle = func.color + '12';
+                ctx.fill();
+            }
+
+            // Output waveform
+            ctx.strokeStyle = func.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 0; i < HISTORY_LEN; i++) {
+                const idx = (histIdx + i) % HISTORY_LEN;
+                const x = cellX + 6 + i / HISTORY_LEN * (cellW - 12);
+                const y = midY - outputHistories[fi][idx] * plotScale;
+                const cy = Math.max(cellY + 18, Math.min(cellY + cellH - 5, y));
+                if (i === 0) ctx.moveTo(x, cy); else ctx.lineTo(x, cy);
+            }
+            ctx.stroke();
+
+            // Waveform glow
+            ctx.save();
+            ctx.globalAlpha = 0.1;
+            ctx.lineWidth = 5;
+            ctx.beginPath();
+            for (let i = 0; i < HISTORY_LEN; i++) {
+                const idx = (histIdx + i) % HISTORY_LEN;
+                const x = cellX + 6 + i / HISTORY_LEN * (cellW - 12);
+                const y = midY - outputHistories[fi][idx] * plotScale;
+                const cy = Math.max(cellY + 18, Math.min(cellY + cellH - 5, y));
+                if (i === 0) ctx.moveTo(x, cy); else ctx.lineTo(x, cy);
+            }
+            ctx.stroke();
+            ctx.restore();
+
+            // Derivative overlay
+            if (CONFIG.showDerivative) {
+                ctx.strokeStyle = func.color + '50';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                for (let i = 0; i < HISTORY_LEN; i++) {
+                    const idx = (histIdx + i) % HISTORY_LEN;
+                    const x = cellX + 6 + i / HISTORY_LEN * (cellW - 12);
+                    const y = midY - derivHistories[fi][idx] * plotScale * 2;
+                    const cy = Math.max(cellY + 18, Math.min(cellY + cellH - 5, y));
+                    if (i === 0) ctx.moveTo(x, cy); else ctx.lineTo(x, cy);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Current value indicator
+            const lastOutput = outputHistories[fi][(histIdx + HISTORY_LEN - 1) % HISTORY_LEN];
+            const lastDeriv = derivHistories[fi][(histIdx + HISTORY_LEN - 1) % HISTORY_LEN];
+            const dotX = cellX + cellW - 12;
+            const dotY = midY - lastOutput * plotScale;
+            const clampDotY = Math.max(cellY + 18, Math.min(cellY + cellH - 5, dotY));
+
+            ctx.save();
+            ctx.shadowColor = func.color;
+            ctx.shadowBlur = 6;
+            ctx.beginPath();
+            ctx.arc(dotX, clampDotY, 3.5, 0, Math.PI * 2);
+            ctx.fillStyle = func.color;
+            ctx.fill();
+            ctx.restore();
+
+            // Status badges
+            const isSaturated = Math.abs(lastDeriv) < 0.05 && Math.abs(currentInput) > 1;
+            const isDead = (func.name === 'ReLU' || func.name === 'Leaky ReLU') && currentInput < 0 && Math.abs(lastOutput) < 0.01;
+
+            if (isSaturated) {
+                ctx.fillStyle = 'rgba(239,68,68,0.12)';
+                ctx.beginPath();
+                ctx.roundRect(cellX + cellW - 78, cellY + cellH - 20, 70, 16, 4);
+                ctx.fill();
+                ctx.fillStyle = '#ef4444';
+                ctx.font = 'bold 8px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('SATURATED', cellX + cellW - 43, cellY + cellH - 10);
+            } else if (isDead) {
+                ctx.fillStyle = 'rgba(100,100,100,0.12)';
+                ctx.beginPath();
+                ctx.roundRect(cellX + cellW - 78, cellY + cellH - 20, 70, 16, 4);
+                ctx.fill();
+                ctx.fillStyle = '#6b7280';
+                ctx.font = 'bold 8px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('DEAD ZONE', cellX + cellW - 43, cellY + cellH - 10);
+            }
+
+            // Function name label
+            ctx.fillStyle = func.color;
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText(func.name, cellX + 8, cellY + 15);
+
+            // Current output value
+            ctx.fillStyle = 'rgba(255,255,255,0.45)';
+            ctx.font = '9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText('out: ' + lastOutput.toFixed(3), cellX + cellW - 8, cellY + 15);
+
+            // Derivative label
+            if (CONFIG.showDerivative) {
+                ctx.fillStyle = func.color + '60';
+                ctx.font = '8px "JetBrains Mono", monospace';
+                ctx.textAlign = 'left';
+                ctx.fillText("f': " + lastDeriv.toFixed(3), cellX + 8, cellY + cellH - 6);
+            }
+        }
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  MAIN LOOP
+    // ═══════════════════════════════════════════════════
+    let lastTime = 0;
+
+    function loop(time) {
+        const dt = Math.min((time - lastTime) / 1000, 0.1);
+        lastTime = time;
+
+        simTime += dt * CONFIG.timeScale;
+
+        const input = inputSignal(simTime);
+        inputHistory[histIdx] = input;
+        for (let fi = 0; fi < funcs.length; fi++) {
+            outputHistories[fi][histIdx] = funcs[fi].f(input);
+            derivHistories[fi][histIdx] = funcs[fi].df(input);
+        }
+        histIdx = (histIdx + 1) % HISTORY_LEN;
+
+        // Update header value
+        document.getElementById('hs-val').textContent = input.toFixed(3);
+
+        if (CONFIG.audioEnabled) updateAudio(input);
+
+        draw(time);
+        requestAnimationFrame(loop);
+    }
+
+    // ═══════════════════════════════════════════════════
+    //  INIT
+    // ═══════════════════════════════════════════════════
+    requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

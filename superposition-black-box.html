@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superposition: Dentro de la Caja Negra - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg-primary: #030712; --bg-secondary: #0f172a; --bg-panel: #1e293b; --accent: #ef4444; --module-color: #06b6d4; --module-dim: rgba(6,182,212,0.15); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; } .controls::-webkit-scrollbar-track { background: transparent; } .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-accent:hover { opacity: 0.9; color: white; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(6,182,212,0.1); padding: 1px 5px; border-radius: 3px; }
+        .feature-toggles { display: flex; flex-wrap: wrap; gap: 4px; }
+        .feature-toggle { width: 28px; height: 28px; border-radius: 6px; border: 2px solid transparent; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-family: 'JetBrains Mono', monospace; transition: all 0.2s; }
+        .feature-toggle.active { border-color: white; }
+        .feature-toggle.inactive { opacity: 0.3; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Superposition: Dentro de la Caja Negra</h1>
+            <nav class="breadcrumb"><a href="../../_portal/index.html">EigenLab</a> / <a href="index.html">AI Visual Lab</a> / Superposition</nav>
+        </div>
+        <div class="mono" style="font-size:0.75rem;color:var(--text-secondary);">M/N: <span id="stat-ratio">-</span> | Loss: <span id="stat-loss">-</span></div>
+    </header>
+    <main class="main">
+        <div class="canvas-container"><canvas id="canvas"></canvas></div>
+        <aside class="controls">
+            <div class="equation-box">x&#770; = W<sup>T</sup>Wx, &nbsp; L = ||x - x&#770;||&sup2; + &lambda; &middot; sparsity</div>
+            <div class="control-section">
+                <h3>&#9881; Modelo</h3>
+                <div class="slider-group">
+                    <label>N (dimensiones del modelo) <span id="val-n">2</span></label>
+                    <input type="range" id="sl-n" min="2" max="10" value="2" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>M (features a codificar) <span id="val-m">3</span></label>
+                    <input type="range" id="sl-m" min="1" max="20" value="3" step="1">
+                </div>
+                <div class="slider-group">
+                    <label>Sparsity (S) <span id="val-sparsity">0.90</span></label>
+                    <input type="range" id="sl-sparsity" min="0" max="100" value="90">
+                </div>
+                <div class="slider-group">
+                    <label>&lambda; (penalizacion sparsity) <span id="val-lambda">0.10</span></label>
+                    <input type="range" id="sl-lambda" min="0" max="100" value="10">
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>&#127912; Vista</h3>
+                <div class="btn-group">
+                    <button class="btn btn-accent" id="btn-geometric">Geometrica</button>
+                    <button class="btn" id="btn-phase">Diagrama de Fase</button>
+                </div>
+                <div class="btn-group" style="margin-top:0.5rem;">
+                    <button class="btn btn-accent" id="btn-optimize">&#9654; Optimizar W</button>
+                    <button class="btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="btn-sonify">&#9835; Sonificar</button>
+                    <button class="btn" id="btn-mute">Silenciar</button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>&#128998; Features activas</h3>
+                <div class="feature-toggles" id="feature-toggles"></div>
+            </div>
+            <div class="control-section">
+                <h3>&#128202; Metricas</h3>
+                <div class="stat"><span>M / N ratio</span><span class="stat-value" id="met-ratio">1.50</span></div>
+                <div class="stat"><span>Loss total</span><span class="stat-value" id="met-loss">0.000</span></div>
+                <div class="stat"><span>Reconstruction loss</span><span class="stat-value" id="met-recon">0.000</span></div>
+                <div class="stat"><span>Sparsity loss</span><span class="stat-value" id="met-sparse">0.000</span></div>
+                <div class="stat"><span>Interferencia media</span><span class="stat-value" id="met-interf">0.000</span></div>
+                <div class="stat"><span>Features representadas</span><span class="stat-value" id="met-feats">0</span></div>
+            </div>
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; Superposicion</strong><br><br>
+                Las redes neuronales pueden codificar <span class="hl">mas features que neuronas</span> usando superposicion: multiples features comparten las mismas dimensiones.<br><br>
+                <span class="eq">W^T W x</span> reconstruye la entrada. Si <span class="hl">M &le; N</span>, cada feature tiene su propia dimension (sin interferencia). Si <span class="hl">M &gt; N</span>, features se superponen y compiten.<br><br>
+                La <span class="hl">sparsity</span> es clave: cuanto mas dispersas son las features, mas caben sin interferencia. El <span class="hl">diagrama de fase</span> muestra la transicion entre representacion completa y superposicion.
+            </div>
+        </aside>
+    </main>
+<script>
+// === CONFIG ===
+const CONFIG = { volume: 0.3, audioEnabled: true };
+
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+// === AUDIO (Lazy Init) ===
+let audioCtx = null, masterGain = null, compressor = null;
+
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    compressor = audioCtx.createDynamicsCompressor();
+    compressor.threshold.value = -24; compressor.ratio.value = 12;
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = CONFIG.volume;
+    masterGain.connect(compressor);
+    compressor.connect(audioCtx.destination);
+}
+
+function playTone(freq, dur, vol = 0.1, type = 'sine', detune = 0) {
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = type; osc.frequency.value = freq; osc.detune.value = detune;
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 1200 + freq * 0.5;
+    osc.connect(lp); lp.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+
+// === FEATURE COLORS ===
+const FEATURE_HUES = [];
+for (let i = 0; i < 20; i++) FEATURE_HUES.push((i * 137.508 + 60) % 360);
+
+function featureColor(i, alpha = 1) {
+    const h = FEATURE_HUES[i % 20];
+    return `hsla(${h}, 80%, 60%, ${alpha})`;
+}
+function featureColorRGB(i) {
+    const h = FEATURE_HUES[i % 20];
+    const s = 0.8, l = 0.6;
+    // HSL to RGB
+    const c = (1 - Math.abs(2 * l - 1)) * s;
+    const x = c * (1 - Math.abs((h / 60) % 2 - 1));
+    const m = l - c / 2;
+    let r = 0, g = 0, b = 0;
+    if (h < 60) { r = c; g = x; }
+    else if (h < 120) { r = x; g = c; }
+    else if (h < 180) { g = c; b = x; }
+    else if (h < 240) { g = x; b = c; }
+    else if (h < 300) { r = x; b = c; }
+    else { r = c; b = x; }
+    return { r: (r + m) * 255, g: (g + m) * 255, b: (b + m) * 255 };
+}
+
+// === TOY MODEL STATE ===
+let N = 2;       // model dimensions (neurons)
+let M = 3;       // features to encode
+let sparsity = 0.9;
+let lambda = 0.1;
+let Wmat = [];   // N x M weight matrix (each column is a feature direction in N-dim space)
+let featureActive = [];
+let viewMode = 'geometric'; // 'geometric' | 'phase'
+let optimizing = false;
+let optimStep = 0;
+let time = 0;
+let hoverFeature = -1;
+
+// === INITIALIZE MODEL ===
+function initModel() {
+    Wmat = [];
+    featureActive = [];
+    for (let j = 0; j < M; j++) {
+        const col = [];
+        for (let i = 0; i < N; i++) {
+            col.push(gaussRand() * 0.5);
+        }
+        // Normalize
+        const norm = Math.sqrt(col.reduce((s, v) => s + v * v, 0)) || 1;
+        for (let i = 0; i < N; i++) col[i] /= norm;
+        Wmat.push(col);
+        featureActive.push(true);
+    }
+    optimStep = 0;
+    buildFeatureToggles();
+    updateMetrics();
+}
+
+function gaussRand() {
+    const u1 = Math.random(), u2 = Math.random();
+    return Math.sqrt(-2 * Math.log(u1 || 1e-10)) * Math.cos(2 * Math.PI * u2);
+}
+
+// === TOY MODEL COMPUTATION ===
+// W is N x M. x is M-dim sparse feature vector.
+// Encoding: h = W * x (N-dim), Decoding: x_hat = W^T * h = W^T * W * x
+
+function matVecMul(mat, vec) {
+    // mat is array of columns (each col is array of row values)
+    // mat has M columns, each of length N => mat is M columns * N rows
+    // W * x: result is N-dim, where result[i] = sum_j W[j][i] * x[j]
+    const rows = mat[0].length; // N
+    const result = new Array(rows).fill(0);
+    for (let j = 0; j < mat.length; j++) {
+        for (let i = 0; i < rows; i++) {
+            result[i] += mat[j][i] * vec[j];
+        }
+    }
+    return result;
+}
+
+function matTVecMul(mat, vec) {
+    // W^T * h: result is M-dim, result[j] = sum_i W[j][i] * h[i]
+    const cols = mat.length; // M
+    const result = new Array(cols).fill(0);
+    for (let j = 0; j < cols; j++) {
+        for (let i = 0; i < mat[j].length; i++) {
+            result[j] += mat[j][i] * vec[i];
+        }
+    }
+    return result;
+}
+
+function reconstruct(x) {
+    // x is M-dim. h = W*x (N-dim). x_hat = W^T*h (M-dim)
+    const h = matVecMul(Wmat, x);
+    return matTVecMul(Wmat, h);
+}
+
+function computeLoss() {
+    // Sample random sparse x vectors and compute average loss
+    const numSamples = 50;
+    let totalRecon = 0;
+    let totalSparse = 0;
+
+    for (let s = 0; s < numSamples; s++) {
+        const x = new Array(M).fill(0);
+        for (let j = 0; j < M; j++) {
+            if (Math.random() > sparsity) {
+                x[j] = Math.random() * 2 - 1; // uniform [-1,1]
+            }
+        }
+        const xhat = reconstruct(x);
+        // Reconstruction loss: ||x - x_hat||^2
+        let reconLoss = 0;
+        for (let j = 0; j < M; j++) {
+            reconLoss += (x[j] - xhat[j]) ** 2;
+        }
+        totalRecon += reconLoss;
+
+        // Sparsity penalty: sum of |x_hat| (L1 on reconstruction)
+        let sparseLoss = 0;
+        for (let j = 0; j < M; j++) sparseLoss += Math.abs(xhat[j]);
+        totalSparse += sparseLoss;
+    }
+
+    return {
+        recon: totalRecon / numSamples,
+        sparse: (totalSparse / numSamples) * lambda,
+        total: totalRecon / numSamples + (totalSparse / numSamples) * lambda
+    };
+}
+
+function computeInterference() {
+    // Average absolute dot product between distinct feature vectors (columns of W)
+    let totalDot = 0, count = 0;
+    for (let i = 0; i < M; i++) {
+        for (let j = i + 1; j < M; j++) {
+            let dot = 0;
+            for (let k = 0; k < N; k++) dot += Wmat[i][k] * Wmat[j][k];
+            totalDot += Math.abs(dot);
+            count++;
+        }
+    }
+    return count > 0 ? totalDot / count : 0;
+}
+
+// === OPTIMIZATION STEP (Gradient descent on W) ===
+function optimizeStep() {
+    const lr = 0.02;
+    const numSamples = 20;
+
+    // Accumulate gradients for W
+    const grad = Wmat.map(col => new Array(col.length).fill(0));
+
+    for (let s = 0; s < numSamples; s++) {
+        const x = new Array(M).fill(0);
+        for (let j = 0; j < M; j++) {
+            if (Math.random() > sparsity) {
+                x[j] = Math.random() * 2 - 1;
+            }
+        }
+
+        // Forward: h = W*x, xhat = W^T * h
+        const h = matVecMul(Wmat, x);
+        const xhat = matTVecMul(Wmat, h);
+
+        // dL/dxhat = 2*(xhat - x) + lambda * sign(xhat)
+        const dxhat = new Array(M).fill(0);
+        for (let j = 0; j < M; j++) {
+            dxhat[j] = 2 * (xhat[j] - x[j]) + lambda * Math.sign(xhat[j]);
+        }
+
+        // Backprop through W^T: dh = W * dxhat
+        const dh = matVecMul(Wmat, dxhat);
+
+        // dW from decoding: dW[j][i] += dxhat[j] * h[i] (W^T gradient)
+        // dW from encoding: dW[j][i] += dh[i] * x[j]
+        for (let j = 0; j < M; j++) {
+            for (let i = 0; i < N; i++) {
+                grad[j][i] += (dxhat[j] * h[i] + dh[i] * x[j]) / numSamples;
+            }
+        }
+    }
+
+    // Apply gradient
+    for (let j = 0; j < M; j++) {
+        for (let i = 0; i < N; i++) {
+            Wmat[j][i] -= lr * grad[j][i];
+        }
+        // Re-normalize columns to unit length
+        const norm = Math.sqrt(Wmat[j].reduce((s, v) => s + v * v, 0)) || 1;
+        for (let i = 0; i < N; i++) Wmat[j][i] /= norm;
+    }
+    optimStep++;
+}
+
+// === FEATURE TOGGLES ===
+function buildFeatureToggles() {
+    const container = document.getElementById('feature-toggles');
+    container.innerHTML = '';
+    for (let i = 0; i < M; i++) {
+        const btn = document.createElement('div');
+        btn.className = 'feature-toggle active';
+        btn.style.background = featureColor(i, 0.3);
+        btn.textContent = i + 1;
+        btn.dataset.index = i;
+        btn.addEventListener('click', () => {
+            featureActive[i] = !featureActive[i];
+            btn.className = 'feature-toggle ' + (featureActive[i] ? 'active' : 'inactive');
+        });
+        container.appendChild(btn);
+    }
+}
+
+// === METRICS UPDATE ===
+function updateMetrics() {
+    const ratio = M / N;
+    const loss = computeLoss();
+    const interf = computeInterference();
+    const represented = Wmat.filter((col, i) => {
+        const norm = Math.sqrt(col.reduce((s, v) => s + v * v, 0));
+        return norm > 0.1 && featureActive[i];
+    }).length;
+
+    document.getElementById('met-ratio').textContent = ratio.toFixed(2);
+    document.getElementById('met-loss').textContent = loss.total.toFixed(4);
+    document.getElementById('met-recon').textContent = loss.recon.toFixed(4);
+    document.getElementById('met-sparse').textContent = loss.sparse.toFixed(4);
+    document.getElementById('met-interf').textContent = interf.toFixed(4);
+    document.getElementById('met-feats').textContent = represented + '/' + M;
+    document.getElementById('stat-ratio').textContent = ratio.toFixed(1);
+    document.getElementById('stat-loss').textContent = loss.total.toFixed(3);
+}
+
+// === SONIFICATION ===
+function sonifyFeatures() {
+    initAudio();
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+
+    const baseFreq = 261.63; // C4
+    const activeFeats = [];
+    for (let i = 0; i < M; i++) {
+        if (featureActive[i]) activeFeats.push(i);
+    }
+
+    if (activeFeats.length === 0) return;
+
+    const interf = computeInterference();
+    const ratio = M / N;
+
+    // Each feature gets a frequency based on its index
+    activeFeats.forEach((fi, idx) => {
+        const semitone = (fi * 7) % 12; // spread across scale
+        const freq = baseFreq * Math.pow(2, semitone / 12);
+
+        // Low sparsity => dense cluster, add beating via slight detune
+        const detune = (1 - sparsity) * 30 * Math.sin(fi * 1.3);
+        const vol = 0.08 / Math.sqrt(activeFeats.length);
+
+        // More superposition => sawtooth (harmonically rich), less => sine (pure)
+        const type = ratio > 1 ? (interf > 0.3 ? 'sawtooth' : 'triangle') : 'sine';
+        const dur = 0.6 + sparsity * 0.6;
+
+        setTimeout(() => {
+            playTone(freq, dur, vol, type, detune);
+        }, idx * (sparsity > 0.7 ? 120 : 40));
+    });
+
+    // If high interference, add beating pair
+    if (interf > 0.3 && activeFeats.length >= 2) {
+        const f1 = baseFreq * Math.pow(2, 5 / 12);
+        const f2 = f1 + 3 + interf * 8; // close frequencies => beating
+        setTimeout(() => {
+            playTone(f1, 1.0, 0.04, 'sine');
+            playTone(f2, 1.0, 0.04, 'sine');
+        }, 200);
+    }
+}
+
+// === DRAWING: GEOMETRIC VIEW ===
+function drawGeometric() {
+    const cx = W * 0.45;
+    const cy = H * 0.45;
+    const radius = Math.min(W * 0.35, H * 0.38);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(6,182,212,0.04)';
+    ctx.lineWidth = 1;
+    for (let gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+    for (let gy = 0; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+    // Title
+    ctx.font = 'bold 13px Inter';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'left';
+    ctx.fillText(M <= N ? `Sin superposicion (M=${M} ≤ N=${N})` : `Superposicion activa (M=${M} > N=${N})`, 20, 25);
+
+    ctx.font = '11px Inter';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText(`Espacio de ${N} dimensiones — vista 2D`, 20, 42);
+
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(cx - radius - 20, cy); ctx.lineTo(cx + radius + 20, cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy - radius - 20); ctx.lineTo(cx, cy + radius + 20); ctx.stroke();
+
+    // Axis labels
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.textAlign = 'center';
+    ctx.fillText('neurona 1', cx + radius + 10, cy + 15);
+    ctx.save(); ctx.translate(cx - 15, cy - radius - 10);
+    ctx.fillText('neurona 2', 0, 0);
+    ctx.restore();
+
+    // Unit circle (reference)
+    ctx.strokeStyle = 'rgba(6,182,212,0.08)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.stroke();
+
+    // Draw interference regions (overlapping color)
+    if (M > N) {
+        for (let i = 0; i < M; i++) {
+            if (!featureActive[i]) continue;
+            for (let j = i + 1; j < M; j++) {
+                if (!featureActive[j]) continue;
+                let dot = 0;
+                for (let k = 0; k < Math.min(N, 2); k++) dot += Wmat[i][k] * Wmat[j][k];
+                const overlap = Math.abs(dot);
+                if (overlap > 0.15) {
+                    const midX = cx + (Wmat[i][0] + Wmat[j][0]) * 0.5 * radius * 0.6;
+                    const midY = cy - (((Wmat[i][1] || 0) + (Wmat[j][1] || 0)) * 0.5) * radius * 0.6;
+                    const rgbi = featureColorRGB(i);
+                    const rgbj = featureColorRGB(j);
+                    const mr = (rgbi.r + rgbj.r) / 2;
+                    const mg = (rgbi.g + rgbj.g) / 2;
+                    const mb = (rgbi.b + rgbj.b) / 2;
+                    const pulse = 0.15 + 0.1 * Math.sin(time * 3 + i + j);
+                    const grad = ctx.createRadialGradient(midX, midY, 0, midX, midY, radius * overlap * 0.5);
+                    grad.addColorStop(0, `rgba(${mr|0},${mg|0},${mb|0},${pulse})`);
+                    grad.addColorStop(1, `rgba(${mr|0},${mg|0},${mb|0},0)`);
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(midX - radius * 0.5, midY - radius * 0.5, radius, radius);
+                }
+            }
+        }
+    }
+
+    // Draw feature vectors as arrows
+    for (let i = 0; i < M; i++) {
+        if (!featureActive[i]) continue;
+        const wx = Wmat[i][0];
+        const wy = Wmat[i][1] || 0;
+
+        const endX = cx + wx * radius;
+        const endY = cy - wy * radius;
+
+        // Glow
+        const isHover = hoverFeature === i;
+        const glowAlpha = isHover ? 0.4 : 0.15;
+        ctx.strokeStyle = featureColor(i, glowAlpha + 0.1 * Math.sin(time * 2 + i * 0.7));
+        ctx.lineWidth = isHover ? 5 : 3;
+        ctx.shadowColor = featureColor(i, 0.5);
+        ctx.shadowBlur = isHover ? 15 : 6;
+
+        // Arrow shaft
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(endX, endY);
+        ctx.stroke();
+
+        // Arrowhead
+        const angle = Math.atan2(-(wy), wx);
+        const headLen = 12;
+        ctx.beginPath();
+        ctx.moveTo(endX, endY);
+        ctx.lineTo(endX - headLen * Math.cos(angle - 0.35), endY + headLen * Math.sin(angle - 0.35));
+        ctx.lineTo(endX - headLen * Math.cos(angle + 0.35), endY + headLen * Math.sin(angle + 0.35));
+        ctx.closePath();
+        ctx.fillStyle = featureColor(i, 0.9);
+        ctx.fill();
+
+        ctx.shadowBlur = 0;
+
+        // Feature label
+        const labelDist = radius + 22;
+        const labelX = cx + wx * labelDist;
+        const labelY = cy - wy * labelDist;
+        ctx.font = isHover ? 'bold 11px JetBrains Mono' : '10px JetBrains Mono';
+        ctx.fillStyle = featureColor(i, isHover ? 1 : 0.7);
+        ctx.textAlign = 'center';
+        ctx.fillText(`f${i + 1}`, labelX, labelY);
+    }
+
+    // Draw interference arcs between close features
+    for (let i = 0; i < M; i++) {
+        if (!featureActive[i]) continue;
+        for (let j = i + 1; j < M; j++) {
+            if (!featureActive[j]) continue;
+            let dot = 0;
+            for (let k = 0; k < Math.min(N, 2); k++) dot += Wmat[i][k] * Wmat[j][k];
+            if (Math.abs(dot) > 0.3) {
+                const angle1 = Math.atan2(-(Wmat[i][1] || 0), Wmat[i][0]);
+                const angle2 = Math.atan2(-(Wmat[j][1] || 0), Wmat[j][0]);
+                const arcR = radius * 0.25;
+                ctx.strokeStyle = `rgba(239,68,68,${Math.abs(dot) * 0.5})`;
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.arc(cx, cy, arcR, Math.min(angle1, angle2), Math.max(angle1, angle2));
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Dot product label
+                const midAngle = (angle1 + angle2) / 2;
+                const lx = cx + Math.cos(midAngle) * (arcR + 12);
+                const ly = cy + Math.sin(midAngle) * (arcR + 12);
+                ctx.font = '9px JetBrains Mono';
+                ctx.fillStyle = 'rgba(239,68,68,0.6)';
+                ctx.textAlign = 'center';
+                ctx.fillText(dot.toFixed(2), lx, ly);
+            }
+        }
+    }
+
+    // Info panel bottom-left
+    drawInfoPanel();
+}
+
+function drawInfoPanel() {
+    const px = 20, py = H - 120;
+    ctx.fillStyle = 'rgba(15,23,42,0.85)';
+    ctx.beginPath();
+    ctx.roundRect(px, py, 250, 105, 8);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(6,182,212,0.2)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'left';
+    ctx.fillText('Toy Model de Superposicion', px + 12, py + 18);
+
+    ctx.font = '9px Inter';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    const lines = [
+        `Dimensiones (N): ${N}  |  Features (M): ${M}`,
+        `Ratio M/N: ${(M / N).toFixed(2)}  |  Sparsity: ${sparsity.toFixed(2)}`,
+        `Estado: ${M <= N ? 'Sin superposicion' : 'Superposicion activa'}`,
+        `Paso optimizacion: ${optimStep}`,
+        `λ = ${lambda.toFixed(2)}`
+    ];
+    lines.forEach((line, i) => {
+        ctx.fillText(line, px + 12, py + 35 + i * 14);
+    });
+}
+
+// === DRAWING: PHASE DIAGRAM ===
+function drawPhaseDiagram() {
+    const margin = { top: 60, right: 40, bottom: 60, left: 80 };
+    const plotW = W - margin.left - margin.right;
+    const plotH = H - margin.top - margin.bottom;
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(6,182,212,0.04)';
+    for (let gx = 0; gx < W; gx += 40) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, H); ctx.stroke(); }
+    for (let gy = 0; gy < H; gy += 40) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(W, gy); ctx.stroke(); }
+
+    // Title
+    ctx.font = 'bold 13px Inter';
+    ctx.fillStyle = '#67e8f9';
+    ctx.textAlign = 'left';
+    ctx.fillText('Diagrama de Fase: Superposicion', margin.left, 30);
+    ctx.font = '11px Inter';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText('Color = fraccion de features representadas', margin.left, 47);
+
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(margin.left, margin.top);
+    ctx.lineTo(margin.left, margin.top + plotH);
+    ctx.lineTo(margin.left + plotW, margin.top + plotH);
+    ctx.stroke();
+
+    // X axis: M/N ratio (0.5 to 5)
+    // Y axis: Sparsity (0 to 1)
+    const xMin = 0.5, xMax = 5;
+    const yMin = 0, yMax = 1;
+
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    for (let xv = 1; xv <= 5; xv++) {
+        const px = margin.left + (xv - xMin) / (xMax - xMin) * plotW;
+        ctx.fillText(xv.toString(), px, margin.top + plotH + 20);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.beginPath(); ctx.moveTo(px, margin.top); ctx.lineTo(px, margin.top + plotH); ctx.stroke();
+    }
+    ctx.fillText('M / N ratio', margin.left + plotW / 2, margin.top + plotH + 45);
+
+    ctx.textAlign = 'right';
+    for (let yv = 0; yv <= 1; yv += 0.2) {
+        const py = margin.top + plotH - (yv - yMin) / (yMax - yMin) * plotH;
+        ctx.fillText(yv.toFixed(1), margin.left - 10, py + 4);
+        ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+        ctx.beginPath(); ctx.moveTo(margin.left, py); ctx.lineTo(margin.left + plotW, py); ctx.stroke();
+    }
+    ctx.save();
+    ctx.translate(margin.left - 50, margin.top + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.textAlign = 'center';
+    ctx.fillText('Sparsity (S)', 0, 0);
+    ctx.restore();
+
+    // Heatmap: for each cell compute expected representation quality
+    const resX = 60, resY = 40;
+    const cellW = plotW / resX;
+    const cellH = plotH / resY;
+
+    for (let ix = 0; ix < resX; ix++) {
+        for (let iy = 0; iy < resY; iy++) {
+            const ratio = xMin + (ix + 0.5) / resX * (xMax - xMin);
+            const sp = yMin + (iy + 0.5) / resY * (yMax - yMin);
+
+            // Analytical approximation: superposition happens when
+            // density * (1 - sparsity) > capacity
+            // Features fit without superposition when M/N <= 1
+            // With sparsity, effective load is (1-S)*M/N
+            const effectiveLoad = (1 - sp) * ratio;
+            // Fraction of features well-represented
+            const frac = Math.min(1, 1 / Math.max(effectiveLoad, 0.01));
+            // Transition sharpness
+            const score = Math.pow(frac, 1.5);
+
+            const px = margin.left + ix * cellW;
+            const py = margin.top + plotH - (iy + 1) * cellH;
+
+            // Color: green (features fit) to red (superposition/loss)
+            const r = Math.round((1 - score) * 220 + 30);
+            const g = Math.round(score * 200 + 30);
+            const b = Math.round(score * 100 + 50);
+            ctx.fillStyle = `rgba(${r},${g},${b},0.6)`;
+            ctx.fillRect(px, py, cellW + 0.5, cellH + 0.5);
+        }
+    }
+
+    // Transition boundary line: effectiveLoad = 1 => (1-S)*M/N = 1 => S = 1 - N/M
+    ctx.strokeStyle = 'rgba(255,255,255,0.8)';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([5, 5]);
+    ctx.beginPath();
+    let started = false;
+    for (let ix = 0; ix <= resX; ix++) {
+        const ratio = xMin + ix / resX * (xMax - xMin);
+        const criticalS = 1 - 1 / ratio; // S above which features fit
+        if (criticalS >= yMin && criticalS <= yMax) {
+            const px = margin.left + ix / resX * plotW;
+            const py = margin.top + plotH - (criticalS - yMin) / (yMax - yMin) * plotH;
+            if (!started) { ctx.moveTo(px, py); started = true; } else ctx.lineTo(px, py);
+        }
+    }
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Label for boundary
+    const lblRatio = 3;
+    const lblS = 1 - 1 / lblRatio;
+    const lblPx = margin.left + (lblRatio - xMin) / (xMax - xMin) * plotW + 10;
+    const lblPy = margin.top + plotH - (lblS - yMin) / (yMax - yMin) * plotH - 10;
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    ctx.textAlign = 'left';
+    ctx.fillText('S = 1 - N/M', lblPx, lblPy);
+
+    // Region labels
+    ctx.font = 'bold 12px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    // Top-right: no superposition needed (high sparsity, any ratio)
+    const nsPx = margin.left + plotW * 0.75;
+    const nsPy = margin.top + plotH * 0.15;
+    ctx.fillText('Sin superposicion', nsPx, nsPy);
+    ctx.font = '9px Inter';
+    ctx.fillText('(features caben)', nsPx, nsPy + 14);
+
+    // Bottom-right: superposition
+    ctx.font = 'bold 12px Inter';
+    const sPx = margin.left + plotW * 0.75;
+    const sPy = margin.top + plotH * 0.75;
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.fillText('Superposicion', sPx, sPy);
+    ctx.font = '9px Inter';
+    ctx.fillText('(interferencia)', sPx, sPy + 14);
+
+    // Current position marker
+    const curRatio = M / N;
+    const curPx = margin.left + (curRatio - xMin) / (xMax - xMin) * plotW;
+    const curPy = margin.top + plotH - (sparsity - yMin) / (yMax - yMin) * plotH;
+
+    if (curRatio >= xMin && curRatio <= xMax) {
+        ctx.beginPath();
+        ctx.arc(curPx, curPy, 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 15;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(curPx, curPy, 8, 0, Math.PI * 2);
+        ctx.stroke();
+
+        ctx.font = 'bold 10px JetBrains Mono';
+        ctx.fillStyle = '#06b6d4';
+        ctx.textAlign = 'left';
+        ctx.fillText(`(${curRatio.toFixed(1)}, ${sparsity.toFixed(2)})`, curPx + 14, curPy + 4);
+    }
+
+    // Legend
+    const lgX = margin.left + plotW - 150, lgY = margin.top + 10;
+    ctx.fillStyle = 'rgba(15,23,42,0.8)';
+    ctx.beginPath(); ctx.roundRect(lgX, lgY, 140, 50, 6); ctx.fill();
+    ctx.strokeStyle = 'rgba(6,182,212,0.2)'; ctx.stroke();
+
+    const gradLg = ctx.createLinearGradient(lgX + 10, 0, lgX + 100, 0);
+    gradLg.addColorStop(0, 'rgba(220,50,50,0.7)');
+    gradLg.addColorStop(0.5, 'rgba(140,160,60,0.7)');
+    gradLg.addColorStop(1, 'rgba(50,200,130,0.7)');
+    ctx.fillStyle = gradLg;
+    ctx.fillRect(lgX + 10, lgY + 10, 90, 10);
+
+    ctx.font = '8px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Perdida', lgX + 10, lgY + 35);
+    ctx.textAlign = 'right';
+    ctx.fillText('Fidelidad', lgX + 100, lgY + 35);
+}
+
+// === MAIN DRAW ===
+function draw() {
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+
+    if (viewMode === 'geometric') {
+        drawGeometric();
+    } else {
+        drawPhaseDiagram();
+    }
+}
+
+// === MOUSE INTERACTION ===
+let mouseX = 0, mouseY = 0;
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    mouseX = e.clientX - rect.left;
+    mouseY = e.clientY - rect.top;
+
+    if (viewMode === 'geometric') {
+        const cx = W * 0.45;
+        const cy = H * 0.45;
+        const radius = Math.min(W * 0.35, H * 0.38);
+
+        hoverFeature = -1;
+        for (let i = 0; i < M; i++) {
+            if (!featureActive[i]) continue;
+            const endX = cx + Wmat[i][0] * radius;
+            const endY = cy - (Wmat[i][1] || 0) * radius;
+            const dist = Math.sqrt((mouseX - endX) ** 2 + (mouseY - endY) ** 2);
+            if (dist < 18) { hoverFeature = i; break; }
+        }
+        canvas.style.cursor = hoverFeature >= 0 ? 'pointer' : 'default';
+    }
+});
+
+canvas.addEventListener('click', () => {
+    initAudio();
+    if (hoverFeature >= 0 && viewMode === 'geometric') {
+        // Toggle feature and play its tone
+        featureActive[hoverFeature] = !featureActive[hoverFeature];
+        const toggles = document.querySelectorAll('.feature-toggle');
+        if (toggles[hoverFeature]) {
+            toggles[hoverFeature].className = 'feature-toggle ' + (featureActive[hoverFeature] ? 'active' : 'inactive');
+        }
+        const semitone = (hoverFeature * 7) % 12;
+        const freq = 261.63 * Math.pow(2, semitone / 12);
+        playTone(freq, 0.3, featureActive[hoverFeature] ? 0.12 : 0.04, 'sine');
+        updateMetrics();
+    }
+});
+
+// === ANIMATION LOOP ===
+let lastTime = 0;
+let optimTimer = 0;
+let metricsTimer = 0;
+
+function loop(t) {
+    const dt = Math.min((t - lastTime) / 1000, 0.1);
+    lastTime = t;
+    time += dt;
+
+    // Optimization
+    if (optimizing) {
+        optimTimer += dt;
+        if (optimTimer > 0.03) {
+            optimTimer = 0;
+            optimizeStep();
+        }
+    }
+
+    // Periodic metrics update
+    metricsTimer += dt;
+    if (metricsTimer > 0.5) {
+        metricsTimer = 0;
+        updateMetrics();
+    }
+
+    draw();
+    requestAnimationFrame(loop);
+}
+
+// === CONTROLS ===
+document.getElementById('sl-n').addEventListener('input', (e) => {
+    N = parseInt(e.target.value);
+    document.getElementById('val-n').textContent = N;
+    initModel();
+});
+
+document.getElementById('sl-m').addEventListener('input', (e) => {
+    M = parseInt(e.target.value);
+    document.getElementById('val-m').textContent = M;
+    initModel();
+});
+
+document.getElementById('sl-sparsity').addEventListener('input', (e) => {
+    sparsity = parseInt(e.target.value) / 100;
+    document.getElementById('val-sparsity').textContent = sparsity.toFixed(2);
+    updateMetrics();
+});
+
+document.getElementById('sl-lambda').addEventListener('input', (e) => {
+    lambda = parseInt(e.target.value) / 100;
+    document.getElementById('val-lambda').textContent = lambda.toFixed(2);
+    updateMetrics();
+});
+
+document.getElementById('btn-geometric').addEventListener('click', () => {
+    viewMode = 'geometric';
+    document.getElementById('btn-geometric').classList.add('btn-accent');
+    document.getElementById('btn-phase').classList.remove('btn-accent');
+});
+
+document.getElementById('btn-phase').addEventListener('click', () => {
+    viewMode = 'phase';
+    document.getElementById('btn-phase').classList.add('btn-accent');
+    document.getElementById('btn-geometric').classList.remove('btn-accent');
+});
+
+document.getElementById('btn-optimize').addEventListener('click', () => {
+    initAudio();
+    optimizing = !optimizing;
+    document.getElementById('btn-optimize').textContent = optimizing ? '⏸ Pausar' : '▶ Optimizar W';
+    document.getElementById('btn-optimize').classList.toggle('btn-accent', !optimizing);
+    if (optimizing) {
+        // Play transition tone
+        const ratio = M / N;
+        const freq = ratio > 1 ? 330 : 440;
+        playTone(freq, 0.3, 0.08, 'triangle');
+    }
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+    optimizing = false;
+    document.getElementById('btn-optimize').textContent = '▶ Optimizar W';
+    document.getElementById('btn-optimize').classList.add('btn-accent');
+    initModel();
+});
+
+document.getElementById('sl-vol').addEventListener('input', (e) => {
+    CONFIG.volume = parseInt(e.target.value) / 100;
+    document.getElementById('val-vol').textContent = e.target.value + '%';
+    if (masterGain) masterGain.gain.value = CONFIG.volume;
+});
+
+document.getElementById('btn-sonify').addEventListener('click', () => {
+    initAudio();
+    sonifyFeatures();
+});
+
+document.getElementById('btn-mute').addEventListener('click', () => {
+    CONFIG.audioEnabled = !CONFIG.audioEnabled;
+    document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio';
+});
+
+// === INIT ===
+initModel();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

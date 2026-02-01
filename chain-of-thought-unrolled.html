@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain of Thought Unrolled - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --module-color: #8b5cf6;
+            --module-dim: rgba(139, 92, 246, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; }
+        .controls::-webkit-scrollbar-track { background: transparent; }
+        .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-accent:hover { opacity: 0.9; color: white; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(139,92,246,0.1); padding: 1px 5px; border-radius: 3px; }
+        .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+        .toggle-row label { font-size: 0.8rem; color: var(--text-secondary); }
+        .toggle { position: relative; width: 36px; height: 20px; cursor: pointer; }
+        .toggle input { display: none; }
+        .toggle span { position: absolute; inset: 0; background: var(--bg-primary); border-radius: 10px; transition: 0.2s; }
+        .toggle span:before { content: ''; position: absolute; width: 16px; height: 16px; left: 2px; top: 2px; background: var(--text-muted); border-radius: 50%; transition: 0.2s; }
+        .toggle input:checked + span { background: var(--module-dim); }
+        .toggle input:checked + span:before { transform: translateX(16px); background: var(--module-color); }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Chain of Thought Unrolled</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                Chain of Thought
+            </nav>
+        </div>
+        <div class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">
+            Nodos: <span id="stat-nodes">0</span> &nbsp;|&nbsp;
+            Confianza: <span id="stat-conf">-</span>
+        </div>
+    </header>
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        <aside class="controls">
+            <div class="equation-box">
+                P(answer | CoT) > P(answer | direct)
+            </div>
+
+            <div class="control-section">
+                <h3>&#9881; Problema</h3>
+                <select id="sel-problem">
+                    <option value="0">Aritmetica: 23 × 17 = ?</option>
+                    <option value="1">Logica: Todos A son B. X es A. ¿X es B?</option>
+                    <option value="2">Secuencia: 2, 6, 18, 54, ?</option>
+                    <option value="3">Analogia: Dia:Noche :: Calor:?</option>
+                    <option value="4">Multi-paso: Si tengo 5 manzanas...</option>
+                </select>
+                <div class="btn-group" style="margin-top:0.75rem;">
+                    <button class="btn btn-accent" id="btn-solve">&#9654; Resolver con CoT</button>
+                    <button class="btn" id="btn-direct">Respuesta Directa</button>
+                    <button class="btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#9874; Configuracion</h3>
+                <div class="toggle-row">
+                    <label>Modo Alucinacion</label>
+                    <label class="toggle"><input type="checkbox" id="chk-halluc"><span></span></label>
+                </div>
+                <div class="toggle-row">
+                    <label>Mostrar Confianza</label>
+                    <label class="toggle"><input type="checkbox" id="chk-conf" checked><span></span></label>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <button class="btn" id="btn-mute">Silenciar</button>
+            </div>
+
+            <div class="control-section">
+                <h3>&#128202; Comparacion</h3>
+                <div class="stat"><span>CoT pasos</span><span class="stat-value" id="val-steps">-</span></div>
+                <div class="stat"><span>CoT confianza</span><span class="stat-value" id="val-cot-conf">-</span></div>
+                <div class="stat"><span>Directa confianza</span><span class="stat-value" id="val-dir-conf">-</span></div>
+                <div class="stat"><span>CoT correcta</span><span class="stat-value" id="val-cot-correct">-</span></div>
+                <div class="stat"><span>Directa correcta</span><span class="stat-value" id="val-dir-correct">-</span></div>
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; Razonamiento Paso a Paso</strong><br><br>
+                <span class="hl">Chain of Thought (CoT)</span> permite que los LLMs resuelvan problemas complejos descomponiendo el razonamiento en pasos intermedios.<br><br>
+                Cada <span class="hl">nodo</span> del arbol representa un paso de razonamiento con su <span class="hl">confianza</span> (color). Los nodos <span style="color:#ef4444;">rojos</span> son backtracking (errores corregidos).<br><br>
+                Sin CoT, el modelo intenta dar la respuesta <span class="hl">directamente</span> &mdash; funciona para problemas simples pero falla en razonamiento multi-paso.
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128161; Alucinaciones</strong><br><br>
+                El modo <span class="hl">alucinacion</span> simula errores de razonamiento: pasos que parecen logicos pero contienen errores sutiles. Esto demuestra por que la <span class="hl">verificacion</span> de cada paso es critica.
+            </div>
+        </aside>
+    </main>
+
+<script>
+// === CONFIG ===
+const CONFIG = { volume: 0.3, audioEnabled: true, hallucinate: false, showConf: true };
+
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// === AUDIO ===
+let audioCtx = null, masterGain = null;
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = CONFIG.volume;
+    const comp = audioCtx.createDynamicsCompressor();
+    masterGain.connect(comp); comp.connect(audioCtx.destination);
+}
+function playNote(freq, dur, vol = 0.1, type = 'sine') {
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = type; osc.frequency.value = freq;
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+
+// === PROBLEM DATA ===
+const PROBLEMS = [
+    {
+        question: '¿Cuanto es 23 × 17?',
+        answer: '391',
+        type: 'aritmetica',
+        cot: [
+            { text: 'Descomponer: 23 × 17', conf: 0.95, type: 'decompose' },
+            { text: '23 × 10 = 230', conf: 0.98, type: 'compute' },
+            { text: '23 × 7 = ?', conf: 0.90, type: 'compute' },
+            { text: '20 × 7 = 140', conf: 0.97, type: 'compute' },
+            { text: '3 × 7 = 21', conf: 0.99, type: 'compute' },
+            { text: '140 + 21 = 161', conf: 0.97, type: 'combine' },
+            { text: '230 + 161 = 391', conf: 0.96, type: 'combine' },
+            { text: 'Respuesta: 391', conf: 0.95, type: 'answer', correct: true }
+        ],
+        cotHalluc: [
+            { text: 'Descomponer: 23 × 17', conf: 0.95, type: 'decompose' },
+            { text: '23 × 10 = 230', conf: 0.98, type: 'compute' },
+            { text: '23 × 7 = ?', conf: 0.90, type: 'compute' },
+            { text: '20 × 7 = 140', conf: 0.97, type: 'compute' },
+            { text: '3 × 7 = 24 ✗', conf: 0.65, type: 'error', halluc: true },
+            { text: '140 + 24 = 164', conf: 0.70, type: 'combine' },
+            { text: '230 + 164 = 394', conf: 0.72, type: 'combine' },
+            { text: 'Respuesta: 394 ✗', conf: 0.68, type: 'answer', correct: false }
+        ],
+        directConf: 0.45,
+        directAnswer: '391',
+        directCorrect: true
+    },
+    {
+        question: 'Todos los A son B. X es A. ¿X es B?',
+        answer: 'Si',
+        type: 'logica',
+        cot: [
+            { text: 'Premisa 1: Todos los A son B', conf: 0.99, type: 'premise' },
+            { text: 'Premisa 2: X es A', conf: 0.99, type: 'premise' },
+            { text: 'Si X es A, y todos A son B...', conf: 0.95, type: 'reason' },
+            { text: 'Entonces X debe ser B', conf: 0.97, type: 'deduce' },
+            { text: 'Respuesta: Si, X es B', conf: 0.98, type: 'answer', correct: true }
+        ],
+        cotHalluc: [
+            { text: 'Premisa 1: Todos los A son B', conf: 0.99, type: 'premise' },
+            { text: 'Premisa 2: X es A', conf: 0.99, type: 'premise' },
+            { text: 'Pero ¿son TODOS?', conf: 0.50, type: 'error', halluc: true },
+            { text: 'Podria haber excepciones...', conf: 0.40, type: 'reason' },
+            { text: 'Respuesta: No necesariamente ✗', conf: 0.45, type: 'answer', correct: false }
+        ],
+        directConf: 0.85,
+        directAnswer: 'Si',
+        directCorrect: true
+    },
+    {
+        question: '2, 6, 18, 54, ?',
+        answer: '162',
+        type: 'secuencia',
+        cot: [
+            { text: 'Buscar patron entre numeros', conf: 0.90, type: 'decompose' },
+            { text: '6/2 = 3', conf: 0.98, type: 'compute' },
+            { text: '18/6 = 3', conf: 0.98, type: 'compute' },
+            { text: '54/18 = 3', conf: 0.98, type: 'compute' },
+            { text: 'Patron: multiplicar por 3', conf: 0.97, type: 'deduce' },
+            { text: '54 × 3 = 162', conf: 0.99, type: 'compute' },
+            { text: 'Respuesta: 162', conf: 0.98, type: 'answer', correct: true }
+        ],
+        cotHalluc: [
+            { text: 'Buscar patron entre numeros', conf: 0.90, type: 'decompose' },
+            { text: '6 - 2 = 4', conf: 0.80, type: 'compute' },
+            { text: '18 - 6 = 12', conf: 0.80, type: 'compute' },
+            { text: 'Diferencias: 4, 12... ×3?', conf: 0.55, type: 'reason' },
+            { text: '54 - 18 = 36', conf: 0.60, type: 'compute' },
+            { text: 'Siguiente dif: 36×3=108 ✗', conf: 0.40, type: 'error', halluc: true },
+            { text: 'Respuesta: 54+108=162', conf: 0.50, type: 'answer', correct: true }
+        ],
+        directConf: 0.70,
+        directAnswer: '162',
+        directCorrect: true
+    },
+    {
+        question: 'Dia:Noche :: Calor:?',
+        answer: 'Frio',
+        type: 'analogia',
+        cot: [
+            { text: 'Relacion: Dia y Noche', conf: 0.95, type: 'decompose' },
+            { text: 'Son opuestos', conf: 0.97, type: 'deduce' },
+            { text: 'Aplicar: opuesto de Calor', conf: 0.96, type: 'reason' },
+            { text: 'Respuesta: Frio', conf: 0.98, type: 'answer', correct: true }
+        ],
+        cotHalluc: [
+            { text: 'Relacion: Dia y Noche', conf: 0.95, type: 'decompose' },
+            { text: 'Noche sigue al dia', conf: 0.70, type: 'reason' },
+            { text: 'Lo que sigue al calor... ✗', conf: 0.35, type: 'error', halluc: true },
+            { text: 'Respuesta: Otoño ✗', conf: 0.30, type: 'answer', correct: false }
+        ],
+        directConf: 0.82,
+        directAnswer: 'Frio',
+        directCorrect: true
+    },
+    {
+        question: 'Tengo 5 manzanas. Doy 2. Me dan 3. Como 1. ¿Cuantas tengo?',
+        answer: '5',
+        type: 'multi-paso',
+        cot: [
+            { text: 'Inicio: 5 manzanas', conf: 0.99, type: 'premise' },
+            { text: 'Doy 2: 5 - 2 = 3', conf: 0.98, type: 'compute' },
+            { text: 'Me dan 3: 3 + 3 = 6', conf: 0.97, type: 'compute' },
+            { text: 'Como 1: 6 - 1 = 5', conf: 0.98, type: 'compute' },
+            { text: 'Respuesta: 5 manzanas', conf: 0.97, type: 'answer', correct: true }
+        ],
+        cotHalluc: [
+            { text: 'Inicio: 5 manzanas', conf: 0.99, type: 'premise' },
+            { text: 'Doy 2: 5 - 2 = 3', conf: 0.98, type: 'compute' },
+            { text: 'Me dan 3: 3 + 3 = 6', conf: 0.97, type: 'compute' },
+            { text: 'Olvido contar una... ✗', conf: 0.30, type: 'error', halluc: true },
+            { text: 'Como 1: 7 - 1 = 6 ✗', conf: 0.35, type: 'compute' },
+            { text: 'Respuesta: 6 manzanas ✗', conf: 0.40, type: 'answer', correct: false }
+        ],
+        directConf: 0.35,
+        directAnswer: '7',
+        directCorrect: false
+    }
+];
+
+// === STATE ===
+let currentProblem = 0;
+let treeNodes = [];
+let visibleNodes = 0;
+let directMode = false;
+let animating = false;
+let selectedNode = -1;
+let time = 0;
+let scrollY = 0;
+
+function getSteps() {
+    const p = PROBLEMS[currentProblem];
+    return CONFIG.hallucinate ? p.cotHalluc : p.cot;
+}
+
+function startCoT() {
+    initAudio();
+    const steps = getSteps();
+    treeNodes = steps.map((s, i) => ({
+        ...s,
+        x: 0, y: 0, // computed in layout
+        visible: false,
+        expandT: 0
+    }));
+    visibleNodes = 0;
+    directMode = false;
+    animating = true;
+    selectedNode = -1;
+    advanceNode();
+}
+
+function advanceNode() {
+    if (visibleNodes >= treeNodes.length) {
+        animating = false;
+        updateStats();
+        // Final sound
+        const lastNode = treeNodes[treeNodes.length - 1];
+        if (lastNode.correct) {
+            playNote(261.63, 0.3, 0.12); playNote(329.63, 0.3, 0.10); playNote(392, 0.4, 0.12);
+        } else {
+            playNote(233.08, 0.4, 0.15, 'sawtooth'); playNote(220, 0.4, 0.12, 'sawtooth');
+        }
+        return;
+    }
+
+    treeNodes[visibleNodes].visible = true;
+    const node = treeNodes[visibleNodes];
+
+    // Sound per node
+    const conf = node.conf;
+    const freq = 220 + conf * 300;
+    if (node.halluc) {
+        playNote(freq * 0.9, 0.2, 0.15, 'sawtooth');
+        playNote(freq * 1.1, 0.2, 0.12, 'sawtooth');
+    } else {
+        playNote(freq, 0.25, 0.12 * conf, 'triangle');
+    }
+
+    visibleNodes++;
+    updateStats();
+
+    if (animating) {
+        setTimeout(advanceNode, 700);
+    }
+}
+
+function startDirect() {
+    initAudio();
+    directMode = true;
+    treeNodes = [];
+    visibleNodes = 0;
+    animating = false;
+    updateStats();
+    playNote(330, 0.3, 0.1, 'sine');
+}
+
+function updateStats() {
+    const p = PROBLEMS[currentProblem];
+    const steps = getSteps();
+    document.getElementById('stat-nodes').textContent = visibleNodes;
+    document.getElementById('val-steps').textContent = steps.length;
+
+    if (visibleNodes > 0) {
+        const lastConf = steps[Math.min(visibleNodes - 1, steps.length - 1)].conf;
+        document.getElementById('stat-conf').textContent = (lastConf * 100).toFixed(0) + '%';
+        document.getElementById('val-cot-conf').textContent = (steps[steps.length - 1].conf * 100).toFixed(0) + '%';
+    }
+    document.getElementById('val-dir-conf').textContent = (p.directConf * 100).toFixed(0) + '%';
+
+    const cotLast = steps[steps.length - 1];
+    document.getElementById('val-cot-correct').textContent = cotLast.correct ? '✓' : '✗';
+    document.getElementById('val-dir-correct').textContent = p.directCorrect ? '✓' : '✗';
+}
+
+// === LAYOUT ===
+function layoutTree() {
+    const startX = 80;
+    const startY = 100;
+    const stepH = 65;
+    const indent = 25;
+
+    for (let i = 0; i < treeNodes.length; i++) {
+        const node = treeNodes[i];
+        const hasBacktrack = node.halluc;
+        node.x = startX + (hasBacktrack ? indent + 15 : indent);
+        node.y = startY + i * stepH - scrollY;
+    }
+}
+
+// === DRAWING ===
+function confColor(conf) {
+    if (conf > 0.85) return '#22c55e';
+    if (conf > 0.6) return '#eab308';
+    if (conf > 0.4) return '#f97316';
+    return '#ef4444';
+}
+
+function typeIcon(type) {
+    switch (type) {
+        case 'decompose': return '🔍';
+        case 'compute': return '🔢';
+        case 'combine': return '➕';
+        case 'deduce': return '💡';
+        case 'reason': return '🤔';
+        case 'premise': return '📌';
+        case 'answer': return '✅';
+        case 'error': return '⚠️';
+        default: return '•';
+    }
+}
+
+function draw() {
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(139,92,246,0.025)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 50) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 50) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    const p = PROBLEMS[currentProblem];
+
+    // Question
+    ctx.font = 'bold 16px Inter';
+    ctx.fillStyle = '#c4b5fd';
+    ctx.textAlign = 'left';
+    ctx.fillText('Problema:', 30, 35);
+    ctx.font = '14px Inter';
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillText(p.question, 30, 58);
+
+    // Answer line
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillStyle = 'rgba(139,92,246,0.4)';
+    ctx.fillText(`Respuesta correcta: ${p.answer}`, 30, 78);
+
+    if (directMode) {
+        // Direct answer mode
+        const cx = W / 2;
+        const cy = H / 2;
+
+        // Single node
+        const nodeW = 280;
+        const nodeH = 60;
+        ctx.fillStyle = p.directCorrect ? 'rgba(34,197,94,0.1)' : 'rgba(239,68,68,0.1)';
+        ctx.strokeStyle = p.directCorrect ? 'rgba(34,197,94,0.4)' : 'rgba(239,68,68,0.4)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(cx - nodeW / 2, cy - nodeH / 2, nodeW, nodeH, 10);
+        ctx.fill(); ctx.stroke();
+
+        ctx.font = 'bold 14px Inter';
+        ctx.fillStyle = '#f1f5f9';
+        ctx.textAlign = 'center';
+        ctx.fillText(`Respuesta directa: ${p.directAnswer}`, cx, cy - 5);
+        ctx.font = '12px JetBrains Mono';
+        ctx.fillStyle = p.directCorrect ? '#22c55e' : '#ef4444';
+        ctx.fillText(`Confianza: ${(p.directConf * 100).toFixed(0)}% | ${p.directCorrect ? 'Correcta ✓' : 'Incorrecta ✗'}`, cx, cy + 18);
+
+        // VS label
+        ctx.font = '11px Inter';
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Sin Chain of Thought: 1 paso, sin razonamiento intermedio', cx, cy + 60);
+
+        // Confidence bar
+        const barW = 200;
+        const barY = cy + 80;
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fillRect(cx - barW / 2, barY, barW, 8);
+        ctx.fillStyle = p.directCorrect ? 'rgba(34,197,94,0.5)' : 'rgba(239,68,68,0.5)';
+        ctx.fillRect(cx - barW / 2, barY, barW * p.directConf, 8);
+
+    } else if (treeNodes.length > 0) {
+        // CoT tree
+        layoutTree();
+
+        // Confidence progress bar at top
+        const barY = 88;
+        const barW = W - 60;
+        ctx.fillStyle = 'rgba(255,255,255,0.03)';
+        ctx.fillRect(30, barY, barW, 4);
+
+        let accumConf = 0;
+        for (let i = 0; i < visibleNodes; i++) accumConf += treeNodes[i].conf;
+        const avgConf = visibleNodes > 0 ? accumConf / visibleNodes : 0;
+        ctx.fillStyle = `${confColor(avgConf)}80`;
+        ctx.fillRect(30, barY, barW * avgConf, 4);
+
+        // Draw connecting lines
+        for (let i = 1; i < treeNodes.length; i++) {
+            if (!treeNodes[i].visible) continue;
+            const prev = treeNodes[i - 1];
+            const curr = treeNodes[i];
+
+            ctx.strokeStyle = curr.halluc ? 'rgba(239,68,68,0.3)' : 'rgba(139,92,246,0.2)';
+            ctx.lineWidth = curr.halluc ? 1.5 : 1;
+            ctx.setLineDash(curr.halluc ? [4, 4] : []);
+            ctx.beginPath();
+            ctx.moveTo(prev.x, prev.y + 20);
+            ctx.lineTo(curr.x, curr.y - 5);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Draw nodes
+        for (let i = 0; i < treeNodes.length; i++) {
+            const node = treeNodes[i];
+            if (!node.visible) continue;
+
+            const nx = node.x;
+            const ny = node.y;
+            const isSelected = i === selectedNode;
+            const nodeW = Math.min(W - nx - 30, 400);
+            const nodeH = 40;
+
+            // Node background
+            const bgColor = node.halluc ? 'rgba(239,68,68,0.08)' :
+                            node.type === 'answer' ? (node.correct ? 'rgba(34,197,94,0.08)' : 'rgba(239,68,68,0.08)') :
+                            'rgba(139,92,246,0.05)';
+            const borderColor = node.halluc ? 'rgba(239,68,68,0.3)' :
+                               node.type === 'answer' ? (node.correct ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)') :
+                               'rgba(139,92,246,0.15)';
+
+            ctx.fillStyle = bgColor;
+            ctx.strokeStyle = isSelected ? '#fff' : borderColor;
+            ctx.lineWidth = isSelected ? 2 : 1;
+            ctx.beginPath();
+            ctx.roundRect(nx - 5, ny - nodeH / 2, nodeW, nodeH, 8);
+            ctx.fill(); ctx.stroke();
+
+            // Confidence bar
+            if (CONFIG.showConf) {
+                const confBarW = 4;
+                const confBarH = nodeH - 8;
+                ctx.fillStyle = confColor(node.conf);
+                ctx.fillRect(nx - 5, ny - confBarH / 2, confBarW, confBarH * node.conf);
+            }
+
+            // Step number circle
+            ctx.beginPath();
+            ctx.arc(nx + 14, ny, 12, 0, Math.PI * 2);
+            ctx.fillStyle = node.halluc ? 'rgba(239,68,68,0.2)' : 'rgba(139,92,246,0.15)';
+            ctx.fill();
+            ctx.font = 'bold 10px JetBrains Mono';
+            ctx.fillStyle = node.halluc ? '#ef4444' : '#8b5cf6';
+            ctx.textAlign = 'center';
+            ctx.fillText(i + 1, nx + 14, ny + 3);
+
+            // Text
+            ctx.font = '12px Inter';
+            ctx.fillStyle = node.halluc ? '#fca5a5' : '#e2e8f0';
+            ctx.textAlign = 'left';
+            ctx.fillText(node.text, nx + 32, ny + 4);
+
+            // Confidence percentage
+            if (CONFIG.showConf) {
+                ctx.font = '10px JetBrains Mono';
+                ctx.fillStyle = confColor(node.conf);
+                ctx.textAlign = 'right';
+                ctx.fillText(`${(node.conf * 100).toFixed(0)}%`, nx + nodeW - 12, ny + 4);
+            }
+        }
+    } else {
+        // Idle state
+        ctx.font = '14px Inter';
+        ctx.fillStyle = 'rgba(139,92,246,0.3)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Selecciona un problema y pulsa "Resolver con CoT"', W / 2, H / 2);
+    }
+
+    time += 0.016;
+}
+
+// === CLICK HANDLER ===
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const my = e.clientY - rect.top;
+
+    for (let i = 0; i < treeNodes.length; i++) {
+        if (!treeNodes[i].visible) continue;
+        if (Math.abs(my - treeNodes[i].y) < 20) {
+            selectedNode = i;
+            initAudio();
+            playNote(300 + treeNodes[i].conf * 200, 0.2, 0.1, 'triangle');
+            break;
+        }
+    }
+});
+
+// Scroll
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    scrollY += e.deltaY * 0.5;
+    scrollY = Math.max(0, scrollY);
+});
+
+// === CONTROLS ===
+document.getElementById('btn-solve').addEventListener('click', startCoT);
+document.getElementById('btn-direct').addEventListener('click', startDirect);
+document.getElementById('btn-reset').addEventListener('click', () => {
+    treeNodes = []; visibleNodes = 0; directMode = false; animating = false; selectedNode = -1; scrollY = 0;
+    document.getElementById('stat-nodes').textContent = '0';
+    document.getElementById('stat-conf').textContent = '-';
+});
+document.getElementById('sel-problem').addEventListener('change', (e) => {
+    currentProblem = parseInt(e.target.value);
+    treeNodes = []; visibleNodes = 0; directMode = false; animating = false; selectedNode = -1; scrollY = 0;
+});
+document.getElementById('chk-halluc').addEventListener('change', (e) => { CONFIG.hallucinate = e.target.checked; });
+document.getElementById('chk-conf').addEventListener('change', (e) => { CONFIG.showConf = e.target.checked; });
+document.getElementById('sl-vol').addEventListener('input', (e) => {
+    CONFIG.volume = e.target.value / 100;
+    document.getElementById('val-vol').textContent = e.target.value + '%';
+    if (masterGain) masterGain.gain.value = CONFIG.volume;
+});
+document.getElementById('btn-mute').addEventListener('click', () => {
+    CONFIG.audioEnabled = !CONFIG.audioEnabled;
+    document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio';
+});
+
+// === LOOP ===
+function loop() { draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSTM Memory Cells - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --module-color: #f59e0b;
+            --module-dim: rgba(245, 158, 11, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+            --gate-forget: #ef4444;
+            --gate-input: #22c55e;
+            --gate-output: #3b82f6;
+            --cell-state: #f59e0b;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .header-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-secondary); display: flex; gap: 12px; }
+        .header-stats .hs-val { color: var(--module-color); }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .tooltip { position: absolute; pointer-events: none; background: rgba(15,23,42,0.92); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; color: var(--text-primary); z-index: 20; backdrop-filter: blur(6px); display: none; min-width: 190px; line-height: 1.55; }
+        .tooltip .tt-label { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .tooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .overlay-badge { position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.85); border: 1px solid rgba(245,158,11,0.25); border-radius: 8px; padding: 6px 14px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-primary); backdrop-filter: blur(6px); z-index: 5; }
+        .controls { width: 360px; min-width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .controls::-webkit-scrollbar { width: 5px; }
+        .controls::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 0.95rem; color: var(--text-primary); line-height: 1.7; text-align: center; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 6px; }
+        .control-section h3 .ico { font-size: 0.85rem; }
+        .slider-group { margin-bottom: 0.65rem; }
+        .slider-group:last-child { margin-bottom: 0; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.2rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.74rem; }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+        .btn { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.76rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: #030712; border-color: var(--module-color); font-weight: 600; }
+        .btn-accent:hover { opacity: 0.85; color: #030712; }
+        .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.3rem 0.55rem; font-size: 0.68rem; }
+        select { width: 100%; padding: 0.45rem 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.76rem; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.76rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .stat:last-child { border-bottom: none; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.72rem; }
+        .gate-bar { height: 6px; border-radius: 3px; margin-top: 4px; transition: width 0.3s; }
+        .seq-input { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; letter-spacing: 2px; }
+        .explain-section { background: rgba(245,158,11,0.04); border-radius: 10px; padding: 0.9rem 1rem; border: 1px solid rgba(245,158,11,0.08); }
+        .explain-section h4 { font-size: 0.78rem; font-weight: 600; margin-bottom: 0.45rem; color: var(--text-primary); }
+        .explain-section p { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.35rem; }
+        .explain-section p:last-child { margin-bottom: 0; }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'Times New Roman', serif; font-style: italic; color: var(--text-primary); background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+        .explain-section ul { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; padding-left: 1.1rem; margin-bottom: 0.35rem; }
+        .explain-section ul:last-child { margin-bottom: 0; }
+        .explain-section li { margin-bottom: 0.2rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>LSTM Memory Cells</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                LSTM Memory Cells
+            </nav>
+        </div>
+        <div class="header-stats">
+            <span>Paso: <span class="hs-val" id="hs-step">0</span>/<span class="hs-val" id="hs-total">0</span></span>
+            <span>Prediccion: <span class="hs-val" id="hs-pred">-</span></span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+            <div class="overlay-badge" id="badge-info">Introduce una secuencia</div>
+        </div>
+
+        <aside class="controls">
+            <div class="equation-box">
+                f<sub>t</sub> = &sigma;(W<sub>f</sub>&middot;[h<sub>t-1</sub>, x<sub>t</sub>] + b<sub>f</sub>)
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9998;</span> Secuencia</h3>
+                <input type="text" class="seq-input" id="seq-input" value="abcabcabc" maxlength="20" placeholder="Escribe una secuencia...">
+                <div class="btn-group" style="margin-top: 0.5rem;">
+                    <button class="btn btn-sm" onclick="setSeq('abcabcabc')">Repetitiva</button>
+                    <button class="btn btn-sm" onclick="setSeq('aabbccaabb')">Pares</button>
+                    <button class="btn btn-sm" onclick="setSeq('abcdefgh')">Secuencial</button>
+                    <button class="btn btn-sm" onclick="setSeq('abbaabba')">Palindromo</button>
+                    <button class="btn btn-sm" onclick="setSeq('aaaaaaaaaa')">Monotona</button>
+                    <button class="btn btn-sm" onclick="setRandom()">Aleatoria</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9654;</span> Control</h3>
+                <div class="btn-group" style="margin-bottom: 0.5rem;">
+                    <button class="btn btn-accent" id="btn-run">Procesar</button>
+                    <button class="btn" id="btn-step">Paso a paso</button>
+                    <button class="btn" id="btn-animate">Animar</button>
+                </div>
+                <div class="slider-group">
+                    <label>Unidades LSTM <span id="val-units">8</span></label>
+                    <input type="range" id="sl-units" min="4" max="16" step="4" value="8">
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9881;</span> Forzar compuertas</h3>
+                <div class="slider-group">
+                    <label>Forget gate <span id="val-fg" style="color:var(--gate-forget)">Auto</span></label>
+                    <input type="range" id="sl-fg" min="-1" max="100" step="1" value="-1">
+                </div>
+                <div class="slider-group">
+                    <label>Input gate <span id="val-ig" style="color:var(--gate-input)">Auto</span></label>
+                    <input type="range" id="sl-ig" min="-1" max="100" step="1" value="-1">
+                </div>
+                <div class="slider-group">
+                    <label>Output gate <span id="val-og" style="color:var(--gate-output)">Auto</span></label>
+                    <input type="range" id="sl-og" min="-1" max="100" step="1" value="-1">
+                </div>
+                <div style="font-size:0.62rem;color:var(--text-muted)">-1 = automatico (red decide). 0-100 = forzar valor.</div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9836;</span> Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" step="1" value="30">
+                </div>
+                <button class="btn btn-sm" id="btn-audio">Audio: ON</button>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9776;</span> Estado actual</h3>
+                <div class="stat"><span>Paso</span><span class="stat-value" id="m-step">0</span></div>
+                <div class="stat"><span>Caracter</span><span class="stat-value" id="m-char">-</span></div>
+                <div class="stat"><span>Prediccion</span><span class="stat-value" id="m-pred">-</span></div>
+                <div class="stat"><span>|Cell state|</span><span class="stat-value" id="m-cell">-</span></div>
+                <div class="stat"><span>|Hidden|</span><span class="stat-value" id="m-hidden">-</span></div>
+                <div style="margin-top: 6px;">
+                    <div style="font-size:0.68rem;color:var(--gate-forget);margin-bottom:2px">Forget: <span id="m-fg">-</span></div>
+                    <div class="gate-bar" id="bar-fg" style="background:var(--gate-forget);width:0%"></div>
+                    <div style="font-size:0.68rem;color:var(--gate-input);margin-bottom:2px;margin-top:4px">Input: <span id="m-ig">-</span></div>
+                    <div class="gate-bar" id="bar-ig" style="background:var(--gate-input);width:0%"></div>
+                    <div style="font-size:0.68rem;color:var(--gate-output);margin-bottom:2px;margin-top:4px">Output: <span id="m-og">-</span></div>
+                    <div class="gate-bar" id="bar-og" style="background:var(--gate-output);width:0%"></div>
+                </div>
+            </div>
+
+            <div class="explain-section">
+                <h4>¿Que es una celula LSTM?</h4>
+                <p>Una LSTM (<span class="hl">Long Short-Term Memory</span>) es un tipo de red recurrente que resuelve el problema de la <span class="hl">memoria a largo plazo</span>. Tiene tres compuertas que controlan el flujo de informacion:</p>
+                <ul>
+                    <li><span style="color:var(--gate-forget)">Forget gate:</span> que olvidar de la memoria</li>
+                    <li><span style="color:var(--gate-input)">Input gate:</span> que nueva informacion guardar</li>
+                    <li><span style="color:var(--gate-output)">Output gate:</span> que parte de la memoria usar</li>
+                </ul>
+            </div>
+
+            <div class="explain-section">
+                <h4>Cell state: el rio de la memoria</h4>
+                <p>El <span class="hl">cell state</span> (C<sub>t</sub>) fluye horizontalmente a traves del tiempo, como un rio. Las compuertas pueden <span class="hl">borrar</span> informacion (forget gate = 0) o <span class="hl">anadir</span> nueva (input gate = 1).</p>
+                <p>Formula: <span class="eq">C<sub>t</sub> = f<sub>t</sub> ⊙ C<sub>t-1</sub> + i<sub>t</sub> ⊙ C&#771;<sub>t</sub></span></p>
+            </div>
+
+            <div class="explain-section">
+                <h4>¿Por que importan las LSTM?</h4>
+                <p>Las RNN simples pierden informacion rapidamente (<span class="hl">vanishing gradient</span>). Las LSTM mantienen memoria durante cientos de pasos. Son fundamentales en:</p>
+                <ul>
+                    <li>Procesamiento de lenguaje natural</li>
+                    <li>Prediccion de series temporales</li>
+                    <li>Generacion de musica y texto</li>
+                    <li>Traduccion automatica (antes de Transformers)</li>
+                </ul>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+    // === CONFIG ===
+    const CONFIG = {
+        units: 8,
+        volume: 0.3,
+        audioEnabled: true,
+        forceForget: -1,
+        forceInput: -1,
+        forceOutput: -1
+    };
+
+    // === CANVAS ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, dpr;
+
+    function resizeCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        W = rect.width; H = rect.height;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // === AUDIO ===
+    let audioContext = null, masterGain = null, compressor = null;
+
+    function initAudio() {
+        if (audioContext) return;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        compressor = audioContext.createDynamicsCompressor();
+        compressor.threshold.value = -20; compressor.ratio.value = 4;
+        compressor.connect(audioContext.destination);
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = CONFIG.volume;
+        masterGain.connect(compressor);
+    }
+
+    function playNote(freq, dur, vol = 0.06, delay = 0, type = 'sine') {
+        if (!audioContext || !CONFIG.audioEnabled) return;
+        masterGain.gain.value = CONFIG.volume;
+        const now = audioContext.currentTime + delay;
+        const osc = audioContext.createOscillator();
+        osc.type = type;
+        osc.frequency.value = Math.max(80, Math.min(2000, freq));
+        const lp = audioContext.createBiquadFilter();
+        lp.type = 'lowpass'; lp.frequency.value = Math.min(3000, freq * 2.5); lp.Q.value = 0.7;
+        const env = audioContext.createGain();
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(vol, now + 0.015);
+        env.gain.setValueAtTime(vol, now + dur * 0.5);
+        env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(lp); lp.connect(env); env.connect(masterGain);
+        osc.start(now); osc.stop(now + dur + 0.05);
+    }
+
+    // === LSTM IMPLEMENTATION ===
+    const VOCAB = 'abcdefghijklmnopqrstuvwxyz';
+    const VOCAB_SIZE = VOCAB.length;
+
+    function gaussianRandom() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function sigmoid(x) { return 1 / (1 + Math.exp(-Math.max(-500, Math.min(500, x)))); }
+    function tanh2(x) { return Math.tanh(x); }
+
+    class LSTMCell {
+        constructor(inputSize, hiddenSize) {
+            this.inputSize = inputSize;
+            this.hiddenSize = hiddenSize;
+            const totalIn = inputSize + hiddenSize;
+            // 4 gates: forget, input, cell_candidate, output
+            const scale = Math.sqrt(1 / totalIn);
+            this.Wf = this.initMatrix(hiddenSize, totalIn, scale);
+            this.Wi = this.initMatrix(hiddenSize, totalIn, scale);
+            this.Wc = this.initMatrix(hiddenSize, totalIn, scale);
+            this.Wo = this.initMatrix(hiddenSize, totalIn, scale);
+            this.bf = new Float64Array(hiddenSize).fill(1); // forget bias = 1 (remember by default)
+            this.bi = new Float64Array(hiddenSize);
+            this.bc = new Float64Array(hiddenSize);
+            this.bo = new Float64Array(hiddenSize);
+        }
+
+        initMatrix(rows, cols, scale) {
+            const m = [];
+            for (let r = 0; r < rows; r++) {
+                m[r] = new Float64Array(cols);
+                for (let c = 0; c < cols; c++) m[r][c] = gaussianRandom() * scale;
+            }
+            return m;
+        }
+
+        forward(x, hPrev, cPrev) {
+            const hs = this.hiddenSize;
+            const concat = new Float64Array(this.inputSize + hs);
+            concat.set(hPrev, 0);
+            concat.set(x, hs);
+
+            const fg = new Float64Array(hs);
+            const ig = new Float64Array(hs);
+            const cg = new Float64Array(hs);
+            const og = new Float64Array(hs);
+
+            for (let j = 0; j < hs; j++) {
+                let sf = this.bf[j], si = this.bi[j], sc = this.bc[j], so = this.bo[j];
+                for (let k = 0; k < concat.length; k++) {
+                    sf += this.Wf[j][k] * concat[k];
+                    si += this.Wi[j][k] * concat[k];
+                    sc += this.Wc[j][k] * concat[k];
+                    so += this.Wo[j][k] * concat[k];
+                }
+                fg[j] = CONFIG.forceForget >= 0 ? CONFIG.forceForget / 100 : sigmoid(sf);
+                ig[j] = CONFIG.forceInput >= 0 ? CONFIG.forceInput / 100 : sigmoid(si);
+                cg[j] = tanh2(sc);
+                og[j] = CONFIG.forceOutput >= 0 ? CONFIG.forceOutput / 100 : sigmoid(so);
+            }
+
+            const cNew = new Float64Array(hs);
+            const hNew = new Float64Array(hs);
+            for (let j = 0; j < hs; j++) {
+                cNew[j] = fg[j] * cPrev[j] + ig[j] * cg[j];
+                hNew[j] = og[j] * tanh2(cNew[j]);
+            }
+
+            return { h: hNew, c: cNew, fg, ig, og, cg };
+        }
+    }
+
+    // Output layer: hidden → vocab logits
+    class OutputLayer {
+        constructor(hiddenSize, vocabSize) {
+            const scale = Math.sqrt(1 / hiddenSize);
+            this.W = [];
+            this.b = new Float64Array(vocabSize);
+            for (let j = 0; j < vocabSize; j++) {
+                this.W[j] = new Float64Array(hiddenSize);
+                for (let i = 0; i < hiddenSize; i++) this.W[j][i] = gaussianRandom() * scale;
+            }
+        }
+
+        forward(h) {
+            const logits = new Float64Array(this.W.length);
+            for (let j = 0; j < this.W.length; j++) {
+                let sum = this.b[j];
+                for (let i = 0; i < h.length; i++) sum += this.W[j][i] * h[i];
+                logits[j] = sum;
+            }
+            // Softmax
+            let maxL = -Infinity;
+            for (const l of logits) if (l > maxL) maxL = l;
+            const exps = new Float64Array(logits.length);
+            let sumExp = 0;
+            for (let i = 0; i < logits.length; i++) {
+                exps[i] = Math.exp(logits[i] - maxL);
+                sumExp += exps[i];
+            }
+            const probs = new Float64Array(logits.length);
+            for (let i = 0; i < logits.length; i++) probs[i] = exps[i] / sumExp;
+            return probs;
+        }
+    }
+
+    // === STATE ===
+    let lstm = null;
+    let outputLayer = null;
+    let steps = []; // { char, x_onehot, h, c, fg, ig, og, cg, probs, prediction }
+    let currentStep = -1;
+    let isAnimating = false;
+    let animTimer = null;
+    let mouseX = -1, mouseY = -1;
+    let hoverStep = -1;
+
+    function buildNetwork() {
+        lstm = new LSTMCell(VOCAB_SIZE, CONFIG.units);
+        outputLayer = new OutputLayer(CONFIG.units, VOCAB_SIZE);
+    }
+
+    function charToOneHot(ch) {
+        const v = new Float64Array(VOCAB_SIZE);
+        const idx = VOCAB.indexOf(ch);
+        if (idx >= 0) v[idx] = 1;
+        return v;
+    }
+
+    function processSequence(seq) {
+        initAudio();
+        const hs = CONFIG.units;
+        let h = new Float64Array(hs);
+        let c = new Float64Array(hs);
+        steps = [];
+
+        for (let t = 0; t < seq.length; t++) {
+            const ch = seq[t];
+            const x = charToOneHot(ch);
+            const result = lstm.forward(x, h, c);
+
+            const probs = outputLayer.forward(result.h);
+            let predIdx = 0;
+            for (let i = 1; i < probs.length; i++) if (probs[i] > probs[predIdx]) predIdx = i;
+
+            steps.push({
+                char: ch,
+                x: x,
+                h: result.h,
+                c: result.c,
+                fg: result.fg,
+                ig: result.ig,
+                og: result.og,
+                cg: result.cg,
+                probs: probs,
+                prediction: VOCAB[predIdx],
+                predConf: probs[predIdx]
+            });
+
+            h = result.h;
+            c = result.c;
+        }
+
+        currentStep = steps.length - 1;
+        updateStepDisplay();
+    }
+
+    function updateStepDisplay() {
+        if (currentStep < 0 || currentStep >= steps.length) return;
+        const s = steps[currentStep];
+        document.getElementById('hs-step').textContent = currentStep + 1;
+        document.getElementById('hs-total').textContent = steps.length;
+        document.getElementById('hs-pred').textContent = s.prediction;
+        document.getElementById('m-step').textContent = currentStep + 1;
+        document.getElementById('m-char').textContent = `'${s.char}'`;
+        document.getElementById('m-pred').textContent = `'${s.prediction}' (${(s.predConf * 100).toFixed(1)}%)`;
+
+        // Gate averages
+        const avgFg = avg(s.fg), avgIg = avg(s.ig), avgOg = avg(s.og);
+        document.getElementById('m-fg').textContent = avgFg.toFixed(3);
+        document.getElementById('m-ig').textContent = avgIg.toFixed(3);
+        document.getElementById('m-og').textContent = avgOg.toFixed(3);
+        document.getElementById('bar-fg').style.width = (avgFg * 100) + '%';
+        document.getElementById('bar-ig').style.width = (avgIg * 100) + '%';
+        document.getElementById('bar-og').style.width = (avgOg * 100) + '%';
+
+        const cellNorm = Math.sqrt(s.c.reduce((a, v) => a + v * v, 0) / s.c.length);
+        const hiddenNorm = Math.sqrt(s.h.reduce((a, v) => a + v * v, 0) / s.h.length);
+        document.getElementById('m-cell').textContent = cellNorm.toFixed(4);
+        document.getElementById('m-hidden').textContent = hiddenNorm.toFixed(4);
+
+        document.getElementById('badge-info').textContent = `Paso ${currentStep + 1}/${steps.length} · '${s.char}' → '${s.prediction}'`;
+    }
+
+    function avg(arr) {
+        let s = 0; for (let i = 0; i < arr.length; i++) s += arr[i]; return s / arr.length;
+    }
+
+    function sonifyStep(step) {
+        if (!audioContext || !CONFIG.audioEnabled) return;
+        const s = steps[step];
+        // Input char → base note
+        const charIdx = VOCAB.indexOf(s.char);
+        const baseFreq = 220 + charIdx * 30;
+        playNote(baseFreq, 0.15, 0.04);
+
+        // Cell state magnitude → bass note
+        const cellMag = Math.sqrt(s.c.reduce((a, v) => a + v * v, 0) / s.c.length);
+        const bassFreq = 80 + cellMag * 60;
+        playNote(bassFreq, 0.2, 0.03, 0.05, 'triangle');
+
+        // Forget gate → reverb-like decay (high forget = open, low = cut)
+        const avgF = avg(s.fg);
+        if (avgF < 0.3) {
+            playNote(150, 0.05, 0.02, 0.1); // sharp cut
+        }
+    }
+
+    // === RENDERING ===
+    const tooltipEl = document.getElementById('tooltip');
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    });
+    canvas.addEventListener('mouseleave', () => {
+        mouseX = mouseY = -1;
+        tooltipEl.style.display = 'none';
+        hoverStep = -1;
+    });
+
+    function getStepLayout() {
+        const n = steps.length;
+        if (n === 0) return [];
+        const margin = { l: 60, r: 40, t: 70, b: 80 };
+        const usableW = W - margin.l - margin.r;
+        const spacing = Math.min(usableW / n, 100);
+        const totalW = spacing * n;
+        const startX = margin.l + (usableW - totalW) / 2;
+        const layout = [];
+        for (let i = 0; i < n; i++) {
+            layout.push({
+                x: startX + i * spacing + spacing / 2,
+                y: H * 0.5,
+                w: spacing
+            });
+        }
+        return layout;
+    }
+
+    function draw(time) {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, W, H);
+
+        if (steps.length === 0) {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '15px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Escribe una secuencia y pulsa "Procesar"', W / 2, H / 2);
+            return;
+        }
+
+        const layout = getStepLayout();
+        const n = steps.length;
+        const cellY = H * 0.35;
+        const hiddenY = H * 0.58;
+        const gateY = H * 0.72;
+        const charY = H * 0.15;
+        const predY = H * 0.88;
+
+        // === CELL STATE RIVER ===
+        // Draw the cell state flow line
+        ctx.strokeStyle = 'rgba(245,158,11,0.15)';
+        ctx.lineWidth = 30;
+        ctx.beginPath();
+        ctx.moveTo(layout[0].x - layout[0].w / 2, cellY);
+        ctx.lineTo(layout[n - 1].x + layout[n - 1].w / 2, cellY);
+        ctx.stroke();
+
+        // Cell state magnitude line
+        ctx.strokeStyle = 'var(--cell-state)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+            const s = steps[i];
+            const mag = Math.sqrt(s.c.reduce((a, v) => a + v * v, 0) / s.c.length);
+            const thickness = Math.min(mag * 15, 25);
+            const x = layout[i].x;
+            // Draw cell state as ribbon with varying height
+            if (i === 0) ctx.moveTo(x, cellY - thickness / 2);
+            else ctx.lineTo(x, cellY - thickness / 2);
+        }
+        for (let i = n - 1; i >= 0; i--) {
+            const s = steps[i];
+            const mag = Math.sqrt(s.c.reduce((a, v) => a + v * v, 0) / s.c.length);
+            const thickness = Math.min(mag * 15, 25);
+            ctx.lineTo(layout[i].x, cellY + thickness / 2);
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(245,158,11,0.15)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(245,158,11,0.4)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = 'rgba(245,158,11,0.5)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Cell State (C_t)', layout[0].x - layout[0].w / 2 - 5, cellY - 20);
+
+        // Hidden state line
+        ctx.setLineDash([4, 4]);
+        ctx.strokeStyle = 'rgba(100,200,255,0.3)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        for (let i = 0; i < n; i++) {
+            const s = steps[i];
+            const mag = Math.sqrt(s.h.reduce((a, v) => a + v * v, 0) / s.h.length);
+            const y = hiddenY - mag * 20;
+            if (i === 0) ctx.moveTo(layout[i].x, y); else ctx.lineTo(layout[i].x, y);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = 'rgba(100,200,255,0.4)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillText('Hidden State (h_t)', layout[0].x - layout[0].w / 2 - 5, hiddenY - 25);
+
+        // === PER-STEP ELEMENTS ===
+        for (let i = 0; i < n; i++) {
+            const s = steps[i];
+            const x = layout[i].x;
+            const sw = layout[i].w;
+            const isActive = i === currentStep;
+            const isHover = i === hoverStep;
+
+            // Highlight column
+            if (isActive || isHover) {
+                ctx.fillStyle = isActive ? 'rgba(245,158,11,0.05)' : 'rgba(255,255,255,0.02)';
+                ctx.fillRect(x - sw / 2, 0, sw, H);
+            }
+
+            // Input character box
+            const charBoxSize = Math.min(sw * 0.6, 32);
+            ctx.fillStyle = isActive ? 'rgba(245,158,11,0.2)' : 'rgba(30,41,59,0.8)';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(x - charBoxSize / 2, charY - charBoxSize / 2, charBoxSize, charBoxSize, 6);
+            else ctx.rect(x - charBoxSize / 2, charY - charBoxSize / 2, charBoxSize, charBoxSize);
+            ctx.fill();
+            ctx.strokeStyle = isActive ? 'rgba(245,158,11,0.5)' : 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = isActive ? '#f59e0b' : '#ccc';
+            ctx.font = `${isActive ? 'bold ' : ''}${Math.min(14, sw * 0.4)}px "JetBrains Mono", monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillText(s.char, x, charY + 5);
+
+            // Step number
+            ctx.fillStyle = 'rgba(255,255,255,0.2)';
+            ctx.font = '8px "JetBrains Mono", monospace';
+            ctx.fillText(`t=${i + 1}`, x, charY - charBoxSize / 2 - 6);
+
+            // Arrow from input to cell
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            ctx.moveTo(x, charY + charBoxSize / 2 + 2);
+            ctx.lineTo(x, cellY - 18);
+            ctx.stroke();
+
+            // Gate visualization (3 small bars)
+            const gateBarW = Math.min(sw * 0.7, 40);
+            const gateBarH = 5;
+            const gateSpacing = 10;
+            const gateStartY = gateY;
+
+            // Forget gate
+            const fgVal = avg(s.fg);
+            ctx.fillStyle = 'rgba(30,41,59,0.6)';
+            ctx.fillRect(x - gateBarW / 2, gateStartY, gateBarW, gateBarH);
+            ctx.fillStyle = `rgba(239,68,68,${0.4 + fgVal * 0.6})`;
+            ctx.fillRect(x - gateBarW / 2, gateStartY, gateBarW * fgVal, gateBarH);
+
+            // Input gate
+            const igVal = avg(s.ig);
+            ctx.fillStyle = 'rgba(30,41,59,0.6)';
+            ctx.fillRect(x - gateBarW / 2, gateStartY + gateSpacing, gateBarW, gateBarH);
+            ctx.fillStyle = `rgba(34,197,94,${0.4 + igVal * 0.6})`;
+            ctx.fillRect(x - gateBarW / 2, gateStartY + gateSpacing, gateBarW * igVal, gateBarH);
+
+            // Output gate
+            const ogVal = avg(s.og);
+            ctx.fillStyle = 'rgba(30,41,59,0.6)';
+            ctx.fillRect(x - gateBarW / 2, gateStartY + gateSpacing * 2, gateBarW, gateBarH);
+            ctx.fillStyle = `rgba(59,130,246,${0.4 + ogVal * 0.6})`;
+            ctx.fillRect(x - gateBarW / 2, gateStartY + gateSpacing * 2, gateBarW * ogVal, gateBarH);
+
+            // Gate labels (only if enough space)
+            if (sw > 50) {
+                ctx.font = '7px "JetBrains Mono", monospace';
+                ctx.textAlign = 'right';
+                ctx.fillStyle = 'rgba(239,68,68,0.5)'; ctx.fillText('F', x - gateBarW / 2 - 3, gateStartY + 5);
+                ctx.fillStyle = 'rgba(34,197,94,0.5)'; ctx.fillText('I', x - gateBarW / 2 - 3, gateStartY + gateSpacing + 5);
+                ctx.fillStyle = 'rgba(59,130,246,0.5)'; ctx.fillText('O', x - gateBarW / 2 - 3, gateStartY + gateSpacing * 2 + 5);
+            }
+
+            // Cell state dot at this step
+            const cellMag = Math.sqrt(s.c.reduce((a, v) => a + v * v, 0) / s.c.length);
+            const dotR = Math.min(cellMag * 4 + 3, 10);
+            const g = ctx.createRadialGradient(x, cellY, 0, x, cellY, dotR + 4);
+            g.addColorStop(0, 'rgba(245,158,11,0.6)');
+            g.addColorStop(1, 'rgba(245,158,11,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath();
+            ctx.arc(x, cellY, dotR + 4, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.beginPath();
+            ctx.arc(x, cellY, dotR, 0, Math.PI * 2);
+            ctx.fillStyle = '#f59e0b';
+            ctx.fill();
+
+            // Hidden state dot
+            const hidMag = Math.sqrt(s.h.reduce((a, v) => a + v * v, 0) / s.h.length);
+            const hDotR = Math.min(hidMag * 4 + 2, 8);
+            ctx.beginPath();
+            ctx.arc(x, hiddenY, hDotR, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(100,200,255,0.7)';
+            ctx.fill();
+
+            // Prediction box
+            const predBoxSize = charBoxSize * 0.85;
+            ctx.fillStyle = 'rgba(15,23,42,0.6)';
+            ctx.beginPath();
+            if (ctx.roundRect) ctx.roundRect(x - predBoxSize / 2, predY - predBoxSize / 2, predBoxSize, predBoxSize, 5);
+            else ctx.rect(x - predBoxSize / 2, predY - predBoxSize / 2, predBoxSize, predBoxSize);
+            ctx.fill();
+
+            // Check if prediction matches next character
+            const nextChar = i < n - 1 ? steps[i + 1].char : null;
+            const correct = nextChar && s.prediction === nextChar;
+            ctx.strokeStyle = correct ? 'rgba(34,197,94,0.5)' : 'rgba(100,100,130,0.2)';
+            ctx.lineWidth = correct ? 1.5 : 0.8;
+            ctx.stroke();
+
+            ctx.fillStyle = correct ? '#22c55e' : 'rgba(200,200,220,0.5)';
+            ctx.font = `${Math.min(12, sw * 0.35)}px "JetBrains Mono", monospace`;
+            ctx.textAlign = 'center';
+            ctx.fillText(s.prediction, x, predY + 4);
+
+            // Confidence
+            ctx.fillStyle = 'rgba(255,255,255,0.15)';
+            ctx.font = '7px "JetBrains Mono", monospace';
+            ctx.fillText(`${(s.predConf * 100).toFixed(0)}%`, x, predY + predBoxSize / 2 + 10);
+        }
+
+        // Gate legend
+        const legendY = gateY + 38;
+        ctx.font = '8px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'rgba(239,68,68,0.6)'; ctx.fillText('Forget', W * 0.3, legendY);
+        ctx.fillStyle = 'rgba(34,197,94,0.6)'; ctx.fillText('Input', W * 0.45, legendY);
+        ctx.fillStyle = 'rgba(59,130,246,0.6)'; ctx.fillText('Output', W * 0.6, legendY);
+
+        // Labels
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Input', layout[0].x - layout[0].w, charY);
+        ctx.fillText('Prediccion →', layout[0].x - layout[0].w, predY);
+
+        // Tooltip
+        updateTooltip(layout);
+    }
+
+    function updateTooltip(layout) {
+        hoverStep = -1;
+        if (mouseX < 0 || steps.length === 0) {
+            tooltipEl.style.display = 'none';
+            return;
+        }
+
+        for (let i = 0; i < layout.length; i++) {
+            if (Math.abs(mouseX - layout[i].x) < layout[i].w / 2 && mouseY > 50 && mouseY < H - 30) {
+                hoverStep = i;
+                const s = steps[i];
+                const nextChar = i < steps.length - 1 ? steps[i + 1].char : '?';
+                const correct = s.prediction === nextChar;
+                tooltipEl.innerHTML = `
+                    <div class="tt-label">Paso ${i + 1}</div>
+                    <div>Input: <span class="tt-val">'${s.char}'</span></div>
+                    <div>Prediccion: <span class="tt-val">'${s.prediction}'</span> (${(s.predConf * 100).toFixed(1)}%)</div>
+                    <div>Real: <span class="tt-val">'${nextChar}'</span> ${correct ? '✓' : '✗'}</div>
+                    <div style="margin-top:4px">
+                        <span style="color:var(--gate-forget)">F: ${avg(s.fg).toFixed(2)}</span> &nbsp;
+                        <span style="color:var(--gate-input)">I: ${avg(s.ig).toFixed(2)}</span> &nbsp;
+                        <span style="color:var(--gate-output)">O: ${avg(s.og).toFixed(2)}</span>
+                    </div>
+                `;
+                tooltipEl.style.display = 'block';
+                let tx = mouseX + 14, ty = mouseY - 10;
+                if (tx + 200 > W) tx = mouseX - 210;
+                tooltipEl.style.left = tx + 'px';
+                tooltipEl.style.top = ty + 'px';
+                return;
+            }
+        }
+        tooltipEl.style.display = 'none';
+    }
+
+    // === MAIN LOOP ===
+    let lastTime = 0;
+    function loop(time) {
+        lastTime = time;
+        draw(time);
+        requestAnimationFrame(loop);
+    }
+
+    // === HELPERS ===
+    function setSeq(s) {
+        document.getElementById('seq-input').value = s;
+    }
+
+    function setRandom() {
+        let s = '';
+        for (let i = 0; i < 10; i++) s += VOCAB[Math.floor(Math.random() * 8)];
+        document.getElementById('seq-input').value = s;
+    }
+
+    // === EVENTS ===
+    document.getElementById('btn-run').addEventListener('click', () => {
+        const seq = document.getElementById('seq-input').value.toLowerCase();
+        if (seq.length < 2) return;
+        processSequence(seq);
+    });
+
+    document.getElementById('btn-step').addEventListener('click', () => {
+        if (steps.length === 0) {
+            const seq = document.getElementById('seq-input').value.toLowerCase();
+            if (seq.length < 2) return;
+            processSequence(seq);
+            currentStep = 0;
+        } else {
+            currentStep = Math.min(currentStep + 1, steps.length - 1);
+        }
+        updateStepDisplay();
+        sonifyStep(currentStep);
+    });
+
+    document.getElementById('btn-animate').addEventListener('click', () => {
+        if (isAnimating) {
+            isAnimating = false;
+            clearInterval(animTimer);
+            return;
+        }
+        const seq = document.getElementById('seq-input').value.toLowerCase();
+        if (seq.length < 2) return;
+        processSequence(seq);
+        currentStep = -1;
+        isAnimating = true;
+
+        animTimer = setInterval(() => {
+            currentStep++;
+            if (currentStep >= steps.length) {
+                isAnimating = false;
+                clearInterval(animTimer);
+                currentStep = steps.length - 1;
+                updateStepDisplay();
+                return;
+            }
+            updateStepDisplay();
+            sonifyStep(currentStep);
+        }, 400);
+    });
+
+    document.getElementById('sl-units').addEventListener('input', function() {
+        CONFIG.units = +this.value;
+        document.getElementById('val-units').textContent = this.value;
+        buildNetwork();
+        steps = [];
+        currentStep = -1;
+    });
+
+    document.getElementById('sl-fg').addEventListener('input', function() {
+        CONFIG.forceForget = +this.value;
+        document.getElementById('val-fg').textContent = this.value < 0 ? 'Auto' : (this.value / 100).toFixed(2);
+    });
+
+    document.getElementById('sl-ig').addEventListener('input', function() {
+        CONFIG.forceInput = +this.value;
+        document.getElementById('val-ig').textContent = this.value < 0 ? 'Auto' : (this.value / 100).toFixed(2);
+    });
+
+    document.getElementById('sl-og').addEventListener('input', function() {
+        CONFIG.forceOutput = +this.value;
+        document.getElementById('val-og').textContent = this.value < 0 ? 'Auto' : (this.value / 100).toFixed(2);
+    });
+
+    document.getElementById('sl-vol').addEventListener('input', function() {
+        CONFIG.volume = +this.value / 100;
+        document.getElementById('val-vol').textContent = this.value + '%';
+    });
+
+    document.getElementById('btn-audio').addEventListener('click', function() {
+        CONFIG.audioEnabled = !CONFIG.audioEnabled;
+        this.textContent = 'Audio: ' + (CONFIG.audioEnabled ? 'ON' : 'OFF');
+    });
+
+    // Click to select step
+    canvas.addEventListener('click', e => {
+        if (steps.length === 0) return;
+        const layout = getStepLayout();
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        for (let i = 0; i < layout.length; i++) {
+            if (Math.abs(mx - layout[i].x) < layout[i].w / 2) {
+                currentStep = i;
+                updateStepDisplay();
+                sonifyStep(currentStep);
+                return;
+            }
+        }
+    });
+
+    // === INIT ===
+    buildNetwork();
+    requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

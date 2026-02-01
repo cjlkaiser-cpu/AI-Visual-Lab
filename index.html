@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Visual Lab - Inteligencia Artificial Explicable</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        .card { transition: all 0.3s ease; cursor: pointer; }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 20px 40px rgba(239, 68, 68, 0.15); }
+        .card-link { text-decoration: none; color: inherit; display: block; }
+        .card:hover .card-border { opacity: 1; }
+        .card-border {
+            position: absolute; inset: 0; border-radius: 1rem; padding: 2px;
+            background: linear-gradient(135deg, #ef4444, #f59e0b, #8b5cf6, #06b6d4);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor; mask-composite: exclude;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .preview-canvas { border-radius: 0.5rem; }
+        .equation { font-family: 'JetBrains Mono', monospace; font-style: normal; }
+        .category-tag { font-size: 0.65rem; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .glow-text { text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+        .ai-symbol { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; }
+        .module-divider { border-color: rgba(255,255,255,0.06); }
+    </style>
+</head>
+<body class="bg-black text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="border-b border-gray-900 bg-black/80 backdrop-blur-sm sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <nav class="text-xs text-gray-600 mb-1">
+                        <a href="../../_portal/index.html" class="hover:text-red-400 transition">EigenLab</a>
+                        <span class="mx-1">/</span>
+                        <span class="text-gray-500">AI Visual Lab</span>
+                    </nav>
+                    <h1 class="text-2xl font-light">
+                        <span class="text-red-400 font-medium glow-text">AI</span> Visual Lab
+                    </h1>
+                    <p class="text-gray-600 text-sm mono">La inteligencia hecha visible y audible</p>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="ai-symbol text-red-400">&#x1D6BB;</span>
+                    <span class="ai-symbol text-amber-400">&sigma;</span>
+                    <span class="ai-symbol text-violet-400">W</span>
+                    <span class="ai-symbol text-cyan-400">Q&#xB7;K</span>
+                    <a href="https://github.com/cjlkaiser-cpu" target="_blank" class="text-gray-500 hover:text-white transition ml-2">
+                        <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-6 py-12">
+        <!-- Hero -->
+        <section class="text-center mb-16">
+            <h2 class="text-4xl font-light mb-4">
+                Inteligencia Artificial <span class="text-red-400 font-medium glow-text">explicable</span>
+            </h2>
+            <p class="text-gray-500 max-w-2xl mx-auto">
+                20 simulaciones interactivas con sonificacion. Desde el perceptron hasta arquitecturas especulativas.
+                Ve, escucha y manipula el aprendizaje automatico.
+            </p>
+            <div class="flex justify-center gap-8 mt-6 text-xs mono text-gray-600">
+                <span>20 simulaciones</span>
+                <span>4 modulos</span>
+                <span>audio interactivo</span>
+            </div>
+        </section>
+
+        <!-- Module 1: Fundamentos -->
+        <section class="mb-16">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                <h2 class="text-xl font-medium text-gray-300">Modulo 1: Fundamentos</h2>
+                <span class="text-xs mono text-gray-600">5 simulaciones</span>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- 1. Perceptron Viviente -->
+                <a href="perceptron-viviente.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-perceptron" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-red-500/20 text-red-400">Fundamentos</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Perceptron Viviente</h3>
+                            <p class="text-gray-500 text-sm mb-3">El nacimiento del aprendizaje. Clasifica puntos en 2D con linea de decision interactiva. Escucha la convergencia.</p>
+                            <div class="equation text-red-400/70 text-sm mb-4">y = sign(w₁x₁ + w₂x₂ + b)</div>
+                            <span class="block w-full text-center py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition text-sm font-medium">
+                                Clasificar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 2. Gradient Descent Landscape -->
+                <a href="gradient-descent-landscape.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-gradient" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-red-500/20 text-red-400">Fundamentos</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Gradient Descent Landscape</h3>
+                            <p class="text-gray-500 text-sm mb-3">Topografia del aprendizaje. Particulas descienden por superficies de perdida con SGD, Momentum, Adam y RMSProp.</p>
+                            <div class="equation text-red-400/70 text-sm mb-4">θ_{t+1} = θ_t - η∇L(θ_t)</div>
+                            <span class="block w-full text-center py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition text-sm font-medium">
+                                Descender →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 3. Backpropagation Flow -->
+                <a href="backpropagation-flow.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-backprop" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-red-500/20 text-red-400">Fundamentos</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Backpropagation Flow</h3>
+                            <p class="text-gray-500 text-sm mb-3">El rio del gradiente. Ve como fluyen senales y gradientes a traves de una red neuronal. Detecta vanishing gradients.</p>
+                            <div class="equation text-red-400/70 text-sm mb-4">∂L/∂w = ∂L/∂a · ∂a/∂z · ∂z/∂w</div>
+                            <span class="block w-full text-center py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition text-sm font-medium">
+                                Propagar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 4. Activation Function Orchestra -->
+                <a href="activation-function-orchestra.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-activations" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-red-500/20 text-red-400">Fundamentos</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Activation Function Orchestra</h3>
+                            <p class="text-gray-500 text-sm mb-3">La personalidad de las neuronas. 8 funciones en paralelo: Sigmoid, ReLU, GELU, Mish... cada una con timbre propio.</p>
+                            <div class="equation text-red-400/70 text-sm mb-4">σ(x), tanh(x), max(0,x), x·σ(x)...</div>
+                            <span class="block w-full text-center py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition text-sm font-medium">
+                                Escuchar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 5. Weight Initialization Galaxy -->
+                <a href="weight-initialization-galaxy.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-weights" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-red-500/20 text-red-400">Fundamentos</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Weight Initialization Galaxy</h3>
+                            <p class="text-gray-500 text-sm mb-3">El big bang de los pesos. Xavier, He, LeCun: ve como la inicializacion determina si la red vive o muere.</p>
+                            <div class="equation text-red-400/70 text-sm mb-4">Var[aₗ] = Var[aₗ₋₁] · n · Var[w]</div>
+                            <span class="block w-full text-center py-2 bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 transition text-sm font-medium">
+                                Propagar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- Module 2: Arquitecturas Clasicas -->
+        <section class="mb-16">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-3 h-3 rounded-full bg-amber-500"></div>
+                <h2 class="text-xl font-medium text-gray-300">Modulo 2: Arquitecturas Clasicas</h2>
+                <span class="text-xs mono text-gray-600">5 simulaciones</span>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- 6. Autoencoder Cathedral -->
+                <a href="autoencoder-cathedral.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-autoencoder" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-amber-500/20 text-amber-400">Arquitecturas</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Autoencoder Cathedral</h3>
+                            <p class="text-gray-500 text-sm mb-3">Compresion como arquitectura. Red en reloj de arena que aprende representaciones latentes de digitos 8x8.</p>
+                            <div class="equation text-amber-400/70 text-sm mb-4">z = f_enc(x), x̂ = f_dec(z), L = ||x - x̂||²</div>
+                            <span class="block w-full text-center py-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition text-sm font-medium">
+                                Comprimir →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 7. LSTM Memory Cells -->
+                <a href="lstm-memory-cells.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-lstm" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-amber-500/20 text-amber-400">Arquitecturas</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">LSTM Memory Cells</h3>
+                            <p class="text-gray-500 text-sm mb-3">Neuronas con memoria. Forget, Input, Output gates: ve como las LSTM recuerdan y olvidan secuencias.</p>
+                            <div class="equation text-amber-400/70 text-sm mb-4">f_t = σ(W_f·[h_{t-1}, x_t] + b_f)</div>
+                            <span class="block w-full text-center py-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition text-sm font-medium">
+                                Memorizar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 8. Attention Heatmap -->
+                <a href="attention-heatmap.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-attention" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-amber-500/20 text-amber-400">Arquitecturas</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Attention Heatmap</h3>
+                            <p class="text-gray-500 text-sm mb-3">Donde mira la red. Multi-head attention con mapa de calor NxN y distribucion softmax interactiva.</p>
+                            <div class="equation text-amber-400/70 text-sm mb-4">Attention(Q,K,V) = softmax(QK^T/√d_k)V</div>
+                            <span class="block w-full text-center py-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition text-sm font-medium">
+                                Atender →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 9. CNN Feature Detectives -->
+                <a href="cnn-feature-detectives.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-cnn" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-amber-500/20 text-amber-400">Arquitecturas</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">CNN Feature Detectives</h3>
+                            <p class="text-gray-500 text-sm mb-3">La corteza visual artificial. Filtros convolucionales que detectan bordes, texturas y patrones en digitos.</p>
+                            <div class="equation text-amber-400/70 text-sm mb-4">(f * g)(x,y) = ΣΣ f(i,j)·g(x-i, y-j)</div>
+                            <span class="block w-full text-center py-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition text-sm font-medium">
+                                Detectar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 10. GAN Duel -->
+                <a href="gan-duel.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-gan" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-amber-500/20 text-amber-400">Arquitecturas</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">GAN Duel</h3>
+                            <p class="text-gray-500 text-sm mb-3">Generador vs Discriminador. Competencia creativa sobre distribuciones 2D con deteccion de mode collapse.</p>
+                            <div class="equation text-amber-400/70 text-sm mb-4">min_G max_D E[log D(x)] + E[log(1-D(G(z)))]</div>
+                            <span class="block w-full text-center py-2 bg-amber-500/10 text-amber-400 rounded-lg hover:bg-amber-500/20 transition text-sm font-medium">
+                                Competir →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- Module 3: Transformers y LLMs -->
+        <section class="mb-16">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-3 h-3 rounded-full bg-violet-500"></div>
+                <h2 class="text-xl font-medium text-gray-300">Modulo 3: Transformers y LLMs</h2>
+                <span class="text-xs mono text-gray-600">5 simulaciones</span>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- 11. Transformer Anatomy -->
+                <a href="transformer-anatomy.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-transformer" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-violet-500/20 text-violet-400">Transformers</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Transformer Anatomy</h3>
+                            <p class="text-gray-500 text-sm mb-3">El corazon de GPT. Arquitectura completa navegable con forward pass real sobre frases cortas.</p>
+                            <div class="equation text-violet-400/70 text-sm mb-4">LayerNorm(x + Attention(x)) → FFN</div>
+                            <span class="block w-full text-center py-2 bg-violet-500/10 text-violet-400 rounded-lg hover:bg-violet-500/20 transition text-sm font-medium">
+                                Explorar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 12. Token Embeddings Constellation -->
+                <a href="token-embeddings-constellation.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-embeddings" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-violet-500/20 text-violet-400">Transformers</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Token Embeddings Constellation</h3>
+                            <p class="text-gray-500 text-sm mb-3">El espacio semantico. Palabras como vectores, clusters por significado y aritmetica vectorial.</p>
+                            <div class="equation text-violet-400/70 text-sm mb-4">king - man + woman ≈ queen</div>
+                            <span class="block w-full text-center py-2 bg-violet-500/10 text-violet-400 rounded-lg hover:bg-violet-500/20 transition text-sm font-medium">
+                                Navegar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 13. Self-Attention Mechanism -->
+                <a href="self-attention-mechanism.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-selfattn" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-violet-500/20 text-violet-400">Transformers</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Self-Attention Mechanism</h3>
+                            <p class="text-gray-500 text-sm mb-3">Cada token habla con todos. Q, K, V paso a paso con heatmap de compatibilidad y softmax.</p>
+                            <div class="equation text-violet-400/70 text-sm mb-4">softmax(QK^T/√d_k)V</div>
+                            <span class="block w-full text-center py-2 bg-violet-500/10 text-violet-400 rounded-lg hover:bg-violet-500/20 transition text-sm font-medium">
+                                Atender →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 14. Chain of Thought Unrolled -->
+                <a href="chain-of-thought-unrolled.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-cot" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-violet-500/20 text-violet-400">Transformers</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Chain of Thought Unrolled</h3>
+                            <p class="text-gray-500 text-sm mb-3">Razonamiento paso a paso. Arboles de razonamiento, backtracking y comparacion con respuesta directa.</p>
+                            <div class="equation text-violet-400/70 text-sm mb-4">P(answer|CoT) > P(answer|direct)</div>
+                            <span class="block w-full text-center py-2 bg-violet-500/10 text-violet-400 rounded-lg hover:bg-violet-500/20 transition text-sm font-medium">
+                                Razonar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 15. Emergent Abilities -->
+                <a href="emergent-abilities.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-emergent" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-violet-500/20 text-violet-400">Transformers</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Emergent Abilities</h3>
+                            <p class="text-gray-500 text-sm mb-3">Transiciones de fase en LLMs. Habilidades que emergen abruptamente al escalar modelos.</p>
+                            <div class="equation text-violet-400/70 text-sm mb-4">L(N) = (N_c/N)^α</div>
+                            <span class="block w-full text-center py-2 bg-violet-500/10 text-violet-400 rounded-lg hover:bg-violet-500/20 transition text-sm font-medium">
+                                Escalar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- Module 4: Fronteras -->
+        <section class="mb-16">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-3 h-3 rounded-full bg-cyan-500"></div>
+                <h2 class="text-xl font-medium text-gray-300">Modulo 4: Fronteras</h2>
+                <span class="text-xs mono text-gray-600">5 simulaciones</span>
+            </div>
+
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                <!-- 16. Diffusion Models -->
+                <a href="diffusion-models.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-diffusion" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-cyan-500/20 text-cyan-400">Fronteras</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Diffusion Models</h3>
+                            <p class="text-gray-500 text-sm mb-3">De ruido a arte. Proceso de denoising paso a paso con schedules lineal y coseno.</p>
+                            <div class="equation text-cyan-400/70 text-sm mb-4">x_t = √ᾱ_t·x₀ + √(1-ᾱ_t)·ε</div>
+                            <span class="block w-full text-center py-2 bg-cyan-500/10 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition text-sm font-medium">
+                                Difundir →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 17. Reinforcement Learning -->
+                <a href="reinforcement-learning.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-rl" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-cyan-500/20 text-cyan-400">Fronteras</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Reinforcement Learning</h3>
+                            <p class="text-gray-500 text-sm mb-3">Grid World con Q-Learning y SARSA. El agente aprende a navegar un mundo con recompensas y trampas.</p>
+                            <div class="equation text-cyan-400/70 text-sm mb-4">Q(s,a) ← Q(s,a) + α[r + γ·max Q(s',a')]</div>
+                            <span class="block w-full text-center py-2 bg-cyan-500/10 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition text-sm font-medium">
+                                Explorar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 18. Knowledge Distillation -->
+                <a href="knowledge-distillation.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-distill" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-cyan-500/20 text-cyan-400">Fronteras</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Knowledge Distillation</h3>
+                            <p class="text-gray-500 text-sm mb-3">Maestro y alumno. Una red grande enseña a una pequeña usando soft labels con temperatura.</p>
+                            <div class="equation text-cyan-400/70 text-sm mb-4">L = α·KL(σ(z_T/T) || σ(z_S/T))·T²</div>
+                            <span class="block w-full text-center py-2 bg-cyan-500/10 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition text-sm font-medium">
+                                Destilar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 19. Mixture of Experts -->
+                <a href="mixture-of-experts.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-moe" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-cyan-500/20 text-cyan-400">Fronteras</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Mixture of Experts</h3>
+                            <p class="text-gray-500 text-sm mb-3">El comite. Router inteligente que asigna tokens a expertos especializados con Top-K routing.</p>
+                            <div class="equation text-cyan-400/70 text-sm mb-4">y = Σ g(x)ᵢ · Eᵢ(x)</div>
+                            <span class="block w-full text-center py-2 bg-cyan-500/10 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition text-sm font-medium">
+                                Enrutar →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- 20. Superposition -->
+                <a href="superposition-black-box.html" class="card-link">
+                    <div class="card relative bg-gray-950 border border-gray-900 rounded-2xl overflow-hidden">
+                        <div class="card-border"></div>
+                        <div class="p-4">
+                            <canvas id="preview-superpos" class="preview-canvas w-full h-40 bg-black mb-4"></canvas>
+                            <span class="category-tag bg-cyan-500/20 text-cyan-400">Fronteras</span>
+                            <h3 class="text-lg font-medium mb-1 mt-2">Superposition</h3>
+                            <p class="text-gray-500 text-sm mb-3">Dentro de la caja negra. Como N neuronas codifican M > N features usando polisemantica.</p>
+                            <div class="equation text-cyan-400/70 text-sm mb-4">x̂ = W^T W x, L = ||x - x̂||²</div>
+                            <span class="block w-full text-center py-2 bg-cyan-500/10 text-cyan-400 rounded-lg hover:bg-cyan-500/20 transition text-sm font-medium">
+                                Superponer →
+                            </span>
+                        </div>
+                    </div>
+                </a>
+
+            </div>
+        </section>
+
+        <!-- Tech -->
+        <section class="text-center mb-12">
+            <div class="flex flex-wrap justify-center gap-2">
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">Canvas 2D</span>
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">Web Audio API</span>
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">Vanilla JS</span>
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">Backprop</span>
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">ADSR</span>
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">SGD / Adam</span>
+                <span class="px-3 py-1 bg-gray-900 text-gray-500 rounded-full text-xs mono">Sonificacion</span>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-gray-900 py-6 text-center text-gray-700 text-sm">
+        AI Visual Lab · La inteligencia hecha visible y audible
+    </footer>
+
+    <script>
+    // === PREVIEW ANIMATIONS ===
+    const previews = {};
+    let time = 0;
+
+    function initPreviews() {
+        // 1. Perceptron
+        const cp = document.getElementById('preview-perceptron');
+        if (cp) {
+            const c = cp.getContext('2d');
+            cp.width = cp.offsetWidth * 2; cp.height = cp.offsetHeight * 2;
+            previews.perceptron = { ctx: c, w: cp.width, h: cp.height, points: [] };
+            // Generate random points
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random(), y = Math.random();
+                previews.perceptron.points.push({ x, y, cls: y > 0.4 * x + 0.3 ? 1 : 0 });
+            }
+        }
+
+        // 2. Gradient Descent
+        const cg = document.getElementById('preview-gradient');
+        if (cg) {
+            const c = cg.getContext('2d');
+            cg.width = cg.offsetWidth * 2; cg.height = cg.offsetHeight * 2;
+            previews.gradient = { ctx: c, w: cg.width, h: cg.height, px: 0.8, py: 0.8 };
+        }
+
+        // 3. Backpropagation
+        const cb = document.getElementById('preview-backprop');
+        if (cb) {
+            const c = cb.getContext('2d');
+            cb.width = cb.offsetWidth * 2; cb.height = cb.offsetHeight * 2;
+            previews.backprop = { ctx: c, w: cb.width, h: cb.height };
+        }
+
+        // 4. Activations
+        const ca = document.getElementById('preview-activations');
+        if (ca) {
+            const c = ca.getContext('2d');
+            ca.width = ca.offsetWidth * 2; ca.height = ca.offsetHeight * 2;
+            previews.activations = { ctx: c, w: ca.width, h: ca.height };
+        }
+
+        // 5. Weights
+        const cw = document.getElementById('preview-weights');
+        if (cw) {
+            const c = cw.getContext('2d');
+            cw.width = cw.offsetWidth * 2; cw.height = cw.offsetHeight * 2;
+            previews.weights = { ctx: c, w: cw.width, h: cw.height };
+        }
+
+        // === MODULE 2 PREVIEWS ===
+
+        // 6. Autoencoder
+        const cae = document.getElementById('preview-autoencoder');
+        if (cae) {
+            const c = cae.getContext('2d');
+            cae.width = cae.offsetWidth * 2; cae.height = cae.offsetHeight * 2;
+            previews.autoencoder = { ctx: c, w: cae.width, h: cae.height };
+        }
+
+        // 7. LSTM
+        const clstm = document.getElementById('preview-lstm');
+        if (clstm) {
+            const c = clstm.getContext('2d');
+            clstm.width = clstm.offsetWidth * 2; clstm.height = clstm.offsetHeight * 2;
+            previews.lstm = { ctx: c, w: clstm.width, h: clstm.height };
+        }
+
+        // 8. Attention
+        const catt = document.getElementById('preview-attention');
+        if (catt) {
+            const c = catt.getContext('2d');
+            catt.width = catt.offsetWidth * 2; catt.height = catt.offsetHeight * 2;
+            previews.attention = { ctx: c, w: catt.width, h: catt.height };
+        }
+
+        // 9. CNN
+        const ccnn = document.getElementById('preview-cnn');
+        if (ccnn) {
+            const c = ccnn.getContext('2d');
+            ccnn.width = ccnn.offsetWidth * 2; ccnn.height = ccnn.offsetHeight * 2;
+            previews.cnn = { ctx: c, w: ccnn.width, h: ccnn.height };
+        }
+
+        // 10. GAN
+        const cgan = document.getElementById('preview-gan');
+        if (cgan) {
+            const c = cgan.getContext('2d');
+            cgan.width = cgan.offsetWidth * 2; cgan.height = cgan.offsetHeight * 2;
+            const realPts = [], fakePts = [];
+            for (let i = 0; i < 40; i++) {
+                const a = Math.random() * Math.PI * 2;
+                const r = 0.3 + Math.random() * 0.05;
+                realPts.push({ x: 0.5 + Math.cos(a) * r, y: 0.5 + Math.sin(a) * r });
+                fakePts.push({ x: 0.5 + (Math.random() - 0.5) * 0.2, y: 0.5 + (Math.random() - 0.5) * 0.2 });
+            }
+            previews.gan = { ctx: c, w: cgan.width, h: cgan.height, real: realPts, fake: fakePts, progress: 0 };
+        }
+
+        // === MODULE 3 PREVIEWS ===
+
+        // 11. Transformer
+        const ctrans = document.getElementById('preview-transformer');
+        if (ctrans) {
+            const c = ctrans.getContext('2d');
+            ctrans.width = ctrans.offsetWidth * 2; ctrans.height = ctrans.offsetHeight * 2;
+            previews.transformer = { ctx: c, w: ctrans.width, h: ctrans.height };
+        }
+
+        // 12. Embeddings
+        const cemb = document.getElementById('preview-embeddings');
+        if (cemb) {
+            const c = cemb.getContext('2d');
+            cemb.width = cemb.offsetWidth * 2; cemb.height = cemb.offsetHeight * 2;
+            const pts = [];
+            for (let i = 0; i < 60; i++) {
+                const cluster = Math.floor(Math.random() * 5);
+                const cx = [0.2, 0.7, 0.5, 0.3, 0.8][cluster];
+                const cy = [0.3, 0.7, 0.5, 0.8, 0.2][cluster];
+                pts.push({ x: cx + (Math.random() - 0.5) * 0.15, y: cy + (Math.random() - 0.5) * 0.15, cluster });
+            }
+            previews.embeddings = { ctx: c, w: cemb.width, h: cemb.height, pts };
+        }
+
+        // 13. Self-Attention
+        const csa = document.getElementById('preview-selfattn');
+        if (csa) {
+            const c = csa.getContext('2d');
+            csa.width = csa.offsetWidth * 2; csa.height = csa.offsetHeight * 2;
+            previews.selfattn = { ctx: c, w: csa.width, h: csa.height };
+        }
+
+        // 14. Chain of Thought
+        const ccot = document.getElementById('preview-cot');
+        if (ccot) {
+            const c = ccot.getContext('2d');
+            ccot.width = ccot.offsetWidth * 2; ccot.height = ccot.offsetHeight * 2;
+            previews.cot = { ctx: c, w: ccot.width, h: ccot.height };
+        }
+
+        // 15. Emergent Abilities
+        const cemer = document.getElementById('preview-emergent');
+        if (cemer) {
+            const c = cemer.getContext('2d');
+            cemer.width = cemer.offsetWidth * 2; cemer.height = cemer.offsetHeight * 2;
+            previews.emergent = { ctx: c, w: cemer.width, h: cemer.height };
+        }
+
+        // === MODULE 4 PREVIEWS ===
+
+        // 16. Diffusion
+        const cdiff = document.getElementById('preview-diffusion');
+        if (cdiff) {
+            const c = cdiff.getContext('2d');
+            cdiff.width = cdiff.offsetWidth * 2; cdiff.height = cdiff.offsetHeight * 2;
+            previews.diffusion = { ctx: c, w: cdiff.width, h: cdiff.height };
+        }
+
+        // 17. RL
+        const crl = document.getElementById('preview-rl');
+        if (crl) {
+            const c = crl.getContext('2d');
+            crl.width = crl.offsetWidth * 2; crl.height = crl.offsetHeight * 2;
+            previews.rl = { ctx: c, w: crl.width, h: crl.height };
+        }
+
+        // 18. Distillation
+        const cdist = document.getElementById('preview-distill');
+        if (cdist) {
+            const c = cdist.getContext('2d');
+            cdist.width = cdist.offsetWidth * 2; cdist.height = cdist.offsetHeight * 2;
+            previews.distill = { ctx: c, w: cdist.width, h: cdist.height };
+        }
+
+        // 19. MoE
+        const cmoe = document.getElementById('preview-moe');
+        if (cmoe) {
+            const c = cmoe.getContext('2d');
+            cmoe.width = cmoe.offsetWidth * 2; cmoe.height = cmoe.offsetHeight * 2;
+            previews.moe = { ctx: c, w: cmoe.width, h: cmoe.height };
+        }
+
+        // 20. Superposition
+        const csup = document.getElementById('preview-superpos');
+        if (csup) {
+            const c = csup.getContext('2d');
+            csup.width = csup.offsetWidth * 2; csup.height = csup.offsetHeight * 2;
+            previews.superpos = { ctx: c, w: csup.width, h: csup.height };
+        }
+    }
+
+    function animate() {
+        time += 0.02;
+
+        // 1. Perceptron: rotating decision boundary with points
+        if (previews.perceptron) {
+            const { ctx: c, w, h, points } = previews.perceptron;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            // Background gradient
+            const angle = time * 0.3;
+            const mx = w / 2, my = h / 2;
+            const dx = Math.cos(angle), dy = Math.sin(angle);
+            for (let i = 0; i < 20; i++) {
+                for (let j = 0; j < 20; j++) {
+                    const nx = i / 20, ny = j / 20;
+                    const side = (nx - 0.5) * dx + (ny - 0.5) * dy;
+                    const alpha = side > 0 ? 0.06 : 0.02;
+                    c.fillStyle = side > 0 ? `rgba(239,68,68,${alpha})` : `rgba(59,130,246,${alpha})`;
+                    c.fillRect(i / 20 * w, j / 20 * h, w / 20 + 1, h / 20 + 1);
+                }
+            }
+
+            // Decision boundary
+            c.strokeStyle = '#fbbf24';
+            c.lineWidth = 3;
+            c.beginPath();
+            c.moveTo(mx - dy * h, my + dx * h);
+            c.lineTo(mx + dy * h, my - dx * h);
+            c.stroke();
+
+            // Points
+            for (const p of points) {
+                c.beginPath();
+                c.arc(p.x * w, p.y * h, 8, 0, Math.PI * 2);
+                c.fillStyle = p.cls === 0 ? '#3b82f6' : '#ef4444';
+                c.fill();
+            }
+        }
+
+        // 2. Gradient: contour with descending particle
+        if (previews.gradient) {
+            const p = previews.gradient;
+            const { ctx: c, w, h } = p;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            // Simple contour rings
+            const cx = w * 0.4, cy = h * 0.5;
+            for (let r = 10; r < 200; r += 20) {
+                c.beginPath();
+                c.arc(cx, cy, r, 0, Math.PI * 2);
+                c.strokeStyle = `rgba(34,197,94,${0.15 - r * 0.0005})`;
+                c.lineWidth = 1;
+                c.stroke();
+            }
+
+            // Descending particle
+            const targetX = 0.4, targetY = 0.5;
+            p.px += (targetX - p.px) * 0.008;
+            p.py += (targetY - p.py) * 0.008;
+            p.px += Math.sin(time * 3) * 0.003;
+            p.py += Math.cos(time * 2.5) * 0.003;
+
+            // Trail
+            c.beginPath();
+            c.arc(p.px * w, p.py * h, 10, 0, Math.PI * 2);
+            c.fillStyle = '#ef4444';
+            c.fill();
+            c.strokeStyle = 'white';
+            c.lineWidth = 2;
+            c.stroke();
+        }
+
+        // 3. Backprop: neural network graph with flowing particles
+        if (previews.backprop) {
+            const { ctx: c, w, h } = previews.backprop;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const layers = [2, 4, 4, 1];
+            const layerX = layers.map((_, i) => (i + 1) / (layers.length + 1) * w);
+
+            // Connections
+            for (let l = 0; l < layers.length - 1; l++) {
+                for (let i = 0; i < layers[l]; i++) {
+                    for (let j = 0; j < layers[l + 1]; j++) {
+                        const x1 = layerX[l];
+                        const y1 = (i + 1) / (layers[l] + 1) * h;
+                        const x2 = layerX[l + 1];
+                        const y2 = (j + 1) / (layers[l + 1] + 1) * h;
+                        c.strokeStyle = 'rgba(100,120,160,0.15)';
+                        c.lineWidth = 1;
+                        c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+                    }
+                }
+            }
+
+            // Neurons
+            for (let l = 0; l < layers.length; l++) {
+                for (let i = 0; i < layers[l]; i++) {
+                    const x = layerX[l];
+                    const y = (i + 1) / (layers[l] + 1) * h;
+                    c.beginPath();
+                    c.arc(x, y, 12, 0, Math.PI * 2);
+                    c.fillStyle = '#1e293b';
+                    c.fill();
+                    c.strokeStyle = 'rgba(255,255,255,0.3)';
+                    c.lineWidth = 1.5;
+                    c.stroke();
+                }
+            }
+
+            // Flowing particles
+            const phase = (time * 0.5) % 2;
+            const isForward = phase < 1;
+            const t = phase % 1;
+            const activeLayer = Math.floor(t * (layers.length - 1));
+            const layerT = (t * (layers.length - 1)) % 1;
+
+            if (activeLayer < layers.length - 1) {
+                const l = isForward ? activeLayer : layers.length - 2 - activeLayer;
+                if (l >= 0 && l < layers.length - 1) {
+                    for (let j = 0; j < Math.min(3, layers[l + 1]); j++) {
+                        const x1 = layerX[isForward ? l : l + 1];
+                        const y1 = (j % layers[isForward ? l : l + 1] + 1) / (layers[isForward ? l : l + 1] + 1) * h;
+                        const x2 = layerX[isForward ? l + 1 : l];
+                        const y2 = (j % layers[isForward ? l + 1 : l] + 1) / (layers[isForward ? l + 1 : l] + 1) * h;
+                        const px = x1 + (x2 - x1) * layerT;
+                        const py = y1 + (y2 - y1) * layerT;
+                        c.beginPath();
+                        c.arc(px, py, 4, 0, Math.PI * 2);
+                        c.fillStyle = isForward ? '#22c55e' : '#f97316';
+                        c.fill();
+                    }
+                }
+            }
+        }
+
+        // 4. Activations: oscilloscope-style waveforms
+        if (previews.activations) {
+            const { ctx: c, w, h } = previews.activations;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const funcs = [
+                { f: x => 1 / (1 + Math.exp(-x)), color: '#ef4444' },
+                { f: x => Math.tanh(x), color: '#3b82f6' },
+                { f: x => Math.max(0, x), color: '#22c55e' },
+                { f: x => x * (1 / (1 + Math.exp(-x))), color: '#06b6d4' }
+            ];
+
+            const cols = 2, rows = 2;
+            const cellW = w / cols, cellH = h / rows;
+
+            for (let fi = 0; fi < 4; fi++) {
+                const col = fi % 2, row = Math.floor(fi / 2);
+                const ox = col * cellW, oy = row * cellH;
+                const mid = oy + cellH / 2;
+
+                // Border
+                c.strokeStyle = 'rgba(255,255,255,0.05)';
+                c.lineWidth = 1;
+                c.strokeRect(ox + 2, oy + 2, cellW - 4, cellH - 4);
+
+                // Waveform
+                c.strokeStyle = funcs[fi].color;
+                c.lineWidth = 2;
+                c.beginPath();
+                for (let i = 0; i < 60; i++) {
+                    const t2 = (time * 1.5 - i * 0.05);
+                    const input = 3 * Math.sin(t2);
+                    const output = funcs[fi].f(input);
+                    const x = ox + (60 - i) / 60 * cellW;
+                    const y = mid - output * cellH * 0.35;
+                    if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+                }
+                c.stroke();
+            }
+        }
+
+        // 5. Weights: histogram bars
+        if (previews.weights) {
+            const { ctx: c, w, h } = previews.weights;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const numLayers = 8;
+            const barW = w / 20;
+
+            for (let l = 0; l < numLayers; l++) {
+                const yBase = h - 20;
+                const layerY = 30 + l * (h - 60) / numLayers;
+                const spread = l < 4 ? 1.0 : (l < 6 ? 0.3 : 0.05);
+
+                // Histogram bars for this layer
+                for (let b = 0; b < 20; b++) {
+                    const x = b * barW;
+                    const center = 10;
+                    const dist = Math.abs(b - center);
+                    const height = Math.exp(-dist * dist / (spread * 8)) * (h - 60) / numLayers * 0.8;
+
+                    const green = Math.round(150 * spread + 50);
+                    const red = Math.round(200 * (1 - spread) + 50);
+                    c.fillStyle = `rgba(${red},${green},80,0.5)`;
+                    c.fillRect(x, layerY, barW - 1, -height);
+                }
+
+                // Layer label
+                c.fillStyle = 'rgba(255,255,255,0.2)';
+                c.font = '16px "JetBrains Mono"';
+                c.textAlign = 'right';
+                c.fillText(`L${l}`, w - 8, layerY - 2);
+            }
+        }
+
+        // === MODULE 2 ANIMATIONS ===
+
+        // 6. Autoencoder: hourglass network with flowing particles
+        if (previews.autoencoder) {
+            const { ctx: c, w, h } = previews.autoencoder;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const layers = [8, 6, 4, 2, 4, 6, 8];
+            const layerX = layers.map((_, i) => (i + 1) / (layers.length + 1) * w);
+            const amber = [245, 158, 11];
+
+            // Connections
+            for (let l = 0; l < layers.length - 1; l++) {
+                for (let i = 0; i < layers[l]; i++) {
+                    for (let j = 0; j < layers[l + 1]; j++) {
+                        const x1 = layerX[l], y1 = (i + 1) / (layers[l] + 1) * h;
+                        const x2 = layerX[l + 1], y2 = (j + 1) / (layers[l + 1] + 1) * h;
+                        c.strokeStyle = `rgba(${amber[0]},${amber[1]},${amber[2]},0.06)`;
+                        c.lineWidth = 1;
+                        c.beginPath(); c.moveTo(x1, y1); c.lineTo(x2, y2); c.stroke();
+                    }
+                }
+            }
+
+            // Neurons
+            for (let l = 0; l < layers.length; l++) {
+                const isBottleneck = l === 3;
+                for (let i = 0; i < layers[l]; i++) {
+                    const x = layerX[l], y = (i + 1) / (layers[l] + 1) * h;
+                    const pulse = Math.sin(time * 2 + l * 0.5 + i * 0.3) * 0.5 + 0.5;
+                    c.beginPath(); c.arc(x, y, isBottleneck ? 8 : 6, 0, Math.PI * 2);
+                    if (isBottleneck) {
+                        c.fillStyle = `rgba(${amber[0]},${amber[1]},${amber[2]},${0.6 + pulse * 0.4})`;
+                        c.shadowColor = `rgb(${amber[0]},${amber[1]},${amber[2]})`;
+                        c.shadowBlur = 10;
+                    } else {
+                        c.fillStyle = `rgba(${amber[0]},${amber[1]},${amber[2]},${0.15 + pulse * 0.25})`;
+                        c.shadowBlur = 0;
+                    }
+                    c.fill();
+                    c.shadowBlur = 0;
+                }
+            }
+
+            // Flowing particle through hourglass
+            const phase = (time * 0.4) % 1;
+            const totalSeg = layers.length - 1;
+            const seg = Math.floor(phase * totalSeg);
+            const segT = (phase * totalSeg) % 1;
+            if (seg < totalSeg) {
+                const si = Math.floor(Math.random() * 1000) % layers[seg];
+                const sj = Math.floor(Math.random() * 1000) % layers[seg + 1];
+                const x1 = layerX[seg], y1 = (si + 1) / (layers[seg] + 1) * h;
+                const x2 = layerX[seg + 1], y2 = (sj + 1) / (layers[seg + 1] + 1) * h;
+                const px = x1 + (x2 - x1) * segT, py = y1 + (y2 - y1) * segT;
+                c.beginPath(); c.arc(px, py, 5, 0, Math.PI * 2);
+                c.fillStyle = '#fbbf24';
+                c.shadowColor = '#fbbf24'; c.shadowBlur = 12;
+                c.fill(); c.shadowBlur = 0;
+            }
+        }
+
+        // 7. LSTM: gates with cell state river
+        if (previews.lstm) {
+            const { ctx: c, w, h } = previews.lstm;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const steps = 6;
+            const cellY = h * 0.35;
+            const hidY = h * 0.7;
+
+            // Cell state river
+            c.strokeStyle = 'rgba(245,158,11,0.4)';
+            c.lineWidth = 4;
+            c.beginPath();
+            for (let i = 0; i < steps; i++) {
+                const x = (i + 0.5) / steps * w;
+                const thick = 2 + Math.sin(time * 1.5 + i * 0.8) * 1.5 + 1.5;
+                c.lineWidth = thick * 2;
+                if (i === 0) c.moveTo(x, cellY);
+                else c.lineTo(x, cellY);
+            }
+            c.stroke();
+
+            // Hidden state dashed
+            c.setLineDash([6, 6]);
+            c.strokeStyle = 'rgba(245,158,11,0.2)';
+            c.lineWidth = 2;
+            c.beginPath();
+            for (let i = 0; i < steps; i++) {
+                const x = (i + 0.5) / steps * w;
+                if (i === 0) c.moveTo(x, hidY);
+                else c.lineTo(x, hidY);
+            }
+            c.stroke();
+            c.setLineDash([]);
+
+            // Gate blocks per step
+            for (let i = 0; i < steps; i++) {
+                const cx = (i + 0.5) / steps * w;
+                const gateColors = ['#ef4444', '#22c55e', '#3b82f6']; // F, I, O
+                const gateLabels = ['f', 'i', 'o'];
+                for (let g = 0; g < 3; g++) {
+                    const gx = cx - 18 + g * 18;
+                    const gy = cellY + 20;
+                    const val = Math.sin(time * 2 + i * 1.2 + g * 2) * 0.5 + 0.5;
+                    const gateH = val * 24;
+                    c.fillStyle = gateColors[g] + '30';
+                    c.fillRect(gx - 5, gy, 12, 24);
+                    c.fillStyle = gateColors[g] + '90';
+                    c.fillRect(gx - 5, gy + 24 - gateH, 12, gateH);
+                }
+
+                // Step label
+                c.fillStyle = 'rgba(255,255,255,0.15)';
+                c.font = '14px "JetBrains Mono"';
+                c.textAlign = 'center';
+                c.fillText(`t${i}`, cx, h - 10);
+            }
+        }
+
+        // 8. Attention: heatmap grid
+        if (previews.attention) {
+            const { ctx: c, w, h } = previews.attention;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const n = 7;
+            const margin = 30;
+            const gridW = Math.min(w, h) - margin * 2;
+            const cellSz = gridW / n;
+            const ox = (w - gridW) / 2, oy = (h - gridW) / 2;
+
+            // Token labels
+            const tokens = ['El', 'gato', 'se', 'sento', 'en', 'la', 'mesa'];
+            c.font = '13px "Inter"';
+            c.textAlign = 'center';
+            c.fillStyle = 'rgba(255,255,255,0.3)';
+            for (let i = 0; i < n; i++) {
+                c.fillText(tokens[i], ox + i * cellSz + cellSz / 2, oy - 6);
+            }
+
+            // Heatmap cells
+            for (let r = 0; r < n; r++) {
+                for (let col = 0; col < n; col++) {
+                    // Simulated attention with some structure
+                    let val = Math.exp(-Math.abs(r - col) * 0.5) * 0.6;
+                    // Add some dynamics
+                    val += Math.sin(time * 1.2 + r * 1.5 + col * 0.7) * 0.15;
+                    // Diagonal attention + nearby
+                    if (r === col) val += 0.3;
+                    val = Math.max(0, Math.min(1, val));
+
+                    const alpha = val * 0.85;
+                    c.fillStyle = `rgba(245,158,11,${alpha})`;
+                    c.fillRect(ox + col * cellSz + 1, oy + r * cellSz + 1, cellSz - 2, cellSz - 2);
+                }
+            }
+
+            // Highlight active query row
+            const activeRow = Math.floor((time * 0.3) % n);
+            c.strokeStyle = 'rgba(255,255,255,0.4)';
+            c.lineWidth = 2;
+            c.strokeRect(ox, oy + activeRow * cellSz, gridW, cellSz);
+        }
+
+        // 9. CNN: feature maps grid
+        if (previews.cnn) {
+            const { ctx: c, w, h } = previews.cnn;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            // Input digit (simple 7x7 "3")
+            const digit = [
+                [0,1,1,1,1,0,0],
+                [0,0,0,0,1,0,0],
+                [0,0,0,1,0,0,0],
+                [0,0,1,1,1,0,0],
+                [0,0,0,0,1,0,0],
+                [0,0,0,0,1,0,0],
+                [0,1,1,1,0,0,0]
+            ];
+
+            // Draw input
+            const inputSz = 10;
+            const inputX = 15, inputY = (h - 7 * inputSz) / 2;
+            for (let r = 0; r < 7; r++) {
+                for (let col = 0; col < 7; col++) {
+                    c.fillStyle = digit[r][col] ? 'rgba(245,158,11,0.7)' : 'rgba(255,255,255,0.03)';
+                    c.fillRect(inputX + col * inputSz, inputY + r * inputSz, inputSz - 1, inputSz - 1);
+                }
+            }
+
+            // Arrow
+            c.strokeStyle = 'rgba(255,255,255,0.15)';
+            c.lineWidth = 2;
+            const arrowX = inputX + 7 * inputSz + 15;
+            c.beginPath(); c.moveTo(arrowX, h / 2); c.lineTo(arrowX + 20, h / 2); c.stroke();
+            c.beginPath(); c.moveTo(arrowX + 15, h / 2 - 5); c.lineTo(arrowX + 20, h / 2); c.lineTo(arrowX + 15, h / 2 + 5); c.stroke();
+
+            // Feature maps (3 columns of 2x2 mini grids)
+            const fmX = arrowX + 35;
+            const fmSz = 28;
+            const gap = 8;
+            const filters = [
+                [[1,-1],[1,-1]], // vertical edge
+                [[1,1],[-1,-1]], // horizontal edge
+                [[-1,1],[1,-1]], // diagonal
+                [[1,0],[0,1]],   // corner
+                [[0,1],[1,0]],   // anti-corner
+                [[1,1],[1,1]]    // blur
+            ];
+
+            for (let f = 0; f < 6; f++) {
+                const col = Math.floor(f / 3);
+                const row = f % 3;
+                const fx = fmX + col * (fmSz * 2 + gap * 3);
+                const fy = 15 + row * (fmSz * 2 + gap);
+
+                // Feature map cells
+                for (let r = 0; r < 5; r++) {
+                    for (let cc = 0; cc < 5; cc++) {
+                        const val = Math.sin(time * 1.5 + r * filters[f][0][0] + cc * filters[f][0][1] + f * 0.8) * 0.5 + 0.5;
+                        const alpha = val * 0.6;
+                        c.fillStyle = `rgba(245,158,11,${alpha})`;
+                        c.fillRect(fx + cc * (fmSz / 5), fy + r * (fmSz / 5), fmSz / 5 - 1, fmSz / 5 - 1);
+                    }
+                }
+            }
+
+            // Classification bars at right
+            const barX = w - 55;
+            const barH = h - 30;
+            const classes = 5;
+            c.fillStyle = 'rgba(255,255,255,0.08)';
+            c.font = '12px "JetBrains Mono"';
+            c.textAlign = 'right';
+            for (let i = 0; i < classes; i++) {
+                const by = 15 + i * (barH / classes);
+                const bw = (i === 2 ? 0.85 : Math.random() * 0.15 + 0.02) * 35;
+                const pulse = i === 2 ? Math.sin(time * 3) * 0.15 + 0.85 : 0.3;
+                c.fillStyle = `rgba(245,158,11,${pulse})`;
+                c.fillRect(barX, by, bw, barH / classes - 4);
+                c.fillStyle = 'rgba(255,255,255,0.2)';
+                c.fillText(i.toString(), barX - 4, by + barH / classes / 2 + 4);
+            }
+        }
+
+        // === MODULE 3 ANIMATIONS ===
+
+        // 11. Transformer: stacked blocks with flowing data
+        if (previews.transformer) {
+            const { ctx: c, w, h } = previews.transformer;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const blocks = ['Emb', 'Attn', 'FFN', 'Attn', 'FFN', 'Out'];
+            const blockW = w * 0.4;
+            const blockH = (h - 30) / blocks.length - 4;
+            const bx = (w - blockW) / 2;
+
+            for (let i = 0; i < blocks.length; i++) {
+                const by = 15 + i * (blockH + 4);
+                const pulse = Math.sin(time * 2 - i * 0.5) * 0.5 + 0.5;
+                const isAttn = blocks[i] === 'Attn';
+                const color = isAttn ? `rgba(139,92,246,${0.15 + pulse * 0.2})` : `rgba(139,92,246,${0.08 + pulse * 0.1})`;
+                c.fillStyle = color;
+                c.strokeStyle = `rgba(139,92,246,${0.2 + pulse * 0.2})`;
+                c.lineWidth = 1;
+                c.beginPath(); c.roundRect(bx, by, blockW, blockH, 4); c.fill(); c.stroke();
+                c.font = '12px "JetBrains Mono"';
+                c.fillStyle = `rgba(255,255,255,${0.3 + pulse * 0.3})`;
+                c.textAlign = 'center';
+                c.fillText(blocks[i], w / 2, by + blockH / 2 + 4);
+
+                // Residual arrow
+                if (isAttn && i > 0) {
+                    c.strokeStyle = 'rgba(139,92,246,0.15)';
+                    c.setLineDash([3, 3]);
+                    c.beginPath(); c.moveTo(bx - 8, by - 4); c.lineTo(bx - 8, by + blockH + 4); c.stroke();
+                    c.setLineDash([]);
+                }
+            }
+
+            // Flowing particle
+            const phase = (time * 0.6) % 1;
+            const py = 15 + phase * (h - 30);
+            c.beginPath(); c.arc(w / 2, py, 4, 0, Math.PI * 2);
+            c.fillStyle = '#c084fc'; c.shadowColor = '#c084fc'; c.shadowBlur = 10; c.fill(); c.shadowBlur = 0;
+        }
+
+        // 12. Embeddings: constellation scatter
+        if (previews.embeddings) {
+            const { ctx: c, w, h, pts } = previews.embeddings;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const colors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6'];
+            for (const pt of pts) {
+                const sx = pt.x * w, sy = pt.y * h;
+                const pulse = Math.sin(time * 1.5 + pt.x * 10 + pt.y * 7) * 0.3 + 0.7;
+                c.beginPath(); c.arc(sx, sy, 3, 0, Math.PI * 2);
+                c.fillStyle = colors[pt.cluster] + Math.round(pulse * 180).toString(16).padStart(2, '0');
+                c.fill();
+            }
+
+            // Connecting lines between nearby points in same cluster
+            for (let i = 0; i < pts.length; i++) {
+                for (let j = i + 1; j < pts.length; j++) {
+                    if (pts[i].cluster !== pts[j].cluster) continue;
+                    const d = Math.sqrt((pts[i].x - pts[j].x) ** 2 + (pts[i].y - pts[j].y) ** 2);
+                    if (d < 0.1) {
+                        c.strokeStyle = colors[pts[i].cluster] + '15';
+                        c.lineWidth = 1;
+                        c.beginPath(); c.moveTo(pts[i].x * w, pts[i].y * h); c.lineTo(pts[j].x * w, pts[j].y * h); c.stroke();
+                    }
+                }
+            }
+        }
+
+        // 13. Self-Attention: QKV matrix with heat
+        if (previews.selfattn) {
+            const { ctx: c, w, h } = previews.selfattn;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const n = 6;
+            const cellSz = Math.min(w, h) * 0.11;
+            const ox = (w - n * cellSz) / 2, oy = (h - n * cellSz) / 2;
+
+            for (let i = 0; i < n; i++) {
+                for (let j = 0; j < n; j++) {
+                    let val = Math.exp(-Math.abs(i - j) * 0.4) * 0.5;
+                    val += Math.sin(time * 1.5 + i * 1.3 + j * 0.9) * 0.15;
+                    if (i === j) val += 0.35;
+                    val = Math.max(0, Math.min(1, val));
+                    c.fillStyle = `rgba(139,92,246,${val * 0.8})`;
+                    c.fillRect(ox + j * cellSz + 0.5, oy + i * cellSz + 0.5, cellSz - 1, cellSz - 1);
+                }
+            }
+
+            // Q K V labels
+            c.font = '14px "JetBrains Mono"';
+            c.textAlign = 'center';
+            c.fillStyle = 'rgba(139,92,246,0.4)';
+            c.fillText('Q·K^T', w / 2, oy - 8);
+        }
+
+        // 14. CoT: reasoning tree nodes
+        if (previews.cot) {
+            const { ctx: c, w, h } = previews.cot;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const nodes = [
+                { x: 0.5, y: 0.1, conf: 0.95 },
+                { x: 0.35, y: 0.3, conf: 0.90 },
+                { x: 0.65, y: 0.3, conf: 0.85 },
+                { x: 0.25, y: 0.55, conf: 0.92 },
+                { x: 0.45, y: 0.55, conf: 0.40 },
+                { x: 0.55, y: 0.55, conf: 0.88 },
+                { x: 0.25, y: 0.8, conf: 0.95 },
+                { x: 0.55, y: 0.8, conf: 0.93 }
+            ];
+            const edges = [[0,1],[0,2],[1,3],[1,4],[2,5],[3,6],[5,7]];
+
+            // Edges
+            for (const [a, b] of edges) {
+                c.strokeStyle = nodes[b].conf > 0.5 ? 'rgba(139,92,246,0.2)' : 'rgba(239,68,68,0.2)';
+                c.lineWidth = 1;
+                c.beginPath();
+                c.moveTo(nodes[a].x * w, nodes[a].y * h);
+                c.lineTo(nodes[b].x * w, nodes[b].y * h);
+                c.stroke();
+            }
+
+            // Nodes (reveal over time)
+            const visibleCount = Math.floor((time * 0.5) % (nodes.length + 2));
+            for (let i = 0; i < Math.min(visibleCount, nodes.length); i++) {
+                const n = nodes[i];
+                const isError = n.conf < 0.5;
+                c.beginPath(); c.arc(n.x * w, n.y * h, 10, 0, Math.PI * 2);
+                c.fillStyle = isError ? 'rgba(239,68,68,0.3)' : `rgba(34,197,94,${n.conf * 0.4})`;
+                c.fill();
+                c.strokeStyle = isError ? '#ef4444' : '#22c55e';
+                c.lineWidth = 1.5;
+                c.stroke();
+                c.font = '10px "JetBrains Mono"';
+                c.fillStyle = isError ? '#ef4444' : '#22c55e';
+                c.textAlign = 'center';
+                c.fillText(i + 1, n.x * w, n.y * h + 3);
+            }
+        }
+
+        // 15. Emergent: sigmoid curves at different scales
+        if (previews.emergent) {
+            const { ctx: c, w, h } = previews.emergent;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const margin = 25;
+            const chartW = w - margin * 2, chartH = h - margin * 2;
+
+            // Axes
+            c.strokeStyle = 'rgba(255,255,255,0.1)';
+            c.lineWidth = 1;
+            c.beginPath();
+            c.moveTo(margin, margin);
+            c.lineTo(margin, h - margin);
+            c.lineTo(w - margin, h - margin);
+            c.stroke();
+
+            // Sigmoid curves for different tasks
+            const curves = [
+                { transition: 0.3, color: '#ef4444' },
+                { transition: 0.5, color: '#3b82f6' },
+                { transition: 0.7, color: '#22c55e' },
+                { transition: 0.85, color: '#8b5cf6' }
+            ];
+
+            for (const curve of curves) {
+                c.strokeStyle = curve.color + '80';
+                c.lineWidth = 2;
+                c.beginPath();
+                for (let i = 0; i <= 60; i++) {
+                    const t = i / 60;
+                    const x = margin + t * chartW;
+                    const sigmoid = 1 / (1 + Math.exp(-(t - curve.transition) * 15));
+                    const y = (h - margin) - sigmoid * chartH;
+                    if (i === 0) c.moveTo(x, y); else c.lineTo(x, y);
+                }
+                c.stroke();
+            }
+
+            // Animated scale marker
+            const scaleT = ((time * 0.15) % 1);
+            const mx = margin + scaleT * chartW;
+            c.strokeStyle = 'rgba(255,255,255,0.3)';
+            c.lineWidth = 1;
+            c.setLineDash([3, 3]);
+            c.beginPath(); c.moveTo(mx, margin); c.lineTo(mx, h - margin); c.stroke();
+            c.setLineDash([]);
+
+            // Labels
+            c.font = '10px "JetBrains Mono"';
+            c.fillStyle = 'rgba(255,255,255,0.2)';
+            c.textAlign = 'center';
+            c.fillText('10M', margin + chartW * 0.05, h - margin + 14);
+            c.fillText('1T', margin + chartW * 0.95, h - margin + 14);
+        }
+
+        // === MODULE 4 ANIMATIONS ===
+
+        // 16. Diffusion: noise timeline
+        if (previews.diffusion) {
+            const { ctx: c, w, h } = previews.diffusion;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const steps = 6;
+            const imgSz = Math.min(w / steps - 8, h - 30);
+            const pixSz = imgSz / 8;
+
+            for (let s = 0; s < steps; s++) {
+                const noise = s / (steps - 1);
+                const ox = 8 + s * (imgSz + 6);
+                const oy = 10;
+
+                for (let r = 0; r < 8; r++) {
+                    for (let col = 0; col < 8; col++) {
+                        // Simple cross pattern degrading into noise
+                        let signal = (Math.abs(r - 3.5) < 1.5 || Math.abs(col - 3.5) < 1.5) ? 0.8 : 0.1;
+                        const n = (Math.sin(r * 17.3 + col * 31.7 + s * 5.1 + time * 2) * 0.5 + 0.5) * noise;
+                        const val = signal * (1 - noise) + n;
+                        c.fillStyle = `rgba(6,182,212,${val * 0.8})`;
+                        c.fillRect(ox + col * pixSz, oy + r * pixSz, pixSz - 0.5, pixSz - 0.5);
+                    }
+                }
+
+                // Arrow
+                if (s < steps - 1) {
+                    c.fillStyle = 'rgba(255,255,255,0.1)';
+                    c.font = '12px Inter';
+                    c.textAlign = 'center';
+                    c.fillText('→', ox + imgSz + 3, oy + imgSz / 2 + 4);
+                }
+            }
+
+            c.font = '10px "JetBrains Mono"';
+            c.fillStyle = 'rgba(6,182,212,0.3)';
+            c.textAlign = 'left';
+            c.fillText('limpio', 8, h - 4);
+            c.textAlign = 'right';
+            c.fillText('ruido', w - 8, h - 4);
+        }
+
+        // 17. RL: mini grid with agent
+        if (previews.rl) {
+            const { ctx: c, w, h } = previews.rl;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const gs = 6;
+            const cellSz = Math.min((w - 20) / gs, (h - 20) / gs);
+            const ox = (w - gs * cellSz) / 2;
+            const oy = (h - gs * cellSz) / 2;
+
+            for (let r = 0; r < gs; r++) {
+                for (let col = 0; col < gs; col++) {
+                    c.fillStyle = 'rgba(6,182,212,0.04)';
+                    c.strokeStyle = 'rgba(255,255,255,0.05)';
+                    c.fillRect(ox + col * cellSz, oy + r * cellSz, cellSz - 1, cellSz - 1);
+                    c.strokeRect(ox + col * cellSz, oy + r * cellSz, cellSz - 1, cellSz - 1);
+                }
+            }
+
+            // Walls
+            [[1,1],[1,2],[3,3],[3,4]].forEach(([r,col]) => {
+                c.fillStyle = 'rgba(100,116,139,0.3)';
+                c.fillRect(ox + col * cellSz + 2, oy + r * cellSz + 2, cellSz - 5, cellSz - 5);
+            });
+
+            // Goal
+            c.font = `${cellSz * 0.5}px Inter`;
+            c.fillStyle = '#22c55e';
+            c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText('◎', ox + 5.5 * cellSz, oy + 5.5 * cellSz);
+
+            // Agent (animated path)
+            const path = [[0,0],[0,1],[0,2],[0,3],[1,3],[2,3],[2,4],[2,5],[3,5],[4,5],[5,5]];
+            const agentIdx = Math.floor((time * 0.8) % path.length);
+            const [ar, ac] = path[agentIdx];
+            c.beginPath();
+            c.arc(ox + ac * cellSz + cellSz / 2, oy + ar * cellSz + cellSz / 2, cellSz * 0.3, 0, Math.PI * 2);
+            c.fillStyle = '#06b6d4';
+            c.shadowColor = '#06b6d4'; c.shadowBlur = 8;
+            c.fill(); c.shadowBlur = 0;
+        }
+
+        // 18. Distillation: teacher → student
+        if (previews.distill) {
+            const { ctx: c, w, h } = previews.distill;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            // Teacher (left, larger)
+            const tLayers = [4, 3, 2, 3];
+            const tX = w * 0.22;
+            for (let l = 0; l < tLayers.length; l++) {
+                const ly = (l + 1) / (tLayers.length + 1) * h;
+                for (let n = 0; n < tLayers[l]; n++) {
+                    const nx = tX + (n - (tLayers[l] - 1) / 2) * 20;
+                    c.beginPath(); c.arc(nx, ly, 6, 0, Math.PI * 2);
+                    c.fillStyle = 'rgba(6,182,212,0.3)';
+                    c.fill();
+                }
+            }
+            c.font = '10px "JetBrains Mono"';
+            c.fillStyle = 'rgba(6,182,212,0.5)';
+            c.textAlign = 'center';
+            c.fillText('Teacher', tX, h - 5);
+
+            // Student (right, smaller)
+            const sLayers = [2, 2];
+            const sX = w * 0.78;
+            for (let l = 0; l < sLayers.length; l++) {
+                const ly = (l + 1) / (sLayers.length + 1) * h;
+                for (let n = 0; n < sLayers[l]; n++) {
+                    const nx = sX + (n - (sLayers[l] - 1) / 2) * 20;
+                    c.beginPath(); c.arc(nx, ly, 5, 0, Math.PI * 2);
+                    c.fillStyle = 'rgba(6,182,212,0.2)';
+                    c.fill();
+                }
+            }
+            c.fillText('Student', sX, h - 5);
+
+            // Knowledge flow particles
+            for (let i = 0; i < 5; i++) {
+                const t = ((time * 0.6 + i * 0.2) % 1);
+                const px = tX + 40 + (sX - tX - 80) * t;
+                const py = h / 2 + Math.sin(t * Math.PI * 2 + i) * 15;
+                c.beginPath(); c.arc(px, py, 3, 0, Math.PI * 2);
+                c.fillStyle = `rgba(6,182,212,${Math.sin(t * Math.PI) * 0.6})`;
+                c.fill();
+            }
+
+            // Arrow
+            c.strokeStyle = 'rgba(6,182,212,0.15)';
+            c.lineWidth = 1;
+            c.setLineDash([4, 4]);
+            c.beginPath(); c.moveTo(tX + 50, h / 2); c.lineTo(sX - 50, h / 2); c.stroke();
+            c.setLineDash([]);
+        }
+
+        // 19. MoE: router + experts
+        if (previews.moe) {
+            const { ctx: c, w, h } = previews.moe;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const cx = w / 2, cy = h / 2;
+            const expertColors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b'];
+            const numExperts = 4;
+            const radius = Math.min(w, h) * 0.3;
+
+            // Router center
+            c.beginPath(); c.arc(cx, cy, 18, 0, Math.PI * 2);
+            c.fillStyle = 'rgba(6,182,212,0.2)';
+            c.strokeStyle = '#06b6d4';
+            c.lineWidth = 2;
+            c.fill(); c.stroke();
+            c.font = '10px "JetBrains Mono"';
+            c.fillStyle = '#06b6d4';
+            c.textAlign = 'center'; c.textBaseline = 'middle';
+            c.fillText('R', cx, cy);
+
+            // Experts
+            for (let i = 0; i < numExperts; i++) {
+                const angle = (i / numExperts) * Math.PI * 2 - Math.PI / 2;
+                const ex = cx + Math.cos(angle) * radius;
+                const ey = cy + Math.sin(angle) * radius;
+
+                // Connection (varying thickness based on "routing weight")
+                const weight = Math.sin(time * 1.5 + i * 1.5) * 0.4 + 0.5;
+                c.strokeStyle = expertColors[i] + Math.round(weight * 120).toString(16).padStart(2, '0');
+                c.lineWidth = weight * 4;
+                c.beginPath(); c.moveTo(cx, cy); c.lineTo(ex, ey); c.stroke();
+
+                // Expert node
+                c.beginPath(); c.arc(ex, ey, 14, 0, Math.PI * 2);
+                c.fillStyle = expertColors[i] + '30';
+                c.strokeStyle = expertColors[i];
+                c.lineWidth = 1.5;
+                c.fill(); c.stroke();
+                c.font = '9px "JetBrains Mono"';
+                c.fillStyle = expertColors[i];
+                c.textAlign = 'center'; c.textBaseline = 'middle';
+                c.fillText(`E${i + 1}`, ex, ey);
+            }
+        }
+
+        // 20. Superposition: feature vectors in 2D
+        if (previews.superpos) {
+            const { ctx: c, w, h } = previews.superpos;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            const cx = w / 2, cy = h / 2;
+            const numFeatures = 7;
+            const colors = ['#ef4444', '#3b82f6', '#22c55e', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
+            const radius = Math.min(w, h) * 0.35;
+
+            // Axes
+            c.strokeStyle = 'rgba(255,255,255,0.08)';
+            c.lineWidth = 1;
+            c.beginPath(); c.moveTo(cx - radius - 10, cy); c.lineTo(cx + radius + 10, cy); c.stroke();
+            c.beginPath(); c.moveTo(cx, cy - radius - 10); c.lineTo(cx, cy + radius + 10); c.stroke();
+
+            // Feature vectors
+            for (let i = 0; i < numFeatures; i++) {
+                const angle = (i / numFeatures) * Math.PI * 2 + time * 0.1;
+                const len = radius * (0.5 + Math.sin(time + i * 2) * 0.2);
+                const ex = cx + Math.cos(angle) * len;
+                const ey = cy + Math.sin(angle) * len;
+
+                c.strokeStyle = colors[i] + '80';
+                c.lineWidth = 2;
+                c.beginPath(); c.moveTo(cx, cy); c.lineTo(ex, ey); c.stroke();
+
+                // Arrowhead
+                c.beginPath(); c.arc(ex, ey, 4, 0, Math.PI * 2);
+                c.fillStyle = colors[i];
+                c.fill();
+            }
+
+            // Center dot
+            c.beginPath(); c.arc(cx, cy, 3, 0, Math.PI * 2);
+            c.fillStyle = 'rgba(255,255,255,0.3)';
+            c.fill();
+
+            // Labels
+            c.font = '9px "JetBrains Mono"';
+            c.fillStyle = 'rgba(6,182,212,0.4)';
+            c.textAlign = 'center';
+            c.fillText(`M=${numFeatures} > N=2`, cx, h - 5);
+        }
+
+        // 10. GAN: competing point distributions
+        if (previews.gan) {
+            const p = previews.gan;
+            const { ctx: c, w, h } = p;
+            c.fillStyle = '#030712'; c.fillRect(0, 0, w, h);
+
+            p.progress = Math.min(1, p.progress + 0.001);
+
+            // Background decision boundary (soft gradient)
+            const grad = c.createRadialGradient(w * 0.5, h * 0.5, 0, w * 0.5, h * 0.5, w * 0.4);
+            grad.addColorStop(0, 'rgba(239,68,68,0.06)');
+            grad.addColorStop(0.6, 'rgba(239,68,68,0.02)');
+            grad.addColorStop(1, 'rgba(34,197,94,0.04)');
+            c.fillStyle = grad;
+            c.fillRect(0, 0, w, h);
+
+            // Real points (green ring)
+            for (const pt of p.real) {
+                c.beginPath();
+                c.arc(pt.x * w, pt.y * h, 4, 0, Math.PI * 2);
+                c.fillStyle = 'rgba(34,197,94,0.6)';
+                c.fill();
+            }
+
+            // Fake points (red, lerp toward ring)
+            for (let i = 0; i < p.fake.length; i++) {
+                const target = p.real[i];
+                const fx = p.fake[i].x + (target.x - p.fake[i].x) * p.progress * 0.6;
+                const fy = p.fake[i].y + (target.y - p.fake[i].y) * p.progress * 0.6;
+                // Add jitter
+                const jx = fx + Math.sin(time * 3 + i) * 0.01;
+                const jy = fy + Math.cos(time * 2.5 + i) * 0.01;
+                c.beginPath();
+                c.arc(jx * w, jy * h, 4, 0, Math.PI * 2);
+                c.fillStyle = 'rgba(239,68,68,0.6)';
+                c.fill();
+            }
+
+            // Labels
+            c.font = '14px "JetBrains Mono"';
+            c.fillStyle = 'rgba(34,197,94,0.5)';
+            c.textAlign = 'left';
+            c.fillText('Real', 10, 20);
+            c.fillStyle = 'rgba(239,68,68,0.5)';
+            c.fillText('Gen', 10, 36);
+        }
+
+        requestAnimationFrame(animate);
+    }
+
+    // Init
+    setTimeout(() => {
+        initPreviews();
+        animate();
+    }, 100);
+    </script>
+</body>
+</html>

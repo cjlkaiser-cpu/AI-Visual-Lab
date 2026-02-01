@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Embeddings Constellation - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --module-color: #8b5cf6;
+            --module-dim: rgba(139, 92, 246, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; cursor: crosshair; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; }
+        .controls::-webkit-scrollbar-track { background: transparent; }
+        .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.1rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-accent:hover { opacity: 0.9; color: white; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        input[type="text"] { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; outline: none; }
+        input[type="text"]:focus { border-color: var(--module-color); }
+        .explain-section { background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(139,92,246,0.1); padding: 1px 5px; border-radius: 3px; }
+        .tooltip { position: absolute; background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border: 1px solid rgba(139,92,246,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.75rem; color: var(--text-primary); pointer-events: none; z-index: 100; max-width: 200px; }
+        .analogy-box { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        .analogy-box .word { background: rgba(139,92,246,0.15); border: 1px solid rgba(139,92,246,0.3); padding: 2px 8px; border-radius: 6px; color: #c4b5fd; }
+        .analogy-box .op { color: var(--module-color); font-weight: bold; }
+        .analogy-box .result { background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); padding: 2px 8px; border-radius: 6px; color: #86efac; }
+        .neighbor-list { max-height: 140px; overflow-y: auto; }
+        .neighbor-item { display: flex; justify-content: space-between; padding: 3px 0; font-size: 0.78rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+        .neighbor-item .dist { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.72rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Token Embeddings Constellation</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                Embeddings Constellation
+            </nav>
+        </div>
+        <div class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">
+            <span id="stat-words">500 palabras</span> &nbsp;|&nbsp;
+            <span id="stat-dim">50D → 2D</span>
+        </div>
+    </header>
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div id="tooltip" class="tooltip" style="display:none;"></div>
+        </div>
+        <aside class="controls">
+            <div class="equation-box">
+                king - man + woman &asymp; queen
+            </div>
+
+            <div class="control-section">
+                <h3>&#128269; Buscar Palabra</h3>
+                <input type="text" id="input-search" placeholder="Escribe una palabra...">
+                <div id="search-result" style="margin-top:6px; font-size:0.78rem; color:var(--text-muted);"></div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#9879; Aritmetica Vectorial</h3>
+                <div style="display:flex; gap:4px; margin-bottom:8px;">
+                    <input type="text" id="input-a" placeholder="rey" style="width:30%;">
+                    <span style="color:var(--module-color);line-height:2.2;">-</span>
+                    <input type="text" id="input-b" placeholder="hombre" style="width:30%;">
+                    <span style="color:var(--module-color);line-height:2.2;">+</span>
+                    <input type="text" id="input-c" placeholder="mujer" style="width:30%;">
+                </div>
+                <button class="btn btn-accent" id="btn-analogy" style="width:100%;">Calcular Analogia</button>
+                <div id="analogy-result" class="analogy-box"></div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#127912; Visualizacion</h3>
+                <div class="slider-group">
+                    <label>Vecinos K <span id="val-k">5</span></label>
+                    <input type="range" id="sl-k" min="1" max="15" value="5">
+                </div>
+                <div class="slider-group">
+                    <label>Zoom <span id="val-zoom">1.0x</span></label>
+                    <input type="range" id="sl-zoom" min="50" max="300" value="100">
+                </div>
+                <select id="sel-field">
+                    <option value="all">Todos los campos</option>
+                    <option value="animales">Animales</option>
+                    <option value="colores">Colores</option>
+                    <option value="verbos">Verbos</option>
+                    <option value="numeros">Numeros</option>
+                    <option value="paises">Paises</option>
+                    <option value="familia">Familia</option>
+                    <option value="emociones">Emociones</option>
+                </select>
+            </div>
+
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <button class="btn" id="btn-mute">Silenciar</button>
+            </div>
+
+            <div class="control-section">
+                <h3>&#128200; Vecinos Cercanos</h3>
+                <div class="stat"><span>Palabra seleccionada</span><span class="stat-value" id="val-selected">-</span></div>
+                <div id="neighbor-list" class="neighbor-list"></div>
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; Espacio Semantico</strong><br><br>
+                Los <span class="hl">word embeddings</span> convierten palabras en vectores de alta dimension donde la <span class="hl">distancia</span> refleja similitud semantica.<br><br>
+                Proyectamos <span class="eq">50D → 2D</span> usando <span class="hl">PCA</span> para visualizar. Las palabras del mismo campo semantico forman <span class="hl">clusters</span>.<br><br>
+                La <span class="hl">aritmetica vectorial</span> permite analogias: <span class="eq">rey - hombre + mujer ≈ reina</span>. Esto demuestra que las relaciones se codifican como <span class="hl">direcciones</span> en el espacio.
+            </div>
+        </aside>
+    </main>
+
+<script>
+// === CONFIG ===
+const CONFIG = { volume: 0.3, audioEnabled: true, K: 5, zoom: 1.0 };
+
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// === AUDIO ===
+let audioCtx = null, masterGain = null;
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = CONFIG.volume;
+    const comp = audioCtx.createDynamicsCompressor();
+    masterGain.connect(comp); comp.connect(audioCtx.destination);
+}
+function playNote(freq, dur, vol = 0.1, type = 'sine') {
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = type; osc.frequency.value = freq;
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+
+// === WORD EMBEDDINGS ===
+// Generate synthetic embeddings using hash-based approach for ~200 words
+// Words are grouped into semantic fields and embeddings are constructed so similar words cluster
+const DIM = 50;
+const FIELDS = {
+    animales: ['gato','perro','caballo','pajaro','pez','leon','tigre','oso','conejo','aguila','serpiente','elefante','lobo','zorro','delfin','ballena','tortuga','mono','rata','araña'],
+    colores: ['rojo','azul','verde','amarillo','blanco','negro','rosa','naranja','morado','gris','dorado','plateado','violeta','turquesa','marron'],
+    verbos: ['correr','saltar','nadar','volar','pensar','crear','aprender','enseñar','escribir','leer','hablar','escuchar','ver','tocar','sentir','dormir','comer','beber','caminar','bailar'],
+    numeros: ['uno','dos','tres','cuatro','cinco','seis','siete','ocho','nueve','diez','cien','mil','primero','segundo','tercero'],
+    paises: ['españa','francia','italia','alemania','mexico','argentina','brasil','japon','china','india','rusia','canada','australia','egipto','peru'],
+    familia: ['padre','madre','hijo','hija','hermano','hermana','abuelo','abuela','tio','tia','primo','prima','sobrino','esposo','esposa','niño','bebe','familia','hogar','amor'],
+    emociones: ['feliz','triste','enojado','miedo','sorpresa','asco','alegria','tristeza','ira','ansiedad','calma','paz','amor','odio','esperanza'],
+    tecnologia: ['computadora','internet','programa','codigo','red','datos','modelo','algoritmo','neurona','capa','peso','error','funcion','variable','sistema'],
+    naturaleza: ['sol','luna','estrella','rio','mar','montaña','bosque','flor','arbol','lluvia','viento','nube','tierra','fuego','agua'],
+    cuerpo: ['cabeza','mano','pie','ojo','boca','corazon','cerebro','brazo','pierna','dedo','oreja','nariz','espalda','pecho','sangre'],
+    comida: ['pan','arroz','carne','fruta','leche','agua','sal','azucar','queso','huevo','tomate','pollo','pescado','cafe','vino'],
+    abstractos: ['tiempo','espacio','vida','muerte','verdad','justicia','libertad','poder','sueño','idea','razon','mente','alma','forma','energia'],
+    rey_reina: ['rey','reina','principe','princesa','hombre','mujer','niño','niña','actor','actriz','doctor','doctora','maestro','maestra','padre','madre']
+};
+
+let seed2 = 123;
+function srand() { seed2 = (seed2 * 16807) % 2147483647; return (seed2 - 1) / 2147483646; }
+
+// Build embeddings: each field gets a "center" direction and words are jittered around it
+const allWords = [];
+const wordToField = {};
+const embeddings = {};
+const fieldCenters = {};
+
+// Generate random field center vectors
+Object.keys(FIELDS).forEach(field => {
+    fieldCenters[field] = Array.from({length: DIM}, () => (srand() - 0.5) * 2);
+});
+
+// Make similar fields have closer centers
+const fieldSimilarities = {
+    'animales': ['naturaleza'],
+    'colores': ['emociones'],
+    'familia': ['emociones', 'rey_reina'],
+    'numeros': ['tecnologia'],
+    'paises': ['naturaleza'],
+    'cuerpo': ['comida', 'emociones'],
+    'comida': ['naturaleza', 'cuerpo'],
+    'rey_reina': ['familia']
+};
+
+Object.entries(fieldSimilarities).forEach(([f, sims]) => {
+    sims.forEach(s => {
+        if (fieldCenters[s]) {
+            for (let d = 0; d < DIM; d++) {
+                fieldCenters[f][d] = fieldCenters[f][d] * 0.7 + fieldCenters[s][d] * 0.3;
+            }
+        }
+    });
+});
+
+// Assign embeddings
+Object.entries(FIELDS).forEach(([field, words]) => {
+    words.forEach((word, wi) => {
+        if (embeddings[word]) return; // avoid duplicates
+        const emb = new Array(DIM);
+        for (let d = 0; d < DIM; d++) {
+            emb[d] = fieldCenters[field][d] + (srand() - 0.5) * 0.6;
+            // Add word-specific hash for uniqueness
+            emb[d] += Math.sin(word.charCodeAt(0) * 13.7 + d * 2.3 + wi * 0.8) * 0.3;
+        }
+        embeddings[word] = emb;
+        wordToField[word] = field;
+        allWords.push(word);
+    });
+});
+
+// Special: ensure analogies roughly work (rey-hombre+mujer≈reina)
+// Add bias vectors
+const genderDir = Array.from({length: DIM}, (_, d) => Math.sin(d * 0.5) * 0.5);
+const royalDir = Array.from({length: DIM}, (_, d) => Math.cos(d * 0.3) * 0.5);
+
+['hombre','niño','padre','actor','doctor','maestro','principe','rey'].forEach(w => {
+    if (embeddings[w]) for (let d = 0; d < DIM; d++) embeddings[w][d] += genderDir[d] * 0.4;
+});
+['mujer','niña','madre','actriz','doctora','maestra','princesa','reina'].forEach(w => {
+    if (embeddings[w]) for (let d = 0; d < DIM; d++) embeddings[w][d] -= genderDir[d] * 0.4;
+});
+['rey','reina','principe','princesa'].forEach(w => {
+    if (embeddings[w]) for (let d = 0; d < DIM; d++) embeddings[w][d] += royalDir[d] * 0.5;
+});
+
+// === PCA PROJECTION ===
+function computePCA(vecs) {
+    const N = vecs.length;
+    // Center
+    const mean = new Array(DIM).fill(0);
+    vecs.forEach(v => v.forEach((x, d) => mean[d] += x));
+    mean.forEach((_, d) => mean[d] /= N);
+    const centered = vecs.map(v => v.map((x, d) => x - mean[d]));
+
+    // Power iteration for top 2 eigenvectors
+    let pc1 = Array.from({length: DIM}, () => Math.random() - 0.5);
+    let pc2 = Array.from({length: DIM}, () => Math.random() - 0.5);
+
+    for (let iter = 0; iter < 50; iter++) {
+        // Multiply by covariance
+        let new1 = new Array(DIM).fill(0);
+        for (const v of centered) {
+            const dot = v.reduce((s, x, d) => s + x * pc1[d], 0);
+            v.forEach((x, d) => new1[d] += dot * x);
+        }
+        // Normalize
+        const norm1 = Math.sqrt(new1.reduce((s, x) => s + x * x, 0)) || 1;
+        pc1 = new1.map(x => x / norm1);
+
+        // Second component (orthogonalize)
+        let new2 = new Array(DIM).fill(0);
+        for (const v of centered) {
+            const dot = v.reduce((s, x, d) => s + x * pc2[d], 0);
+            v.forEach((x, d) => new2[d] += dot * x);
+        }
+        // Remove pc1 component
+        const proj = new2.reduce((s, x, d) => s + x * pc1[d], 0);
+        new2 = new2.map((x, d) => x - proj * pc1[d]);
+        const norm2 = Math.sqrt(new2.reduce((s, x) => s + x * x, 0)) || 1;
+        pc2 = new2.map(x => x / norm2);
+    }
+
+    // Project
+    const projected = centered.map(v => [
+        v.reduce((s, x, d) => s + x * pc1[d], 0),
+        v.reduce((s, x, d) => s + x * pc2[d], 0)
+    ]);
+
+    return { projected, mean, pc1, pc2 };
+}
+
+const embVecs = allWords.map(w => embeddings[w]);
+const pca = computePCA(embVecs);
+const positions2D = {};
+
+// Normalize to [0.1, 0.9]
+let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+pca.projected.forEach(([x, y]) => {
+    minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+    minY = Math.min(minY, y); maxY = Math.max(maxY, y);
+});
+const rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+
+allWords.forEach((w, i) => {
+    positions2D[w] = {
+        x: 0.1 + (pca.projected[i][0] - minX) / rangeX * 0.8,
+        y: 0.1 + (pca.projected[i][1] - minY) / rangeY * 0.8
+    };
+});
+
+// === STATE ===
+let selectedWord = null;
+let neighbors = [];
+let highlightField = 'all';
+let analogyResult = null;
+let analogyVecPos = null;
+let panX = 0, panY = 0;
+let hoverWord = null;
+let time = 0;
+
+const FIELD_COLORS = {
+    animales: '#22c55e', colores: '#f43f5e', verbos: '#3b82f6', numeros: '#eab308',
+    paises: '#f97316', familia: '#ec4899', emociones: '#a855f7', tecnologia: '#06b6d4',
+    naturaleza: '#10b981', cuerpo: '#fb923c', comida: '#84cc16', abstractos: '#6366f1',
+    rey_reina: '#fbbf24'
+};
+
+function euclidean(a, b) {
+    let sum = 0;
+    for (let d = 0; d < a.length; d++) sum += (a[d] - b[d]) ** 2;
+    return Math.sqrt(sum);
+}
+
+function findNeighbors(word, k) {
+    if (!embeddings[word]) return [];
+    const target = embeddings[word];
+    const dists = allWords.filter(w => w !== word).map(w => ({ word: w, dist: euclidean(target, embeddings[w]) }));
+    dists.sort((a, b) => a.dist - b.dist);
+    return dists.slice(0, k);
+}
+
+function findClosest(vec) {
+    let best = null, bestDist = Infinity;
+    for (const w of allWords) {
+        const d = euclidean(vec, embeddings[w]);
+        if (d < bestDist) { bestDist = d; best = w; }
+    }
+    return { word: best, dist: bestDist };
+}
+
+// Project a vector to 2D using our PCA basis
+function projectVec(vec) {
+    const centered = vec.map((v, d) => v - pca.mean[d]);
+    return {
+        x: 0.1 + (centered.reduce((s, v, d) => s + v * pca.pc1[d], 0) - minX) / rangeX * 0.8,
+        y: 0.1 + (centered.reduce((s, v, d) => s + v * pca.pc2[d], 0) - minY) / rangeY * 0.8
+    };
+}
+
+function selectWord(word) {
+    if (!embeddings[word]) return;
+    initAudio();
+    selectedWord = word;
+    neighbors = findNeighbors(word, CONFIG.K);
+
+    document.getElementById('val-selected').textContent = word;
+
+    // Update neighbor list
+    const list = document.getElementById('neighbor-list');
+    list.innerHTML = neighbors.map(n =>
+        `<div class="neighbor-item"><span>${n.word}</span><span class="dist">${n.dist.toFixed(3)}</span></div>`
+    ).join('');
+
+    // Sound: pitch based on position
+    const pos = positions2D[word];
+    const freq = 200 + pos.x * 400;
+    playNote(freq, 0.3, 0.15, 'triangle');
+
+    // Sound neighbors with consonance/dissonance
+    neighbors.slice(0, 3).forEach((n, i) => {
+        const nFreq = 200 + positions2D[n.word].x * 400;
+        setTimeout(() => playNote(nFreq, 0.2, 0.08, 'sine'), (i + 1) * 100);
+    });
+}
+
+// === DRAWING ===
+function draw() {
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+
+    const zoom = CONFIG.zoom;
+    const cx = W / 2 + panX;
+    const cy = H / 2 + panY;
+
+    function toScreen(pos) {
+        return {
+            sx: cx + (pos.x - 0.5) * W * zoom,
+            sy: cy + (pos.y - 0.5) * H * zoom
+        };
+    }
+
+    // Background stars
+    for (let i = 0; i < 80; i++) {
+        const sx = (Math.sin(i * 127.1) * 0.5 + 0.5) * W;
+        const sy = (Math.cos(i * 311.7) * 0.5 + 0.5) * H;
+        const alpha = Math.sin(time * 0.5 + i * 0.7) * 0.3 + 0.3;
+        ctx.fillStyle = `rgba(139,92,246,${alpha * 0.15})`;
+        ctx.beginPath(); ctx.arc(sx, sy, 1, 0, Math.PI * 2); ctx.fill();
+    }
+
+    // Draw neighbor connections
+    if (selectedWord && positions2D[selectedWord]) {
+        const selPos = toScreen(positions2D[selectedWord]);
+        for (const n of neighbors) {
+            const nPos = toScreen(positions2D[n.word]);
+            const alpha = Math.max(0.05, 0.4 - n.dist * 0.1);
+            ctx.strokeStyle = `rgba(139,92,246,${alpha})`;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(selPos.sx, selPos.sy);
+            ctx.lineTo(nPos.sx, nPos.sy);
+            ctx.stroke();
+        }
+    }
+
+    // Draw analogy arrow
+    if (analogyResult && analogyVecPos) {
+        const aPos = toScreen(positions2D[document.getElementById('input-a').value.toLowerCase()] || {x:0.5,y:0.5});
+        const rPos = toScreen(analogyVecPos);
+
+        ctx.strokeStyle = 'rgba(34,197,94,0.5)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(aPos.sx, aPos.sy);
+        ctx.lineTo(rPos.sx, rPos.sy);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Result marker
+        ctx.beginPath();
+        ctx.arc(rPos.sx, rPos.sy, 10, 0, Math.PI * 2);
+        ctx.strokeStyle = '#22c55e';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(34,197,94,0.2)';
+        ctx.fill();
+
+        ctx.font = 'bold 12px JetBrains Mono';
+        ctx.fillStyle = '#86efac';
+        ctx.textAlign = 'center';
+        ctx.fillText(analogyResult.word, rPos.sx, rPos.sy - 16);
+    }
+
+    // Draw all word points
+    for (const word of allWords) {
+        const field = wordToField[word];
+        if (highlightField !== 'all' && field !== highlightField) continue;
+
+        const pos = positions2D[word];
+        const { sx, sy } = toScreen(pos);
+
+        if (sx < -50 || sx > W + 50 || sy < -50 || sy > H + 50) continue;
+
+        const color = FIELD_COLORS[field] || '#8b5cf6';
+        const isSelected = word === selectedWord;
+        const isNeighbor = neighbors.some(n => n.word === word);
+        const isHovered = word === hoverWord;
+        const dimmed = highlightField !== 'all' && field !== highlightField;
+
+        // Point
+        const radius = isSelected ? 8 : isNeighbor ? 6 : isHovered ? 5 : 3;
+        const alpha = isSelected ? 1 : isNeighbor ? 0.8 : dimmed ? 0.1 : 0.5;
+
+        if (isSelected) {
+            ctx.beginPath();
+            ctx.arc(sx, sy, 16, 0, Math.PI * 2);
+            ctx.fillStyle = `${color}15`;
+            ctx.fill();
+            ctx.shadowColor = color; ctx.shadowBlur = 15;
+        }
+
+        ctx.beginPath();
+        ctx.arc(sx, sy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color + Math.round(alpha * 255).toString(16).padStart(2, '0');
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Label (show for selected, neighbors, hovered, or if zoomed in enough)
+        if (isSelected || isNeighbor || isHovered || (zoom > 1.5 && radius >= 3)) {
+            ctx.font = isSelected ? 'bold 12px JetBrains Mono' : '10px JetBrains Mono';
+            ctx.fillStyle = `rgba(255,255,255,${isSelected ? 0.9 : isNeighbor ? 0.7 : 0.4})`;
+            ctx.textAlign = 'center';
+            ctx.fillText(word, sx, sy - radius - 4);
+        }
+    }
+
+    // Legend
+    const legendFields = highlightField === 'all' ? Object.keys(FIELD_COLORS) : [highlightField];
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'left';
+    legendFields.forEach((field, i) => {
+        const ly = 20 + i * 16;
+        ctx.fillStyle = FIELD_COLORS[field] || '#8b5cf6';
+        ctx.beginPath(); ctx.arc(15, ly, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillText(field, 25, ly + 3);
+    });
+
+    // Instructions
+    if (!selectedWord) {
+        ctx.font = '13px Inter';
+        ctx.fillStyle = 'rgba(139,92,246,0.3)';
+        ctx.textAlign = 'center';
+        ctx.fillText('Click en un punto o busca una palabra para explorar', W / 2, H - 20);
+    }
+
+    time += 0.016;
+}
+
+// === INTERACTION ===
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const cx = W / 2 + panX;
+    const cy = H / 2 + panY;
+    const zoom = CONFIG.zoom;
+
+    let closest = null, closestDist = 30;
+    for (const word of allWords) {
+        if (highlightField !== 'all' && wordToField[word] !== highlightField) continue;
+        const pos = positions2D[word];
+        const sx = cx + (pos.x - 0.5) * W * zoom;
+        const sy = cy + (pos.y - 0.5) * H * zoom;
+        const d = Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2);
+        if (d < closestDist) { closestDist = d; closest = word; }
+    }
+
+    if (closest) selectWord(closest);
+});
+
+const tooltipEl = document.getElementById('tooltip');
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const cx2 = W / 2 + panX;
+    const cy2 = H / 2 + panY;
+    const zoom = CONFIG.zoom;
+
+    hoverWord = null;
+    for (const word of allWords) {
+        if (highlightField !== 'all' && wordToField[word] !== highlightField) continue;
+        const pos = positions2D[word];
+        const sx = cx2 + (pos.x - 0.5) * W * zoom;
+        const sy = cy2 + (pos.y - 0.5) * H * zoom;
+        const d = Math.sqrt((mx - sx) ** 2 + (my - sy) ** 2);
+        if (d < 15) {
+            hoverWord = word;
+            tooltipEl.style.display = 'block';
+            tooltipEl.style.left = (e.clientX + 12) + 'px';
+            tooltipEl.style.top = (e.clientY - 10) + 'px';
+            tooltipEl.innerHTML = `<strong style="color:${FIELD_COLORS[wordToField[word]]}">${word}</strong><br><span style="color:#94a3b8">Campo: ${wordToField[word]}</span>`;
+            break;
+        }
+    }
+    if (!hoverWord) tooltipEl.style.display = 'none';
+});
+
+// Pan with drag
+let isDragging = false, dragStartX = 0, dragStartY = 0, panStartX = 0, panStartY = 0;
+canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0) { isDragging = true; dragStartX = e.clientX; dragStartY = e.clientY; panStartX = panX; panStartY = panY; }
+});
+canvas.addEventListener('mousemove', (e) => {
+    if (isDragging) { panX = panStartX + (e.clientX - dragStartX); panY = panStartY + (e.clientY - dragStartY); }
+});
+canvas.addEventListener('mouseup', () => isDragging = false);
+canvas.addEventListener('mouseleave', () => isDragging = false);
+
+// Zoom with wheel
+canvas.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    CONFIG.zoom = Math.max(0.5, Math.min(3, CONFIG.zoom - e.deltaY * 0.002));
+    document.getElementById('sl-zoom').value = CONFIG.zoom * 100;
+    document.getElementById('val-zoom').textContent = CONFIG.zoom.toFixed(1) + 'x';
+});
+
+// === CONTROLS ===
+document.getElementById('input-search').addEventListener('input', (e) => {
+    const query = e.target.value.toLowerCase().trim();
+    const resultEl = document.getElementById('search-result');
+    if (!query) { resultEl.textContent = ''; return; }
+
+    const matches = allWords.filter(w => w.startsWith(query)).slice(0, 5);
+    if (matches.length) {
+        resultEl.innerHTML = matches.map(m => `<span style="color:#c4b5fd;cursor:pointer;margin-right:8px;" onclick="selectWord('${m}')">${m}</span>`).join('');
+        if (matches.includes(query)) selectWord(query);
+    } else {
+        resultEl.textContent = 'No encontrada';
+    }
+});
+
+document.getElementById('btn-analogy').addEventListener('click', () => {
+    initAudio();
+    const a = document.getElementById('input-a').value.toLowerCase().trim();
+    const b = document.getElementById('input-b').value.toLowerCase().trim();
+    const c = document.getElementById('input-c').value.toLowerCase().trim();
+
+    if (!embeddings[a] || !embeddings[b] || !embeddings[c]) {
+        document.getElementById('analogy-result').innerHTML = '<span style="color:#ef4444;font-size:0.75rem;">Palabra no encontrada en vocabulario</span>';
+        return;
+    }
+
+    // Compute a - b + c
+    const resultVec = new Array(DIM);
+    for (let d = 0; d < DIM; d++) {
+        resultVec[d] = embeddings[a][d] - embeddings[b][d] + embeddings[c][d];
+    }
+
+    // Find closest (excluding a, b, c)
+    let best = null, bestDist = Infinity;
+    for (const w of allWords) {
+        if (w === a || w === b || w === c) continue;
+        const d = euclidean(resultVec, embeddings[w]);
+        if (d < bestDist) { bestDist = d; best = w; }
+    }
+
+    analogyResult = { word: best, dist: bestDist };
+    analogyVecPos = projectVec(resultVec);
+
+    document.getElementById('analogy-result').innerHTML = `
+        <span class="word">${a}</span><span class="op">-</span>
+        <span class="word">${b}</span><span class="op">+</span>
+        <span class="word">${c}</span><span class="op">=</span>
+        <span class="result">${best}</span>
+    `;
+
+    // Sound: cadence
+    playNote(261.63, 0.3, 0.12); // C4
+    setTimeout(() => playNote(349.23, 0.3, 0.12), 200); // F4
+    setTimeout(() => playNote(392, 0.3, 0.12), 400); // G4
+    setTimeout(() => playNote(523.25, 0.4, 0.15), 600); // C5
+
+    selectWord(best);
+});
+
+document.getElementById('sl-k').addEventListener('input', (e) => {
+    CONFIG.K = parseInt(e.target.value);
+    document.getElementById('val-k').textContent = CONFIG.K;
+    if (selectedWord) selectWord(selectedWord);
+});
+
+document.getElementById('sl-zoom').addEventListener('input', (e) => {
+    CONFIG.zoom = e.target.value / 100;
+    document.getElementById('val-zoom').textContent = CONFIG.zoom.toFixed(1) + 'x';
+});
+
+document.getElementById('sel-field').addEventListener('change', (e) => {
+    highlightField = e.target.value;
+});
+
+document.getElementById('sl-vol').addEventListener('input', (e) => {
+    CONFIG.volume = e.target.value / 100;
+    document.getElementById('val-vol').textContent = e.target.value + '%';
+    if (masterGain) masterGain.gain.value = CONFIG.volume;
+});
+document.getElementById('btn-mute').addEventListener('click', () => {
+    CONFIG.audioEnabled = !CONFIG.audioEnabled;
+    document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio';
+});
+
+// Make selectWord global for inline onclick
+window.selectWord = selectWord;
+
+// === LOOP ===
+function loop() {
+    draw();
+    requestAnimationFrame(loop);
+}
+loop();
+</script>
+</body>
+</html>

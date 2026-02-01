@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reinforcement Learning - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg-primary: #030712; --bg-secondary: #0f172a; --bg-panel: #1e293b; --accent: #ef4444; --module-color: #06b6d4; --module-dim: rgba(6,182,212,0.15); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; } .controls::-webkit-scrollbar-track { background: transparent; } .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 0.95rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(6,182,212,0.05); border: 1px solid rgba(6,182,212,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(6,182,212,0.1); padding: 1px 5px; border-radius: 3px; }
+        .chart-container canvas { width: 100%; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Reinforcement Learning: Grid World</h1>
+            <nav class="breadcrumb"><a href="../../_portal/index.html">EigenLab</a> / <a href="index.html">AI Visual Lab</a> / Reinforcement Learning</nav>
+        </div>
+        <div class="mono" style="font-size:0.75rem;color:var(--text-secondary);">Episodio: <span id="stat-ep">0</span> | Reward: <span id="stat-rew">0</span></div>
+    </header>
+    <main class="main">
+        <div class="canvas-container"><canvas id="canvas"></canvas></div>
+        <aside class="controls">
+            <div class="equation-box">Q(s,a) &larr; Q(s,a) + &alpha;[r + &gamma;·max<sub>a'</sub>Q(s',a') - Q(s,a)]</div>
+            <div class="control-section">
+                <h3>&#9881; Entrenamiento</h3>
+                <div class="btn-group">
+                    <button class="btn btn-accent" id="btn-train1">Train 1 Ep</button>
+                    <button class="btn" id="btn-train100">Train 100</button>
+                    <button class="btn" id="btn-train1000">Train 1000</button>
+                    <button class="btn" id="btn-run">&#9654; Correr Agente</button>
+                </div>
+                <div class="btn-group" style="margin-top:0.5rem;">
+                    <button class="btn" id="btn-reset">Reset Q</button>
+                    <button class="btn" id="btn-resetgrid">Reset Grid</button>
+                </div>
+            </div>
+            <div class="control-section">
+                <h3>&#9874; Parametros</h3>
+                <div class="slider-group"><label>Epsilon (exploracion) <span id="val-eps">0.30</span></label><input type="range" id="sl-eps" min="0" max="100" value="30"></div>
+                <div class="slider-group"><label>Gamma (descuento) <span id="val-gamma">0.95</span></label><input type="range" id="sl-gamma" min="0" max="100" value="95"></div>
+                <div class="slider-group"><label>Alpha (learning rate) <span id="val-alpha">0.10</span></label><input type="range" id="sl-alpha" min="1" max="100" value="10"></div>
+                <select id="sel-algo"><option value="qlearning">Q-Learning</option><option value="sarsa">SARSA</option></select>
+            </div>
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group"><label>Volumen <span id="val-vol">30%</span></label><input type="range" id="sl-vol" min="0" max="100" value="30"></div>
+                <button class="btn" id="btn-mute">Silenciar</button>
+            </div>
+            <div class="control-section">
+                <h3>&#128202; Estadisticas</h3>
+                <div class="stat"><span>Episodios</span><span class="stat-value" id="val-eps-count">0</span></div>
+                <div class="stat"><span>Reward promedio</span><span class="stat-value" id="val-avg-rew">0.0</span></div>
+                <div class="stat"><span>Exitos</span><span class="stat-value" id="val-wins">0</span></div>
+                <div class="stat"><span>Algoritmo</span><span class="stat-value" id="val-algo">Q-Learning</span></div>
+                <div class="chart-container" style="margin-top:0.5rem;"><canvas id="chart-reward" height="80"></canvas></div>
+            </div>
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; Aprender de la Experiencia</strong><br><br>
+                El agente navega un <span class="hl">grid 8x8</span> buscando la meta (verde). Cada celda tiene 4 <span class="hl">Q-values</span> (↑↓←→) que estiman la recompensa futura.<br><br>
+                <span class="eq">Q-Learning</span>: actualiza con el maximo Q del siguiente estado (off-policy).<br>
+                <span class="eq">SARSA</span>: actualiza con la accion realmente tomada (on-policy).<br><br>
+                <span class="hl">Epsilon</span> controla exploracion vs explotacion. Las flechas muestran la <span class="hl">politica optima</span>.
+            </div>
+        </aside>
+    </main>
+<script>
+const CONFIG = { volume: 0.3, audioEnabled: true, epsilon: 0.3, gamma: 0.95, alpha: 0.1, algo: 'qlearning' };
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+function resizeCanvas() { dpr = window.devicePixelRatio || 1; const rect = canvas.parentElement.getBoundingClientRect(); W = rect.width; H = rect.height; canvas.width = W * dpr; canvas.height = H * dpr; canvas.style.width = W + 'px'; canvas.style.height = H + 'px'; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); }
+window.addEventListener('resize', resizeCanvas); resizeCanvas();
+
+let audioCtx = null, masterGain = null;
+function initAudio() { if (audioCtx) return; audioCtx = new (window.AudioContext || window.webkitAudioContext)(); masterGain = audioCtx.createGain(); masterGain.gain.value = CONFIG.volume; const c = audioCtx.createDynamicsCompressor(); masterGain.connect(c); c.connect(audioCtx.destination); }
+function playNote(freq, dur, vol = 0.1, type = 'sine') { if (!audioCtx || !CONFIG.audioEnabled) return; const now = audioCtx.currentTime; const o = audioCtx.createOscillator(); o.type = type; o.frequency.value = freq; const e = audioCtx.createGain(); e.gain.setValueAtTime(0, now); e.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02); e.gain.exponentialRampToValueAtTime(0.001, now + dur); o.connect(e); e.connect(masterGain); o.start(now); o.stop(now + dur + 0.05); }
+
+// === GRID WORLD ===
+const GS = 8; // grid size
+const ACTIONS = [[0,-1],[0,1],[-1,0],[1,0]]; // up, down, left, right
+const ARROWS = ['↑','↓','←','→'];
+
+let grid = []; // 0=empty, 1=wall, 2=trap, 3=reward, 4=goal
+let Q = [];
+let agentPos = [0, 0];
+let goalPos = [7, 7];
+let episodes = 0;
+let wins = 0;
+let rewardHistory = [];
+let agentPath = [];
+let agentRunning = false;
+
+function initGrid() {
+    grid = Array.from({length: GS}, () => Array(GS).fill(0));
+    // Walls
+    [[2,1],[2,2],[2,3],[5,4],[5,5],[5,6],[3,6],[1,5]].forEach(([r,c]) => grid[r][c] = 1);
+    // Traps
+    [[4,2],[1,3],[6,5]].forEach(([r,c]) => grid[r][c] = 2);
+    // Rewards
+    [[3,3],[6,1]].forEach(([r,c]) => grid[r][c] = 3);
+    // Goal
+    grid[goalPos[0]][goalPos[1]] = 4;
+}
+
+function initQ() {
+    Q = [];
+    for (let r = 0; r < GS; r++) { Q[r] = []; for (let c = 0; c < GS; c++) Q[r][c] = [0, 0, 0, 0]; }
+    episodes = 0; wins = 0; rewardHistory = [];
+}
+
+function getReward(r, c) {
+    if (grid[r][c] === 2) return -1;
+    if (grid[r][c] === 3) return 0.5;
+    if (grid[r][c] === 4) return 1;
+    return -0.01;
+}
+
+function step(r, c, action) {
+    const [dr, dc] = ACTIONS[action];
+    let nr = r + dr, nc = c + dc;
+    if (nr < 0 || nr >= GS || nc < 0 || nc >= GS || grid[nr][nc] === 1) { nr = r; nc = c; }
+    return [nr, nc];
+}
+
+function chooseAction(r, c) {
+    if (Math.random() < CONFIG.epsilon) return Math.floor(Math.random() * 4);
+    const qvals = Q[r][c];
+    let best = 0;
+    for (let a = 1; a < 4; a++) if (qvals[a] > qvals[best]) best = a;
+    return best;
+}
+
+function trainEpisode() {
+    let [r, c] = [0, 0];
+    let totalReward = 0;
+    let steps = 0;
+    const maxSteps = 200;
+
+    let action = chooseAction(r, c);
+
+    while (steps < maxSteps) {
+        const [nr, nc] = step(r, c, action);
+        const reward = getReward(nr, nc);
+        totalReward += reward;
+        const nextAction = chooseAction(nr, nc);
+
+        if (CONFIG.algo === 'qlearning') {
+            const maxQ = Math.max(...Q[nr][nc]);
+            Q[r][c][action] += CONFIG.alpha * (reward + CONFIG.gamma * maxQ - Q[r][c][action]);
+        } else {
+            Q[r][c][action] += CONFIG.alpha * (reward + CONFIG.gamma * Q[nr][nc][nextAction] - Q[r][c][action]);
+        }
+
+        r = nr; c = nc; action = nextAction; steps++;
+        if (grid[r][c] === 4) { wins++; break; }
+        if (grid[r][c] === 2) break;
+    }
+
+    episodes++;
+    rewardHistory.push(totalReward);
+    if (rewardHistory.length > 200) rewardHistory.shift();
+    updateStats();
+}
+
+function updateStats() {
+    document.getElementById('stat-ep').textContent = episodes;
+    document.getElementById('val-eps-count').textContent = episodes;
+    const avg = rewardHistory.length ? (rewardHistory.reduce((s, v) => s + v, 0) / rewardHistory.length) : 0;
+    document.getElementById('val-avg-rew').textContent = avg.toFixed(2);
+    document.getElementById('stat-rew').textContent = avg.toFixed(2);
+    document.getElementById('val-wins').textContent = wins;
+}
+
+// === AGENT RUN (visual) ===
+function runAgent() {
+    initAudio();
+    agentPos = [0, 0];
+    agentPath = [[0, 0]];
+    agentRunning = true;
+
+    const interval = setInterval(() => {
+        const [r, c] = agentPos;
+        const qvals = Q[r][c];
+        let best = 0;
+        for (let a = 1; a < 4; a++) if (qvals[a] > qvals[best]) best = a;
+        const [nr, nc] = step(r, c, best);
+        agentPos = [nr, nc];
+        agentPath.push([nr, nc]);
+
+        // Sound
+        const reward = getReward(nr, nc);
+        if (reward > 0.5) playNote(523.25, 0.3, 0.15);
+        else if (reward > 0) playNote(440, 0.2, 0.10);
+        else if (reward < -0.5) playNote(196, 0.3, 0.15, 'sawtooth');
+        else playNote(330, 0.08, 0.04, 'triangle');
+
+        if (grid[nr][nc] === 4 || grid[nr][nc] === 2 || agentPath.length > 100) {
+            clearInterval(interval);
+            agentRunning = false;
+            if (grid[nr][nc] === 4) {
+                playNote(523.25, 0.3, 0.12); playNote(659.25, 0.3, 0.10); playNote(783.99, 0.3, 0.10);
+            }
+        }
+    }, 150);
+}
+
+// === DRAWING ===
+function draw() {
+    ctx.fillStyle = '#030712'; ctx.fillRect(0, 0, W, H);
+
+    const gridSize = Math.min(W * 0.7, H * 0.85, 500);
+    const cellSz = gridSize / GS;
+    const ox = (W * 0.65 - gridSize) / 2 + 20;
+    const oy = (H - gridSize) / 2;
+
+    // Grid cells
+    for (let r = 0; r < GS; r++) {
+        for (let c = 0; c < GS; c++) {
+            const x = ox + c * cellSz, y = oy + r * cellSz;
+
+            // Q-value heatmap background
+            const maxQ = Math.max(...Q[r][c]);
+            const minQ = Math.min(...Q[r][c]);
+            const qRange = maxQ - minQ || 1;
+            const qNorm = Math.max(0, Math.min(1, (maxQ + 0.5) / 1.5));
+
+            let bg;
+            if (grid[r][c] === 1) bg = 'rgba(100,116,139,0.3)';
+            else if (grid[r][c] === 2) bg = 'rgba(239,68,68,0.15)';
+            else if (grid[r][c] === 3) bg = 'rgba(234,179,8,0.15)';
+            else if (grid[r][c] === 4) bg = 'rgba(34,197,94,0.2)';
+            else bg = `rgba(6,182,212,${qNorm * 0.15})`;
+
+            ctx.fillStyle = bg;
+            ctx.fillRect(x + 1, y + 1, cellSz - 2, cellSz - 2);
+
+            // Border
+            ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x, y, cellSz, cellSz);
+
+            // Cell content
+            if (grid[r][c] === 1) {
+                ctx.fillStyle = 'rgba(100,116,139,0.5)';
+                ctx.fillRect(x + 4, y + 4, cellSz - 8, cellSz - 8);
+            } else if (grid[r][c] === 2) {
+                ctx.font = `${cellSz * 0.4}px Inter`;
+                ctx.fillStyle = '#ef4444';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('✕', x + cellSz / 2, y + cellSz / 2);
+            } else if (grid[r][c] === 3) {
+                ctx.font = `${cellSz * 0.4}px Inter`;
+                ctx.fillStyle = '#eab308';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('★', x + cellSz / 2, y + cellSz / 2);
+            } else if (grid[r][c] === 4) {
+                ctx.font = `${cellSz * 0.4}px Inter`;
+                ctx.fillStyle = '#22c55e';
+                ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+                ctx.fillText('◎', x + cellSz / 2, y + cellSz / 2);
+            }
+
+            // Policy arrows (for non-wall, non-terminal)
+            if (grid[r][c] === 0 || grid[r][c] === 3) {
+                const qvals = Q[r][c];
+                let best = 0;
+                for (let a = 1; a < 4; a++) if (qvals[a] > qvals[best]) best = a;
+                if (Math.max(...qvals) > 0.001) {
+                    const [dr, dc] = ACTIONS[best];
+                    const ax = x + cellSz / 2;
+                    const ay = y + cellSz / 2;
+                    const len = cellSz * 0.25;
+                    ctx.strokeStyle = 'rgba(6,182,212,0.5)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(ax - dc * len, ay - dr * len);
+                    ctx.lineTo(ax + dc * len, ay + dr * len);
+                    ctx.stroke();
+                    // Arrowhead
+                    ctx.beginPath();
+                    ctx.moveTo(ax + dc * len, ay + dr * len);
+                    ctx.lineTo(ax + dc * len - dc * 6 - dr * 4, ay + dr * len - dr * 6 - dc * 4);
+                    ctx.moveTo(ax + dc * len, ay + dr * len);
+                    ctx.lineTo(ax + dc * len - dc * 6 + dr * 4, ay + dr * len - dr * 6 + dc * 4);
+                    ctx.stroke();
+                }
+            }
+        }
+    }
+
+    // Agent path
+    if (agentPath.length > 1) {
+        ctx.strokeStyle = 'rgba(6,182,212,0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        agentPath.forEach(([r, c], i) => {
+            const x = ox + c * cellSz + cellSz / 2;
+            const y = oy + r * cellSz + cellSz / 2;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+    }
+
+    // Agent
+    if (agentRunning || agentPath.length > 0) {
+        const [ar, ac] = agentPos;
+        const ax = ox + ac * cellSz + cellSz / 2;
+        const ay = oy + ar * cellSz + cellSz / 2;
+        ctx.beginPath();
+        ctx.arc(ax, ay, cellSz * 0.3, 0, Math.PI * 2);
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowColor = '#06b6d4'; ctx.shadowBlur = 15;
+        ctx.fill(); ctx.shadowBlur = 0;
+        ctx.font = `bold ${cellSz * 0.25}px JetBrains Mono`;
+        ctx.fillStyle = '#030712';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('A', ax, ay);
+    }
+
+    // Start marker
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(6,182,212,0.5)';
+    ctx.textAlign = 'center';
+    ctx.fillText('START', ox + cellSz / 2, oy - 5);
+
+    // Legend
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'left';
+    const legX = ox + gridSize + 20;
+    const legItems = [
+        ['rgba(100,116,139,0.5)', 'Pared'],
+        ['#ef4444', '✕ Trampa (-1)'],
+        ['#eab308', '★ Reward (+0.5)'],
+        ['#22c55e', '◎ Meta (+1)'],
+        ['#06b6d4', '→ Politica']
+    ];
+    legItems.forEach(([col, txt], i) => {
+        ctx.fillStyle = col;
+        ctx.fillText(txt, legX, oy + 20 + i * 20);
+    });
+
+    // Click hint
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.font = '10px Inter';
+    ctx.fillText('Click: pared | Shift+Click: trampa', legX, oy + gridSize - 10);
+}
+
+// === REWARD CHART ===
+const chartCanvas = document.getElementById('chart-reward');
+const chartCtx = chartCanvas.getContext('2d');
+function drawChart() {
+    const cw = chartCanvas.offsetWidth * 2; chartCanvas.width = cw; chartCanvas.height = 160;
+    chartCtx.fillStyle = '#0f172a'; chartCtx.fillRect(0, 0, cw, 160);
+    if (!rewardHistory.length) return;
+    const max = Math.max(...rewardHistory, 0.1);
+    const min = Math.min(...rewardHistory, -0.1);
+    const range = max - min || 1;
+    chartCtx.strokeStyle = 'rgba(6,182,212,0.6)'; chartCtx.lineWidth = 1.5;
+    chartCtx.beginPath();
+    rewardHistory.forEach((v, i) => {
+        const x = i / rewardHistory.length * cw;
+        const y = 150 - ((v - min) / range) * 140;
+        if (i === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+    });
+    chartCtx.stroke();
+    // Zero line
+    const zy = 150 - ((0 - min) / range) * 140;
+    chartCtx.strokeStyle = 'rgba(255,255,255,0.1)'; chartCtx.setLineDash([3,3]);
+    chartCtx.beginPath(); chartCtx.moveTo(0, zy); chartCtx.lineTo(cw, zy); chartCtx.stroke();
+    chartCtx.setLineDash([]);
+}
+
+// === CLICK TO EDIT GRID ===
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const gridSize = Math.min(W * 0.7, H * 0.85, 500);
+    const cellSz = gridSize / GS;
+    const ox = (W * 0.65 - gridSize) / 2 + 20;
+    const oy = (H - gridSize) / 2;
+    const gc = Math.floor((mx - ox) / cellSz);
+    const gr = Math.floor((my - oy) / cellSz);
+    if (gr >= 0 && gr < GS && gc >= 0 && gc < GS && grid[gr][gc] !== 4 && !(gr === 0 && gc === 0)) {
+        if (e.shiftKey) {
+            grid[gr][gc] = grid[gr][gc] === 2 ? 0 : 2;
+        } else {
+            grid[gr][gc] = grid[gr][gc] === 1 ? 0 : 1;
+        }
+    }
+});
+
+// === CONTROLS ===
+document.getElementById('btn-train1').addEventListener('click', () => { initAudio(); trainEpisode(); drawChart(); });
+document.getElementById('btn-train100').addEventListener('click', () => { initAudio(); for (let i = 0; i < 100; i++) trainEpisode(); drawChart(); playNote(440, 0.2, 0.1); });
+document.getElementById('btn-train1000').addEventListener('click', () => { initAudio(); for (let i = 0; i < 1000; i++) trainEpisode(); drawChart(); playNote(523.25, 0.3, 0.12); });
+document.getElementById('btn-run').addEventListener('click', runAgent);
+document.getElementById('btn-reset').addEventListener('click', () => { initQ(); drawChart(); });
+document.getElementById('btn-resetgrid').addEventListener('click', () => { initGrid(); initQ(); agentPath = []; agentPos = [0,0]; drawChart(); });
+document.getElementById('sl-eps').addEventListener('input', (e) => { CONFIG.epsilon = e.target.value / 100; document.getElementById('val-eps').textContent = CONFIG.epsilon.toFixed(2); });
+document.getElementById('sl-gamma').addEventListener('input', (e) => { CONFIG.gamma = e.target.value / 100; document.getElementById('val-gamma').textContent = CONFIG.gamma.toFixed(2); });
+document.getElementById('sl-alpha').addEventListener('input', (e) => { CONFIG.alpha = e.target.value / 100; document.getElementById('val-alpha').textContent = CONFIG.alpha.toFixed(2); });
+document.getElementById('sel-algo').addEventListener('change', (e) => { CONFIG.algo = e.target.value; document.getElementById('val-algo').textContent = e.target.value === 'qlearning' ? 'Q-Learning' : 'SARSA'; });
+document.getElementById('sl-vol').addEventListener('input', (e) => { CONFIG.volume = e.target.value / 100; document.getElementById('val-vol').textContent = e.target.value + '%'; if (masterGain) masterGain.gain.value = CONFIG.volume; });
+document.getElementById('btn-mute').addEventListener('click', () => { CONFIG.audioEnabled = !CONFIG.audioEnabled; document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio'; });
+
+initGrid(); initQ();
+function loop() { draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transformer Anatomy - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --module-color: #8b5cf6;
+            --module-dim: rgba(139, 92, 246, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; }
+        .controls::-webkit-scrollbar-track { background: transparent; }
+        .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-accent:hover { opacity: 0.9; color: white; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(139,92,246,0.1); padding: 1px 5px; border-radius: 3px; }
+        .tooltip { position: absolute; background: rgba(15,23,42,0.95); backdrop-filter: blur(12px); border: 1px solid rgba(139,92,246,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.75rem; color: var(--text-primary); pointer-events: none; z-index: 100; max-width: 260px; }
+        .chart-container { position: relative; }
+        .chart-container canvas { width: 100%; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Transformer Anatomy</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                Transformer Anatomy
+            </nav>
+        </div>
+        <div class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">
+            <span id="stat-step">Paso: idle</span> &nbsp;|&nbsp;
+            <span id="stat-tokens">Tokens: 0</span>
+        </div>
+    </header>
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div id="tooltip" class="tooltip" style="display:none;"></div>
+        </div>
+        <aside class="controls">
+            <div class="equation-box">
+                Output = LayerNorm(x + Attention(x))<br>
+                &rarr; LayerNorm(x + FFN(x))
+            </div>
+
+            <div class="control-section">
+                <h3>&#9881; Entrada</h3>
+                <select id="sel-sentence">
+                    <option value="el gato se sienta">el gato se sienta</option>
+                    <option value="la red aprende rapido">la red aprende rapido</option>
+                    <option value="el modelo genera texto">el modelo genera texto</option>
+                    <option value="atencion es todo">atencion es todo</option>
+                </select>
+                <div class="btn-group" style="margin-top:0.75rem;">
+                    <button class="btn btn-accent" id="btn-forward">&#9654; Forward Pass</button>
+                    <button class="btn" id="btn-step">Paso a Paso</button>
+                    <button class="btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <div class="btn-group">
+                    <button class="btn" id="btn-mute">Silenciar</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#128202; Componente Activo</h3>
+                <div class="stat"><span>Componente</span><span class="stat-value" id="val-comp">-</span></div>
+                <div class="stat"><span>Dimension</span><span class="stat-value" id="val-dim">d=32</span></div>
+                <div class="stat"><span>Heads</span><span class="stat-value" id="val-heads">2</span></div>
+                <div class="stat"><span>Capas</span><span class="stat-value" id="val-layers">2</span></div>
+                <div class="chart-container" style="margin-top:0.5rem;">
+                    <canvas id="chart-activations" height="80"></canvas>
+                </div>
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; El Corazon de GPT</strong><br><br>
+                Un <span class="hl">Transformer</span> procesa tokens en paralelo usando <span class="hl">atencion</span> para que cada token "hable" con todos los demas.<br><br>
+                Flujo: <span class="eq">Embedding</span> &rarr; <span class="eq">+ PosEnc</span> &rarr; N&times;(<span class="eq">Attention</span> + <span class="eq">FFN</span>) &rarr; <span class="eq">Output</span><br><br>
+                La <span class="hl">atencion multi-head</span> permite capturar diferentes relaciones simultaneamente. Las <span class="hl">conexiones residuales</span> aseguran flujo de gradientes. <span class="hl">LayerNorm</span> estabiliza cada capa.
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128161; Componentes Clave</strong><br><br>
+                &bull; <span class="hl">Embedding</span>: Token &rarr; vector de dimension d<br>
+                &bull; <span class="hl">Positional Encoding</span>: <span class="eq">PE(pos,2i) = sin(pos/10000^(2i/d))</span><br>
+                &bull; <span class="hl">Multi-Head Attention</span>: <span class="eq">softmax(QK^T/&radic;d_k)V</span><br>
+                &bull; <span class="hl">FFN</span>: <span class="eq">max(0, xW_1+b_1)W_2+b_2</span><br>
+                &bull; <span class="hl">Residual + LayerNorm</span>: Estabilidad del entrenamiento
+            </div>
+        </aside>
+    </main>
+
+<script>
+// === CONFIG ===
+const CONFIG = { volume: 0.3, audioEnabled: true };
+
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// === AUDIO ===
+let audioCtx = null, masterGain = null;
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = CONFIG.volume;
+    const comp = audioCtx.createDynamicsCompressor();
+    masterGain.connect(comp);
+    comp.connect(audioCtx.destination);
+}
+function playNote(freq, dur, vol = 0.15, type = 'sine') {
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = type;
+    osc.frequency.value = freq;
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    const lp = audioCtx.createBiquadFilter();
+    lp.type = 'lowpass'; lp.frequency.value = 2000;
+    osc.connect(lp); lp.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+
+// === MICRO TRANSFORMER ===
+const D = 32; // embedding dimension
+const HEADS = 2;
+const D_K = D / HEADS;
+const LAYERS = 2;
+const VOCAB = {};
+const WORDS = ['el','la','un','una','gato','perro','red','modelo','se','sienta','corre','aprende','genera','rapido','texto','atencion','es','todo','dato','neurona'];
+WORDS.forEach((w, i) => VOCAB[w] = i);
+
+// Random weight matrices (seeded for consistency)
+let seed = 42;
+function seededRandom() { seed = (seed * 16807) % 2147483647; return (seed - 1) / 2147483646; }
+function randMatrix(rows, cols) { const m = []; for (let i = 0; i < rows; i++) { m[i] = []; for (let j = 0; j < cols; j++) m[i][j] = (seededRandom() - 0.5) * Math.sqrt(2 / cols); } return m; }
+function randVec(n) { return Array.from({length: n}, () => (seededRandom() - 0.5) * 0.5); }
+
+// Embedding table
+const embedTable = randMatrix(WORDS.length, D);
+
+// Positional encoding
+function posEnc(pos, d) {
+    const pe = new Array(d);
+    for (let i = 0; i < d; i++) {
+        const div = Math.pow(10000, (2 * Math.floor(i/2)) / d);
+        pe[i] = i % 2 === 0 ? Math.sin(pos / div) : Math.cos(pos / div);
+    }
+    return pe;
+}
+
+// Layer weights
+const layerWeights = [];
+for (let l = 0; l < LAYERS; l++) {
+    layerWeights.push({
+        Wq: randMatrix(D, D), Wk: randMatrix(D, D), Wv: randMatrix(D, D), Wo: randMatrix(D, D),
+        W1: randMatrix(D, D * 4), b1: randVec(D * 4),
+        W2: randMatrix(D * 4, D), b2: randVec(D),
+        gamma1: Array(D).fill(1), beta1: Array(D).fill(0),
+        gamma2: Array(D).fill(1), beta2: Array(D).fill(0)
+    });
+}
+
+function matVec(M, v) { return M.map(row => row.reduce((s, w, i) => s + w * v[i], 0)); }
+function vecAdd(a, b) { return a.map((v, i) => v + (b[i] || 0)); }
+function softmax(arr) {
+    const max = Math.max(...arr);
+    const exp = arr.map(v => Math.exp(v - max));
+    const sum = exp.reduce((s, v) => s + v, 0);
+    return exp.map(v => v / sum);
+}
+function layerNorm(x, gamma, beta) {
+    const mean = x.reduce((s, v) => s + v, 0) / x.length;
+    const variance = x.reduce((s, v) => s + (v - mean) ** 2, 0) / x.length;
+    const std = Math.sqrt(variance + 1e-5);
+    return x.map((v, i) => gamma[i] * (v - mean) / std + beta[i]);
+}
+function relu(x) { return x.map(v => Math.max(0, v)); }
+
+// === FORWARD PASS STATE ===
+let tokens = [];
+let forwardState = null;
+let animPhase = -1; // -1 = idle, 0..N = step
+let animT = 0;
+const PHASES = ['embedding', 'posenc', 'layer0_attn', 'layer0_ffn', 'layer1_attn', 'layer1_ffn', 'output'];
+let hoverComp = null;
+
+function tokenize(sentence) {
+    return sentence.toLowerCase().split(/\s+/).filter(w => w in VOCAB);
+}
+
+function runForward(toks) {
+    const N = toks.length;
+    const state = { tokens: toks, phases: {} };
+
+    // Embedding
+    let X = toks.map(t => [...embedTable[VOCAB[t]]]);
+    state.phases.embedding = X.map(v => [...v]);
+
+    // Positional encoding
+    X = X.map((v, i) => vecAdd(v, posEnc(i, D)));
+    state.phases.posenc = X.map(v => [...v]);
+
+    // Transformer layers
+    for (let l = 0; l < LAYERS; l++) {
+        const lw = layerWeights[l];
+        // Multi-head attention
+        const Q = X.map(x => matVec(lw.Wq, x));
+        const K = X.map(x => matVec(lw.Wk, x));
+        const V = X.map(x => matVec(lw.Wv, x));
+
+        // Per-head attention
+        const attnWeights = [];
+        const headOutputs = Array.from({length: N}, () => new Array(D).fill(0));
+
+        for (let h = 0; h < HEADS; h++) {
+            const start = h * D_K, end = start + D_K;
+            const headAttn = [];
+            for (let i = 0; i < N; i++) {
+                const scores = [];
+                for (let j = 0; j < N; j++) {
+                    let dot = 0;
+                    for (let d = start; d < end; d++) dot += Q[i][d] * K[j][d];
+                    scores.push(dot / Math.sqrt(D_K));
+                }
+                const weights = softmax(scores);
+                headAttn.push(weights);
+
+                // Weighted sum of V
+                for (let d = start; d < end; d++) {
+                    let sum = 0;
+                    for (let j = 0; j < N; j++) sum += weights[j] * V[j][d];
+                    headOutputs[i][d] = sum;
+                }
+            }
+            attnWeights.push(headAttn);
+        }
+
+        // Output projection + residual + layer norm
+        const attnOut = headOutputs.map(v => matVec(lw.Wo, v));
+        X = X.map((x, i) => layerNorm(vecAdd(x, attnOut[i]), lw.gamma1, lw.beta1));
+        state.phases[`layer${l}_attn`] = { X: X.map(v => [...v]), attnWeights, Q, K, V };
+
+        // FFN
+        const ffnMid = X.map(x => relu(vecAdd(matVec(lw.W1, x), lw.b1)));
+        const ffnOut = ffnMid.map(m => vecAdd(matVec(lw.W2, m), lw.b2));
+        X = X.map((x, i) => layerNorm(vecAdd(x, ffnOut[i]), lw.gamma2, lw.beta2));
+        state.phases[`layer${l}_ffn`] = X.map(v => [...v]);
+    }
+
+    // Output logits (simplified: dot with embedding table)
+    const logits = X.map(x => {
+        return embedTable.map(e => e.reduce((s, v, i) => s + v * x[i], 0));
+    });
+    state.phases.output = logits.map(l => softmax(l));
+    state.finalX = X;
+
+    return state;
+}
+
+// === LAYOUT: Architecture components ===
+const COMP = {
+    embedding:   { label: 'Embedding', y: 0.12, color: '#a78bfa' },
+    posenc:      { label: '+ PosEnc', y: 0.20, color: '#818cf8' },
+    layer0_attn: { label: 'Multi-Head Attention (L1)', y: 0.34, color: '#c084fc' },
+    layer0_ffn:  { label: 'Feed-Forward (L1)', y: 0.46, color: '#a855f7' },
+    layer1_attn: { label: 'Multi-Head Attention (L2)', y: 0.60, color: '#c084fc' },
+    layer1_ffn:  { label: 'Feed-Forward (L2)', y: 0.72, color: '#a855f7' },
+    output:      { label: 'Output Logits', y: 0.86, color: '#7c3aed' }
+};
+
+// === DRAWING ===
+let time = 0;
+
+function drawBlock(x, y, w, h, label, color, active, glow) {
+    // Block background
+    ctx.fillStyle = active ? `${color}30` : `${color}10`;
+    ctx.strokeStyle = active ? color : `${color}50`;
+    ctx.lineWidth = active ? 2.5 : 1.5;
+
+    const r = 8;
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    if (glow) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 15;
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    // Label
+    ctx.font = '13px Inter';
+    ctx.fillStyle = active ? '#fff' : 'rgba(255,255,255,0.6)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(label, x + w / 2, y + h / 2);
+}
+
+function drawResidualConnection(x, y1, y2, color) {
+    const offset = 15;
+    ctx.strokeStyle = `${color}40`;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.moveTo(x - offset, y1);
+    ctx.lineTo(x - offset - 20, y1);
+    ctx.lineTo(x - offset - 20, y2);
+    ctx.lineTo(x - offset, y2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // "+" symbol
+    const midY = (y1 + y2) / 2;
+    ctx.font = 'bold 14px JetBrains Mono';
+    ctx.fillStyle = color;
+    ctx.textAlign = 'center';
+    ctx.fillText('+', x - offset - 20, midY);
+}
+
+function drawTokens(toks, y, activations) {
+    const N = toks.length;
+    const totalW = Math.min(W * 0.6, N * 90);
+    const startX = (W * 0.55 - totalW) / 2 + W * 0.05;
+    const tokenW = totalW / N;
+
+    for (let i = 0; i < N; i++) {
+        const tx = startX + i * tokenW + tokenW / 2;
+
+        // Token box
+        ctx.fillStyle = 'rgba(139,92,246,0.12)';
+        ctx.strokeStyle = 'rgba(139,92,246,0.4)';
+        ctx.lineWidth = 1;
+        const bw = tokenW - 8, bh = 28;
+        ctx.beginPath();
+        ctx.roundRect(tx - bw / 2, y - bh / 2, bw, bh, 6);
+        ctx.fill(); ctx.stroke();
+
+        ctx.font = '12px JetBrains Mono';
+        ctx.fillStyle = '#c4b5fd';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(toks[i], tx, y);
+
+        // Activation heat bar
+        if (activations && activations[i]) {
+            const mag = activations[i].reduce((s, v) => s + v * v, 0) / activations[i].length;
+            const norm = Math.min(1, Math.sqrt(mag) * 2);
+            ctx.fillStyle = `rgba(139,92,246,${norm * 0.6})`;
+            ctx.fillRect(tx - bw / 2, y + bh / 2 + 2, bw * norm, 3);
+        }
+    }
+    return { startX, tokenW, N: toks.length };
+}
+
+function drawAttentionMatrix(attnData, toks, cx, cy, size) {
+    if (!attnData || !attnData.attnWeights) return;
+    const N = toks.length;
+    const cellSz = Math.min(size / N, 30);
+    const gridSz = cellSz * N;
+    const ox = cx - gridSz / 2;
+    const oy = cy - gridSz / 2;
+
+    // Average attention across heads
+    const avgAttn = [];
+    for (let i = 0; i < N; i++) {
+        avgAttn[i] = [];
+        for (let j = 0; j < N; j++) {
+            let sum = 0;
+            for (let h = 0; h < HEADS; h++) sum += attnData.attnWeights[h][i][j];
+            avgAttn[i][j] = sum / HEADS;
+        }
+    }
+
+    // Draw cells
+    for (let i = 0; i < N; i++) {
+        for (let j = 0; j < N; j++) {
+            const val = avgAttn[i][j];
+            const alpha = Math.pow(val, 0.6) * 0.85;
+            ctx.fillStyle = `rgba(139,92,246,${alpha})`;
+            ctx.fillRect(ox + j * cellSz + 0.5, oy + i * cellSz + 0.5, cellSz - 1, cellSz - 1);
+        }
+    }
+
+    // Labels
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < N; i++) {
+        ctx.fillText(toks[i], ox + i * cellSz + cellSz / 2, oy - 4);
+    }
+    ctx.textAlign = 'right';
+    for (let i = 0; i < N; i++) {
+        ctx.fillText(toks[i], ox - 4, oy + i * cellSz + cellSz / 2 + 3);
+    }
+}
+
+function drawFlowingParticles(x1, y1, x2, y2, progress, color) {
+    const count = 5;
+    for (let i = 0; i < count; i++) {
+        const t = ((progress + i / count) % 1);
+        const px = x1 + (x2 - x1) * t;
+        const py = y1 + (y2 - y1) * t;
+        const alpha = Math.sin(t * Math.PI) * 0.8;
+        ctx.beginPath();
+        ctx.arc(px, py, 3, 0, Math.PI * 2);
+        ctx.fillStyle = `${color}${Math.round(alpha * 255).toString(16).padStart(2, '0')}`;
+        ctx.fill();
+    }
+}
+
+function draw() {
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(139,92,246,0.03)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x < W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y < H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    const toks = tokens.length ? tokens : ['el', 'gato', 'se', 'sienta'];
+    const blockW = Math.min(280, W * 0.35);
+    const blockH = 36;
+    const centerX = W * 0.3;
+
+    // Title
+    ctx.font = '11px JetBrains Mono';
+    ctx.fillStyle = 'rgba(139,92,246,0.3)';
+    ctx.textAlign = 'center';
+    ctx.fillText('TRANSFORMER · 2 Layers · 2 Heads · d=' + D, centerX, 20);
+
+    // Draw each component block
+    const keys = Object.keys(COMP);
+    const blockBounds = {};
+
+    for (let k = 0; k < keys.length; k++) {
+        const key = keys[k];
+        const comp = COMP[key];
+        const bx = centerX - blockW / 2;
+        const by = comp.y * H;
+        const isActive = animPhase >= 0 && keys[animPhase] === key;
+        const isCompleted = animPhase >= 0 && k < animPhase;
+        const isHovered = hoverComp === key;
+
+        blockBounds[key] = { x: bx, y: by, w: blockW, h: blockH };
+
+        drawBlock(bx, by, blockW, blockH, comp.label, comp.color, isActive || isHovered, isActive);
+
+        // Connection arrow to next
+        if (k < keys.length - 1) {
+            const nextY = COMP[keys[k + 1]].y * H;
+            ctx.strokeStyle = isCompleted || isActive ? 'rgba(139,92,246,0.4)' : 'rgba(139,92,246,0.1)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(centerX, by + blockH);
+            ctx.lineTo(centerX, nextY);
+            ctx.stroke();
+
+            // Arrow head
+            ctx.beginPath();
+            ctx.moveTo(centerX - 4, nextY - 6);
+            ctx.lineTo(centerX, nextY);
+            ctx.lineTo(centerX + 4, nextY - 6);
+            ctx.stroke();
+
+            // Flowing particles when active
+            if (isActive) {
+                drawFlowingParticles(centerX, by + blockH, centerX, nextY, (time * 0.8) % 1, comp.color);
+            }
+        }
+
+        // Completed checkmark
+        if (isCompleted) {
+            ctx.font = 'bold 14px Inter';
+            ctx.fillStyle = '#22c55e';
+            ctx.textAlign = 'left';
+            ctx.fillText('✓', bx + blockW + 8, by + blockH / 2 + 5);
+        }
+    }
+
+    // Draw residual connections for attention layers
+    for (let l = 0; l < LAYERS; l++) {
+        const attnKey = `layer${l}_attn`;
+        const ffnKey = `layer${l}_ffn`;
+        const prevKey = l === 0 ? 'posenc' : `layer${l-1}_ffn`;
+        const attnY = COMP[attnKey].y * H + blockH / 2;
+        const prevY = COMP[prevKey].y * H + blockH / 2;
+        drawResidualConnection(centerX - blockW / 2, prevY, attnY, '#8b5cf6');
+
+        const ffnY = COMP[ffnKey].y * H + blockH / 2;
+        drawResidualConnection(centerX - blockW / 2, COMP[attnKey].y * H + blockH / 2, ffnY, '#8b5cf6');
+    }
+
+    // Right side: token flow and detail
+    const rightX = W * 0.65;
+
+    // Input tokens
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.textAlign = 'left';
+    ctx.fillText('TOKENS', rightX, COMP.embedding.y * H - 5);
+    const tl = drawTokens(toks, COMP.embedding.y * H + blockH / 2, null);
+
+    // Show activations at current phase
+    if (forwardState && animPhase >= 0) {
+        const key = keys[Math.min(animPhase, keys.length - 1)];
+        const phaseData = forwardState.phases[key];
+
+        if (phaseData) {
+            let activations;
+            if (Array.isArray(phaseData) && Array.isArray(phaseData[0])) {
+                activations = phaseData;
+            } else if (phaseData.X) {
+                activations = phaseData.X;
+            }
+
+            if (activations) {
+                const actY = COMP[key].y * H + blockH / 2;
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText('ACTIVACIONES', rightX, actY - 30);
+
+                // Draw activation heatmap
+                const N = toks.length;
+                const actW = Math.min(250, (W - rightX - 30));
+                const cellW = actW / D;
+                const cellH = 16;
+                for (let i = 0; i < N; i++) {
+                    for (let d = 0; d < D; d++) {
+                        const val = activations[i] ? activations[i][d] || 0 : 0;
+                        const norm = Math.tanh(Math.abs(val));
+                        const color = val >= 0 ? `rgba(139,92,246,${norm * 0.8})` : `rgba(239,68,68,${norm * 0.8})`;
+                        ctx.fillStyle = color;
+                        ctx.fillRect(rightX + d * cellW, actY - 20 + i * (cellH + 2), cellW - 0.5, cellH);
+                    }
+                    // Token label
+                    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                    ctx.font = '9px JetBrains Mono';
+                    ctx.textAlign = 'right';
+                    ctx.fillText(toks[i], rightX - 4, actY - 20 + i * (cellH + 2) + cellH / 2 + 3);
+                }
+            }
+
+            // Attention heatmap for attention layers
+            if (phaseData.attnWeights) {
+                const heatY = COMP[key].y * H + blockH + 60 + toks.length * 20;
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                ctx.font = '10px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText('ATTENTION MAP', rightX, heatY - 10);
+                drawAttentionMatrix(phaseData, toks, rightX + 60, heatY + 50, 120);
+            }
+        }
+
+        // Output probabilities
+        if (key === 'output' && forwardState.phases.output) {
+            const probs = forwardState.phases.output;
+            const outY = COMP.output.y * H - 30;
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '10px JetBrains Mono';
+            ctx.textAlign = 'left';
+            ctx.fillText('PREDICCION (ultimo token)', rightX, outY);
+
+            const lastProbs = probs[probs.length - 1];
+            // Top 5
+            const indexed = lastProbs.map((p, i) => ({ p, w: WORDS[i] }));
+            indexed.sort((a, b) => b.p - a.p);
+            const top5 = indexed.slice(0, 5);
+            const barW = 150;
+            for (let i = 0; i < top5.length; i++) {
+                const by = outY + 12 + i * 18;
+                ctx.fillStyle = 'rgba(139,92,246,0.15)';
+                ctx.fillRect(rightX, by, barW, 14);
+                ctx.fillStyle = 'rgba(139,92,246,0.6)';
+                ctx.fillRect(rightX, by, barW * top5[i].p, 14);
+                ctx.fillStyle = '#fff';
+                ctx.font = '9px JetBrains Mono';
+                ctx.textAlign = 'left';
+                ctx.fillText(`${top5[i].w} (${(top5[i].p * 100).toFixed(1)}%)`, rightX + 4, by + 10);
+            }
+        }
+    }
+
+    // Phase indicator
+    if (animPhase >= 0 && animPhase < keys.length) {
+        const key = keys[animPhase];
+        document.getElementById('val-comp').textContent = COMP[key].label;
+        document.getElementById('stat-step').textContent = `Paso: ${animPhase + 1}/${keys.length}`;
+    }
+
+    time += 0.016;
+}
+
+// === ANIMATION LOOP ===
+let animRunning = false;
+let stepMode = false;
+
+function animateForward() {
+    if (animPhase < 0) return;
+
+    animT += 0.016;
+    if (animT > 0.6) { // Time per phase
+        animT = 0;
+        // Sound for this phase
+        const phaseIdx = animPhase;
+        const freq = 220 + phaseIdx * 60;
+        playNote(freq, 0.3, 0.12, 'triangle');
+
+        if (!stepMode) {
+            animPhase++;
+            if (animPhase >= PHASES.length) {
+                animPhase = PHASES.length - 1;
+                animRunning = false;
+                playNote(523.25, 0.5, 0.15); // C5 completion
+                playNote(659.25, 0.5, 0.12);
+                playNote(783.99, 0.5, 0.10);
+            }
+        } else {
+            animRunning = false;
+        }
+    }
+
+    draw();
+    if (animRunning) requestAnimationFrame(animateForward);
+}
+
+function startForward(step = false) {
+    initAudio();
+    const sentence = document.getElementById('sel-sentence').value;
+    tokens = tokenize(sentence);
+    if (tokens.length === 0) tokens = ['el', 'gato'];
+    document.getElementById('stat-tokens').textContent = `Tokens: ${tokens.length}`;
+
+    forwardState = runForward(tokens);
+    stepMode = step;
+
+    if (step && animPhase >= 0) {
+        // Next step
+        animPhase++;
+        if (animPhase >= PHASES.length) animPhase = PHASES.length - 1;
+        const freq = 220 + animPhase * 60;
+        playNote(freq, 0.3, 0.12, 'triangle');
+        draw();
+        return;
+    }
+
+    animPhase = 0;
+    animT = 0;
+    animRunning = true;
+    animateForward();
+}
+
+// === MINI CHART ===
+const chartCanvas = document.getElementById('chart-activations');
+const chartCtx = chartCanvas.getContext('2d');
+
+function drawChart() {
+    const cw = chartCanvas.offsetWidth * 2;
+    const ch = 160;
+    chartCanvas.width = cw; chartCanvas.height = ch;
+
+    chartCtx.fillStyle = '#0f172a';
+    chartCtx.fillRect(0, 0, cw, ch);
+
+    if (!forwardState || animPhase < 0) {
+        chartCtx.fillStyle = 'rgba(255,255,255,0.1)';
+        chartCtx.font = '12px Inter';
+        chartCtx.textAlign = 'center';
+        chartCtx.fillText('Ejecuta forward pass', cw / 2, ch / 2);
+        return;
+    }
+
+    // Draw activation magnitudes per phase
+    const keys = Object.keys(COMP);
+    const barW = cw / keys.length;
+
+    for (let k = 0; k < keys.length; k++) {
+        const key = keys[k];
+        const phaseData = forwardState.phases[key];
+        let mag = 0;
+
+        if (phaseData) {
+            let acts;
+            if (Array.isArray(phaseData) && Array.isArray(phaseData[0])) acts = phaseData;
+            else if (phaseData.X) acts = phaseData.X;
+
+            if (acts) {
+                for (const a of acts) {
+                    mag += a.reduce((s, v) => s + v * v, 0) / a.length;
+                }
+                mag = Math.sqrt(mag / acts.length);
+            }
+        }
+
+        const barH = Math.min(ch - 20, mag * (ch - 20) * 0.8);
+        const alpha = k <= animPhase ? 0.7 : 0.15;
+        chartCtx.fillStyle = `rgba(139,92,246,${alpha})`;
+        chartCtx.fillRect(k * barW + 4, ch - barH - 10, barW - 8, barH);
+
+        // Label
+        chartCtx.fillStyle = 'rgba(255,255,255,0.3)';
+        chartCtx.font = '8px JetBrains Mono';
+        chartCtx.textAlign = 'center';
+        chartCtx.save();
+        chartCtx.translate(k * barW + barW / 2, ch - 2);
+        chartCtx.fillText(COMP[key].label.slice(0, 6), 0, 0);
+        chartCtx.restore();
+    }
+}
+
+// === HOVER / TOOLTIP ===
+const tooltipEl = document.getElementById('tooltip');
+const tooltipTexts = {
+    embedding: 'Cada token se convierte en un vector de dimension d mediante una tabla de embeddings aprendida.',
+    posenc: 'Se suma informacion posicional usando funciones seno/coseno. Sin esto, el Transformer no distingue orden.',
+    layer0_attn: 'Multi-Head Attention: cada token calcula Q, K, V y atiende a todos los demas tokens.',
+    layer0_ffn: 'Feed-Forward Network: transformacion no-lineal punto a punto. Expande a 4d y comprime de vuelta.',
+    layer1_attn: 'Segunda capa de atencion: relaciones mas abstractas y de mayor rango.',
+    layer1_ffn: 'Segunda FFN: procesamiento adicional de las representaciones.',
+    output: 'Logits finales: producto punto con tabla de embeddings para predecir siguiente token.'
+};
+
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    const blockW = Math.min(280, W * 0.35);
+    const centerX = W * 0.3;
+    const bx = centerX - blockW / 2;
+
+    hoverComp = null;
+    for (const [key, comp] of Object.entries(COMP)) {
+        const by = comp.y * H;
+        if (mx >= bx && mx <= bx + blockW && my >= by && my <= by + 36) {
+            hoverComp = key;
+            tooltipEl.style.display = 'block';
+            tooltipEl.style.left = (e.clientX + 12) + 'px';
+            tooltipEl.style.top = (e.clientY - 10) + 'px';
+            tooltipEl.innerHTML = `<strong style="color:#8b5cf6">${comp.label}</strong><br><span style="color:#94a3b8">${tooltipTexts[key]}</span>`;
+            break;
+        }
+    }
+    if (!hoverComp) tooltipEl.style.display = 'none';
+});
+
+canvas.addEventListener('click', (e) => {
+    if (hoverComp && forwardState) {
+        const idx = Object.keys(COMP).indexOf(hoverComp);
+        if (idx >= 0) {
+            animPhase = idx;
+            draw();
+            drawChart();
+        }
+    }
+});
+
+// === CONTROLS ===
+document.getElementById('btn-forward').addEventListener('click', () => startForward(false));
+document.getElementById('btn-step').addEventListener('click', () => startForward(true));
+document.getElementById('btn-reset').addEventListener('click', () => {
+    animPhase = -1; animRunning = false; forwardState = null;
+    document.getElementById('val-comp').textContent = '-';
+    document.getElementById('stat-step').textContent = 'Paso: idle';
+    draw(); drawChart();
+});
+document.getElementById('sl-vol').addEventListener('input', (e) => {
+    CONFIG.volume = e.target.value / 100;
+    document.getElementById('val-vol').textContent = e.target.value + '%';
+    if (masterGain) masterGain.gain.value = CONFIG.volume;
+});
+document.getElementById('btn-mute').addEventListener('click', () => {
+    CONFIG.audioEnabled = !CONFIG.audioEnabled;
+    document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio';
+});
+
+// === MAIN LOOP ===
+function loop() {
+    if (!animRunning) draw();
+    drawChart();
+    requestAnimationFrame(loop);
+}
+draw();
+loop();
+</script>
+</body>
+</html>

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN Feature Detectives - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root { --bg-primary: #030712; --bg-secondary: #0f172a; --bg-panel: #1e293b; --accent: #ef4444; --module-color: #f59e0b; --module-dim: rgba(245,158,11,0.15); --text-primary: #f1f5f9; --text-secondary: #94a3b8; --text-muted: #64748b; --border: #1e293b; }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px; }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .breadcrumb a:hover { text-decoration: underline; }
+        .header-stats { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--text-secondary); display: flex; gap: 12px; }
+        .header-stats .hs-val { color: var(--module-color); }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .tooltip { position: absolute; pointer-events: none; background: rgba(15,23,42,0.92); border: 1px solid rgba(245,158,11,0.3); border-radius: 8px; padding: 8px 12px; font-size: 0.72rem; color: var(--text-primary); z-index: 20; backdrop-filter: blur(6px); display: none; min-width: 170px; line-height: 1.55; }
+        .tooltip .tt-label { color: var(--text-muted); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.04em; }
+        .tooltip .tt-val { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .controls { width: 360px; min-width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.85rem; scrollbar-width: thin; scrollbar-color: #334155 transparent; }
+        .controls::-webkit-scrollbar { width: 5px; }
+        .controls::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 0.95rem; color: var(--text-primary); line-height: 1.7; text-align: center; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-muted); margin-bottom: 0.7rem; display: flex; align-items: center; gap: 6px; }
+        .control-section h3 .ico { font-size: 0.85rem; }
+        .btn { padding: 0.45rem 0.7rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.76rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: #030712; border-color: var(--module-color); font-weight: 600; }
+        .btn-accent:hover { opacity: 0.85; color: #030712; }
+        .btn-group { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+        .btn-sm { padding: 0.3rem 0.55rem; font-size: 0.68rem; }
+        .slider-group { margin-bottom: 0.65rem; }
+        .slider-group:last-child { margin-bottom: 0; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.76rem; margin-bottom: 0.2rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.74rem; }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+        .stat { display: flex; justify-content: space-between; font-size: 0.76rem; padding: 0.3rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+        .stat:last-child { border-bottom: none; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); font-size: 0.72rem; }
+        .draw-canvas { border: 1px solid rgba(245,158,11,0.2); border-radius: 8px; cursor: crosshair; display: block; background: var(--bg-primary); }
+        .field-toggle { display: flex; align-items: center; gap: 8px; font-size: 0.74rem; color: var(--text-secondary); margin-top: 4px; }
+        .field-toggle input[type="checkbox"] { accent-color: var(--module-color); }
+        .explain-section { background: rgba(245,158,11,0.04); border-radius: 10px; padding: 0.9rem 1rem; border: 1px solid rgba(245,158,11,0.08); }
+        .explain-section h4 { font-size: 0.78rem; font-weight: 600; margin-bottom: 0.45rem; color: var(--text-primary); }
+        .explain-section p { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; margin-bottom: 0.35rem; }
+        .explain-section p:last-child { margin-bottom: 0; }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'Times New Roman', serif; font-style: italic; color: var(--text-primary); background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+        .explain-section ul { font-size: 0.72rem; color: var(--text-secondary); line-height: 1.65; padding-left: 1.1rem; margin-bottom: 0.35rem; }
+        .explain-section li { margin-bottom: 0.2rem; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>CNN Feature Detectives</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                CNN Feature Detectives
+            </nav>
+        </div>
+        <div class="header-stats">
+            <span>Prediccion: <span class="hs-val" id="hs-pred">-</span></span>
+            <span>Confianza: <span class="hs-val" id="hs-conf">-</span></span>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+            <div class="tooltip" id="tooltip"></div>
+        </div>
+
+        <aside class="controls">
+            <div class="equation-box">
+                (f * g)(x,y) = &Sigma;&Sigma; f(i,j) &middot; g(x-i, y-j)
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9998;</span> Input (8&times;8)</h3>
+                <canvas id="draw-canvas" class="draw-canvas" width="160" height="160"></canvas>
+                <div class="btn-group" style="margin-top: 0.5rem;">
+                    <button class="btn btn-sm" onclick="loadDigit(0)">0</button>
+                    <button class="btn btn-sm" onclick="loadDigit(1)">1</button>
+                    <button class="btn btn-sm" onclick="loadDigit(2)">2</button>
+                    <button class="btn btn-sm" onclick="loadDigit(3)">3</button>
+                    <button class="btn btn-sm" onclick="loadDigit(4)">4</button>
+                    <button class="btn btn-sm" onclick="loadDigit(5)">5</button>
+                    <button class="btn btn-sm" onclick="loadDigit(6)">6</button>
+                    <button class="btn btn-sm" onclick="loadDigit(7)">7</button>
+                    <button class="btn btn-sm" onclick="loadDigit(8)">8</button>
+                    <button class="btn btn-sm" onclick="loadDigit(9)">9</button>
+                </div>
+                <button class="btn btn-sm" style="margin-top:4px" onclick="clearDraw()">Limpiar</button>
+                <div style="font-size:0.62rem;color:var(--text-muted);margin-top:4px">Dibuja con el mouse · Shift = borrar</div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9881;</span> Filtros</h3>
+                <div class="slider-group">
+                    <label>Capa activa <span id="val-layer">Todas</span></label>
+                    <input type="range" id="sl-layer" min="-1" max="1" step="1" value="-1">
+                </div>
+                <div class="field-toggle">
+                    <input type="checkbox" id="chk-filters" checked>
+                    <label for="chk-filters">Mostrar filtros 3x3</label>
+                </div>
+                <div class="field-toggle">
+                    <input type="checkbox" id="chk-activation">
+                    <label for="chk-activation">Mostrar pre-activacion</label>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9836;</span> Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" step="1" value="30">
+                </div>
+                <button class="btn btn-sm" id="btn-audio">Audio: ON</button>
+            </div>
+
+            <div class="control-section">
+                <h3><span class="ico">&#9776;</span> Clasificacion</h3>
+                <div id="class-bars"></div>
+            </div>
+
+            <div class="explain-section">
+                <h4>¿Que es una CNN?</h4>
+                <p>Una <span class="hl">Red Neuronal Convolucional</span> aplica filtros pequenos (3&times;3) que se deslizan sobre la imagen. Cada filtro detecta un patron especifico como <span class="hl">bordes</span>, <span class="hl">esquinas</span> o <span class="hl">texturas</span>.</p>
+            </div>
+
+            <div class="explain-section">
+                <h4>Jerarquia de features</h4>
+                <ul>
+                    <li><span class="hl">Capa 1:</span> bordes simples (horizontal, vertical, diagonal)</li>
+                    <li><span class="hl">Capa 2:</span> combinaciones de bordes (esquinas, curvas)</li>
+                    <li><span class="hl">FC:</span> combinacion final para clasificar el digito</li>
+                </ul>
+            </div>
+
+            <div class="explain-section">
+                <h4>La operacion de convolucion</h4>
+                <p>El filtro se multiplica elemento a elemento con cada region de la imagen y se suma el resultado: <span class="eq">(f * g)(x,y) = &Sigma;&Sigma; f(i,j) &middot; g(x-i,y-j)</span></p>
+                <p>Despues se aplica <span class="hl">ReLU</span> (max(0, x)) y opcionalmente <span class="hl">Max Pooling</span> para reducir el tamano.</p>
+            </div>
+        </aside>
+    </main>
+
+    <script>
+    // === DIGIT DATA ===
+    const DIGITS = [
+        [0,0,5,13,9,1,0,0,0,0,13,15,10,15,5,0,0,3,15,2,0,11,8,0,0,4,12,0,0,8,8,0,0,5,8,0,0,9,8,0,0,4,11,0,1,12,7,0,0,2,14,5,10,12,0,0,0,0,6,13,10,0,0,0],
+        [0,0,0,12,13,5,0,0,0,0,0,11,16,9,0,0,0,0,3,15,16,6,0,0,0,7,15,16,16,2,0,0,0,0,1,16,16,3,0,0,0,0,1,16,16,6,0,0,0,0,1,16,16,6,0,0,0,0,0,11,16,10,0,0],
+        [0,0,0,4,15,12,0,0,0,0,3,16,15,14,0,0,0,0,8,13,8,16,0,0,0,0,1,6,15,11,0,0,0,1,8,13,15,1,0,0,0,9,16,16,5,0,0,0,0,3,13,16,16,11,5,0,0,0,0,3,11,16,9,0],
+        [0,0,7,15,13,1,0,0,0,8,13,6,15,4,0,0,0,2,1,13,13,0,0,0,0,0,2,15,11,1,0,0,0,0,0,1,12,12,1,0,0,0,0,0,1,10,8,0,0,0,8,4,5,14,9,0,0,0,7,13,13,9,0,0],
+        [0,0,0,1,11,0,0,0,0,0,0,7,8,0,0,0,0,0,1,13,6,2,2,0,0,0,7,15,0,9,8,0,0,5,16,10,0,16,6,0,0,4,15,16,16,16,7,0,0,0,0,3,14,16,6,0,0,0,0,0,11,16,5,0],
+        [0,0,12,10,0,0,0,0,0,0,14,16,16,14,0,0,0,0,13,16,15,10,1,0,0,0,11,16,16,7,0,0,0,0,0,4,7,16,7,0,0,0,0,0,4,16,9,0,0,0,5,4,12,16,4,0,0,0,9,16,16,10,0,0],
+        [0,0,0,12,13,0,0,0,0,0,5,16,8,0,0,0,0,0,13,16,3,0,0,0,0,0,14,13,0,0,0,0,0,0,15,12,7,2,0,0,0,0,13,16,13,16,3,0,0,0,7,16,11,15,8,0,0,0,1,9,16,13,0,0],
+        [0,0,7,8,13,16,15,1,0,0,7,7,4,11,12,0,0,0,0,0,8,13,1,0,0,4,8,8,15,15,6,0,0,2,11,15,15,4,0,0,0,0,0,16,5,0,0,0,0,0,9,12,0,0,0,0,0,0,4,16,6,0,0,0],
+        [0,0,9,14,8,1,0,0,0,0,12,14,14,12,0,0,0,0,9,10,0,15,4,0,0,0,3,16,12,14,2,0,0,0,4,16,16,2,0,0,0,3,16,8,10,13,2,0,0,1,15,1,3,16,8,0,0,0,11,16,15,11,1,0],
+        [0,0,11,12,0,0,0,0,0,2,16,16,16,13,0,0,0,3,16,12,10,14,0,0,0,1,16,1,12,15,0,0,0,0,13,16,9,15,2,0,0,0,0,3,0,9,11,0,0,0,0,0,9,15,4,0,0,0,9,12,13,3,0,0]
+    ];
+
+    const CONFIG = { volume: 0.3, audioEnabled: true, activeLayer: -1, showFilters: true, showPreAct: false };
+
+    // === CANVAS ===
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, dpr;
+
+    function resizeCanvas() {
+        dpr = window.devicePixelRatio || 1;
+        const rect = canvas.parentElement.getBoundingClientRect();
+        W = rect.width; H = rect.height;
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // === DRAW CANVAS ===
+    const drawCanvas = document.getElementById('draw-canvas');
+    const drawCtx = drawCanvas.getContext('2d');
+    let inputImage = new Float64Array(64);
+    let isDrawing = false, erasing = false;
+
+    drawCanvas.addEventListener('mousedown', e => { isDrawing = true; erasing = e.shiftKey; paint(e); });
+    drawCanvas.addEventListener('mousemove', e => { if (isDrawing) paint(e); });
+    window.addEventListener('mouseup', () => { isDrawing = false; });
+
+    function paint(e) {
+        const rect = drawCanvas.getBoundingClientRect();
+        const mx = (e.clientX - rect.left) / rect.width;
+        const my = (e.clientY - rect.top) / rect.height;
+        const col = Math.floor(mx * 8), row = Math.floor(my * 8);
+        if (row >= 0 && row < 8 && col >= 0 && col < 8) {
+            inputImage[row * 8 + col] = erasing ? 0 : 16;
+            // Also set neighbors slightly
+            if (!erasing) {
+                for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = row + dr, nc = col + dc;
+                    if (nr >= 0 && nr < 8 && nc >= 0 && nc < 8) {
+                        inputImage[nr * 8 + nc] = Math.max(inputImage[nr * 8 + nc], 6);
+                    }
+                }
+            }
+            updateDrawCanvas();
+            runCNN();
+        }
+    }
+
+    function updateDrawCanvas() {
+        drawCtx.fillStyle = '#030712';
+        drawCtx.fillRect(0, 0, 160, 160);
+        const cs = 20;
+        for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) {
+            const v = inputImage[r * 8 + c] / 16;
+            if (v > 0.02) {
+                drawCtx.fillStyle = `rgb(${Math.round(245*v)},${Math.round(158*v)},${Math.round(11*v)})`;
+            } else {
+                drawCtx.fillStyle = 'rgba(30,41,59,0.5)';
+            }
+            drawCtx.fillRect(c * cs, r * cs, cs - 1, cs - 1);
+        }
+    }
+
+    function loadDigit(d) {
+        for (let i = 0; i < 64; i++) inputImage[i] = DIGITS[d][i];
+        updateDrawCanvas();
+        runCNN();
+    }
+
+    function clearDraw() {
+        inputImage.fill(0);
+        updateDrawCanvas();
+        runCNN();
+    }
+
+    // === AUDIO ===
+    let audioContext = null, masterGain = null, compressor = null;
+    function initAudio() {
+        if (audioContext) return;
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        compressor = audioContext.createDynamicsCompressor();
+        compressor.threshold.value = -20; compressor.ratio.value = 4;
+        compressor.connect(audioContext.destination);
+        masterGain = audioContext.createGain();
+        masterGain.gain.value = CONFIG.volume;
+        masterGain.connect(compressor);
+    }
+    function playNote(freq, dur, vol = 0.05, delay = 0) {
+        if (!audioContext || !CONFIG.audioEnabled) return;
+        masterGain.gain.value = CONFIG.volume;
+        const now = audioContext.currentTime + delay;
+        const osc = audioContext.createOscillator();
+        osc.type = 'sine'; osc.frequency.value = freq;
+        const env = audioContext.createGain();
+        env.gain.setValueAtTime(0, now);
+        env.gain.linearRampToValueAtTime(vol, now + 0.01);
+        env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        osc.connect(env); env.connect(masterGain);
+        osc.start(now); osc.stop(now + dur + 0.05);
+    }
+
+    // === CNN IMPLEMENTATION ===
+    // Pre-defined filters for interpretability
+    const FILTERS_L1 = [
+        { name: 'H-edge', k: [[-1,-1,-1],[0,0,0],[1,1,1]] },
+        { name: 'V-edge', k: [[-1,0,1],[-1,0,1],[-1,0,1]] },
+        { name: 'D-edge', k: [[-1,-1,0],[-1,0,1],[0,1,1]] },
+        { name: 'D-edge2', k: [[0,-1,-1],[1,0,-1],[1,1,0]] },
+        { name: 'Center', k: [[-1,-1,-1],[-1,8,-1],[-1,-1,-1]] },
+        { name: 'Blur', k: [[1,1,1],[1,1,1],[1,1,1]] }
+    ];
+
+    const FILTERS_L2 = [
+        { name: 'Sharp', k: [[0,-1,0],[-1,5,-1],[0,-1,0]] },
+        { name: 'Corner', k: [[1,-2,1],[-2,4,-2],[1,-2,1]] },
+        { name: 'Smooth', k: [[1,2,1],[2,4,2],[1,2,1]] },
+        { name: 'Emboss', k: [[-2,-1,0],[-1,1,1],[0,1,2]] }
+    ];
+
+    let featureMaps = { layer1: [], layer2: [], pooled1: [], pooled2: [] };
+    let classProbs = new Float64Array(10);
+    let fcWeights = null;
+
+    function gaussianRandom() {
+        let u = 0, v = 0;
+        while (u === 0) u = Math.random();
+        while (v === 0) v = Math.random();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    function initFCWeights() {
+        // FC layer: pooled features → 10 classes
+        const inputSize = FILTERS_L2.length * 4; // 2x2 pooled maps flattened
+        fcWeights = [];
+        for (let c = 0; c < 10; c++) {
+            fcWeights[c] = new Float64Array(inputSize + 1); // +1 for bias
+            for (let i = 0; i <= inputSize; i++) fcWeights[c][i] = gaussianRandom() * 0.3;
+        }
+    }
+
+    function conv2d(input, rows, cols, kernel) {
+        const outRows = rows - 2, outCols = cols - 2;
+        const out = new Float64Array(outRows * outCols);
+        for (let r = 0; r < outRows; r++) {
+            for (let c = 0; c < outCols; c++) {
+                let sum = 0;
+                for (let kr = 0; kr < 3; kr++) {
+                    for (let kc = 0; kc < 3; kc++) {
+                        sum += input[(r + kr) * cols + (c + kc)] * kernel[kr][kc];
+                    }
+                }
+                out[r * outCols + c] = sum;
+            }
+        }
+        return { data: out, rows: outRows, cols: outCols };
+    }
+
+    function relu(data) {
+        const out = new Float64Array(data.length);
+        for (let i = 0; i < data.length; i++) out[i] = Math.max(0, data[i]);
+        return out;
+    }
+
+    function maxPool2x2(data, rows, cols) {
+        const outRows = Math.floor(rows / 2), outCols = Math.floor(cols / 2);
+        const out = new Float64Array(outRows * outCols);
+        for (let r = 0; r < outRows; r++) {
+            for (let c = 0; c < outCols; c++) {
+                const r2 = r * 2, c2 = c * 2;
+                out[r * outCols + c] = Math.max(
+                    data[r2 * cols + c2],
+                    c2 + 1 < cols ? data[r2 * cols + c2 + 1] : -Infinity,
+                    r2 + 1 < rows ? data[(r2 + 1) * cols + c2] : -Infinity,
+                    r2 + 1 < rows && c2 + 1 < cols ? data[(r2 + 1) * cols + c2 + 1] : -Infinity
+                );
+            }
+        }
+        return { data: out, rows: outRows, cols: outCols };
+    }
+
+    function runCNN() {
+        initAudio();
+        // Normalize input to [0,1]
+        const input = new Float64Array(64);
+        for (let i = 0; i < 64; i++) input[i] = inputImage[i] / 16;
+
+        // Layer 1: Conv 3x3 → ReLU → Pool
+        featureMaps.layer1 = [];
+        featureMaps.pooled1 = [];
+        for (const f of FILTERS_L1) {
+            const conv = conv2d(input, 8, 8, f.k);
+            const activated = relu(conv.data);
+            featureMaps.layer1.push({ preact: conv.data, data: activated, rows: conv.rows, cols: conv.cols, name: f.name });
+            const pooled = maxPool2x2(activated, conv.rows, conv.cols);
+            featureMaps.pooled1.push(pooled);
+        }
+
+        // Layer 2: Conv on pooled maps (apply each L2 filter to first L1 pooled map as demo)
+        featureMaps.layer2 = [];
+        featureMaps.pooled2 = [];
+        for (const f of FILTERS_L2) {
+            // Sum over L1 features
+            const pRows = featureMaps.pooled1[0].rows;
+            const pCols = featureMaps.pooled1[0].cols;
+            if (pRows < 3 || pCols < 3) {
+                featureMaps.layer2.push({ data: new Float64Array(1), rows: 1, cols: 1, name: f.name, preact: new Float64Array(1) });
+                featureMaps.pooled2.push({ data: new Float64Array(1), rows: 1, cols: 1 });
+                continue;
+            }
+            let combined = new Float64Array(pRows * pCols);
+            for (const p of featureMaps.pooled1) {
+                for (let i = 0; i < combined.length; i++) combined[i] += p.data[i] / FILTERS_L1.length;
+            }
+            const conv = conv2d(combined, pRows, pCols, f.k);
+            const activated = relu(conv.data);
+            featureMaps.layer2.push({ preact: conv.data, data: activated, rows: conv.rows, cols: conv.cols, name: f.name });
+            const pooled = maxPool2x2(activated, conv.rows, conv.cols);
+            featureMaps.pooled2.push(pooled);
+        }
+
+        // FC layer
+        const flatFeatures = [];
+        for (const p of featureMaps.pooled2) {
+            for (let i = 0; i < p.data.length; i++) flatFeatures.push(p.data[i]);
+        }
+
+        // Pad or truncate to expected size
+        const expectedSize = FILTERS_L2.length * 4;
+        while (flatFeatures.length < expectedSize) flatFeatures.push(0);
+
+        const logits = new Float64Array(10);
+        for (let c = 0; c < 10; c++) {
+            let sum = fcWeights[c][expectedSize]; // bias
+            for (let i = 0; i < expectedSize; i++) sum += fcWeights[c][i] * flatFeatures[i];
+            logits[c] = sum;
+        }
+
+        // Softmax
+        let maxL = -Infinity;
+        for (const l of logits) if (l > maxL) maxL = l;
+        let sumExp = 0;
+        for (let i = 0; i < 10; i++) {
+            classProbs[i] = Math.exp(logits[i] - maxL);
+            sumExp += classProbs[i];
+        }
+        for (let i = 0; i < 10; i++) classProbs[i] /= sumExp;
+
+        updateClassBars();
+
+        let predIdx = 0;
+        for (let i = 1; i < 10; i++) if (classProbs[i] > classProbs[predIdx]) predIdx = i;
+        document.getElementById('hs-pred').textContent = predIdx;
+        document.getElementById('hs-conf').textContent = (classProbs[predIdx] * 100).toFixed(1) + '%';
+
+        // Sonify
+        const freq = 220 + predIdx * 50;
+        playNote(freq, 0.25, 0.04);
+    }
+
+    function updateClassBars() {
+        const container = document.getElementById('class-bars');
+        container.innerHTML = '';
+        let maxP = 0;
+        for (let i = 0; i < 10; i++) if (classProbs[i] > maxP) maxP = classProbs[i];
+
+        for (let i = 0; i < 10; i++) {
+            const p = classProbs[i];
+            const pct = (p / maxP * 100).toFixed(0);
+            const div = document.createElement('div');
+            div.style.cssText = 'display:flex;align-items:center;gap:6px;margin-bottom:2px;font-size:0.7rem;';
+            div.innerHTML = `
+                <span style="width:16px;font-family:'JetBrains Mono';color:var(--text-muted)">${i}</span>
+                <div style="flex:1;height:8px;background:var(--bg-primary);border-radius:4px;overflow:hidden">
+                    <div style="height:100%;width:${pct}%;background:${p === maxP ? '#f59e0b' : 'rgba(245,158,11,0.3)'};border-radius:4px;transition:width 0.3s"></div>
+                </div>
+                <span style="width:40px;text-align:right;font-family:'JetBrains Mono';font-size:0.65rem;color:${p === maxP ? '#f59e0b' : 'var(--text-muted)'}">${(p*100).toFixed(1)}%</span>
+            `;
+            container.appendChild(div);
+        }
+    }
+
+    // === MAIN RENDERING ===
+    const tooltipEl = document.getElementById('tooltip');
+    let mouseX = -1, mouseY = -1;
+
+    canvas.addEventListener('mousemove', e => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+    });
+    canvas.addEventListener('mouseleave', () => {
+        mouseX = mouseY = -1;
+        tooltipEl.style.display = 'none';
+    });
+
+    function drawFeatureMap(x, y, size, data, rows, cols, label, color) {
+        if (rows === 0 || cols === 0) return;
+        const cellW = size / cols;
+        const cellH = size / rows;
+
+        // Find range
+        let minV = Infinity, maxV = -Infinity;
+        for (let i = 0; i < data.length; i++) {
+            if (data[i] < minV) minV = data[i];
+            if (data[i] > maxV) maxV = data[i];
+        }
+        const range = maxV - minV || 1;
+
+        for (let r = 0; r < rows; r++) {
+            for (let c = 0; c < cols; c++) {
+                const v = (data[r * cols + c] - minV) / range;
+                if (color === 'amber') {
+                    ctx.fillStyle = `rgb(${Math.round(245*v)},${Math.round(158*v)},${Math.round(11*v*0.3)})`;
+                } else {
+                    ctx.fillStyle = `rgb(${Math.round(v*200+20)},${Math.round(v*200+20)},${Math.round(v*200+20)})`;
+                }
+                ctx.fillRect(x + c * cellW, y + r * cellH, cellW - 0.5, cellH - 0.5);
+            }
+        }
+        ctx.strokeStyle = 'rgba(245,158,11,0.15)';
+        ctx.lineWidth = 0.5;
+        ctx.strokeRect(x, y, size, size);
+
+        if (label) {
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '8px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(label, x + size / 2, y + size + 10);
+        }
+    }
+
+    function drawFilter(x, y, size, kernel) {
+        const cs = size / 3;
+        let minK = Infinity, maxK = -Infinity;
+        for (const row of kernel) for (const v of row) { if (v < minK) minK = v; if (v > maxK) maxK = v; }
+        const range = maxK - minK || 1;
+
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                const v = (kernel[r][c] - minK) / range;
+                const neg = kernel[r][c] < 0;
+                if (neg) ctx.fillStyle = `rgba(239,68,68,${Math.abs(v) * 0.8})`;
+                else ctx.fillStyle = `rgba(34,197,94,${v * 0.8})`;
+                ctx.fillRect(x + c * cs, y + r * cs, cs - 0.5, cs - 0.5);
+            }
+        }
+    }
+
+    function draw(time) {
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(0, 0, W, H);
+
+        if (featureMaps.layer1.length === 0) {
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '15px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Dibuja un digito o selecciona uno del panel', W / 2, H / 2);
+            return;
+        }
+
+        const showL = CONFIG.activeLayer;
+        const margin = 30;
+        const fmSize = Math.min((W - margin * 5) / 10, 55);
+
+        // === INPUT IMAGE ===
+        const inputSize = fmSize * 1.6;
+        const inputX = margin;
+        const inputY = H * 0.15;
+        drawFeatureMap(inputX, inputY, inputSize, inputImage.map(v => v / 16), 8, 8, 'Input 8×8', 'amber');
+
+        // Arrow
+        ctx.strokeStyle = 'rgba(245,158,11,0.3)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(inputX + inputSize + 5, inputY + inputSize / 2);
+        ctx.lineTo(inputX + inputSize + 25, inputY + inputSize / 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // === LAYER 1 FEATURE MAPS ===
+        if (showL === -1 || showL === 0) {
+            const l1X = inputX + inputSize + 35;
+            const l1Y = margin;
+
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Capa 1: Conv3×3 → ReLU', l1X, l1Y - 8);
+
+            for (let f = 0; f < featureMaps.layer1.length; f++) {
+                const fm = featureMaps.layer1[f];
+                const col = f % 3;
+                const row = Math.floor(f / 3);
+                const fx = l1X + col * (fmSize + 12);
+                const fy = l1Y + row * (fmSize + 22);
+
+                const data = CONFIG.showPreAct ? fm.preact : fm.data;
+                drawFeatureMap(fx, fy, fmSize, data, fm.rows, fm.cols, fm.name, 'gray');
+
+                // Filter kernel
+                if (CONFIG.showFilters) {
+                    const filterSize = 18;
+                    drawFilter(fx + fmSize - filterSize - 1, fy + 1, filterSize, FILTERS_L1[f].k);
+                }
+            }
+
+            // Arrow to L2
+            if (showL === -1) {
+                const arrowX = l1X + 3 * (fmSize + 12);
+                ctx.strokeStyle = 'rgba(245,158,11,0.2)';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(arrowX, l1Y + fmSize);
+                ctx.lineTo(arrowX + 15, l1Y + fmSize);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+
+        // === LAYER 2 FEATURE MAPS ===
+        if (showL === -1 || showL === 1) {
+            const l2X = W * 0.58;
+            const l2Y = margin;
+
+            ctx.fillStyle = 'rgba(255,255,255,0.3)';
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Capa 2: Conv3×3 → ReLU → Pool', l2X, l2Y - 8);
+
+            for (let f = 0; f < featureMaps.layer2.length; f++) {
+                const fm = featureMaps.layer2[f];
+                const fx = l2X + f * (fmSize + 12);
+                const fy = l2Y;
+
+                const data = CONFIG.showPreAct ? fm.preact : fm.data;
+                drawFeatureMap(fx, fy, fmSize, data, fm.rows, fm.cols, fm.name, 'gray');
+
+                if (CONFIG.showFilters) {
+                    const filterSize = 18;
+                    drawFilter(fx + fmSize - filterSize - 1, fy + 1, filterSize, FILTERS_L2[f].k);
+                }
+            }
+        }
+
+        // === CLASSIFICATION BARS ===
+        const barX = W * 0.1;
+        const barY = H * 0.6;
+        const barW = W * 0.8;
+        const barH = H * 0.3;
+
+        ctx.fillStyle = 'rgba(15,23,42,0.4)';
+        ctx.beginPath();
+        if (ctx.roundRect) ctx.roundRect(barX - 10, barY - 10, barW + 20, barH + 30, 8);
+        else ctx.rect(barX - 10, barY - 10, barW + 20, barH + 30);
+        ctx.fill();
+
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Clasificacion (FC → Softmax)', barX, barY - 15);
+
+        let maxP = 0, predIdx = 0;
+        for (let i = 0; i < 10; i++) { if (classProbs[i] > maxP) { maxP = classProbs[i]; predIdx = i; } }
+
+        const digitW = barW / 10;
+        for (let i = 0; i < 10; i++) {
+            const p = classProbs[i];
+            const h = (p / Math.max(maxP, 0.01)) * barH * 0.8;
+            const x = barX + i * digitW;
+            const y = barY + barH - h;
+
+            // Bar
+            const isMax = i === predIdx;
+            const grad = ctx.createLinearGradient(x, y, x, barY + barH);
+            grad.addColorStop(0, isMax ? 'rgba(245,158,11,0.8)' : 'rgba(245,158,11,0.25)');
+            grad.addColorStop(1, isMax ? 'rgba(245,158,11,0.3)' : 'rgba(245,158,11,0.05)');
+            ctx.fillStyle = grad;
+            if (ctx.roundRect) {
+                ctx.beginPath();
+                ctx.roundRect(x + 4, y, digitW - 8, h, [4, 4, 0, 0]);
+                ctx.fill();
+            } else {
+                ctx.fillRect(x + 4, y, digitW - 8, h);
+            }
+
+            // Glow for winner
+            if (isMax) {
+                ctx.save();
+                ctx.shadowColor = '#f59e0b';
+                ctx.shadowBlur = 10;
+                ctx.fillStyle = 'rgba(245,158,11,0.3)';
+                ctx.fillRect(x + 4, y, digitW - 8, 2);
+                ctx.restore();
+            }
+
+            // Digit label
+            ctx.fillStyle = isMax ? '#f59e0b' : 'rgba(255,255,255,0.4)';
+            ctx.font = isMax ? 'bold 14px "JetBrains Mono", monospace' : '12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(i.toString(), x + digitW / 2, barY + barH + 16);
+
+            // Probability
+            ctx.fillStyle = isMax ? '#f59e0b' : 'rgba(255,255,255,0.25)';
+            ctx.font = '8px "JetBrains Mono", monospace';
+            ctx.fillText(`${(p * 100).toFixed(1)}%`, x + digitW / 2, y - 5);
+        }
+
+        // Tooltip
+        if (mouseX >= 0) {
+            tooltipEl.style.display = 'none';
+            // Check if hovering feature maps
+            // (simplified - just show tooltip for classification bars)
+            if (mouseX >= barX && mouseX <= barX + barW && mouseY >= barY && mouseY <= barY + barH + 20) {
+                const idx = Math.floor((mouseX - barX) / digitW);
+                if (idx >= 0 && idx < 10) {
+                    tooltipEl.innerHTML = `
+                        <div class="tt-label">Clase ${idx}</div>
+                        <div>Probabilidad: <span class="tt-val">${(classProbs[idx] * 100).toFixed(3)}%</span></div>
+                    `;
+                    tooltipEl.style.display = 'block';
+                    tooltipEl.style.left = (mouseX + 14) + 'px';
+                    tooltipEl.style.top = (mouseY - 10) + 'px';
+                }
+            }
+        }
+    }
+
+    // === LOOP ===
+    function loop(time) { draw(time); requestAnimationFrame(loop); }
+
+    // === EVENTS ===
+    document.getElementById('sl-layer').addEventListener('input', function() {
+        CONFIG.activeLayer = +this.value;
+        const labels = { '-1': 'Todas', '0': 'Capa 1', '1': 'Capa 2' };
+        document.getElementById('val-layer').textContent = labels[this.value];
+    });
+
+    document.getElementById('chk-filters').addEventListener('change', function() { CONFIG.showFilters = this.checked; });
+    document.getElementById('chk-activation').addEventListener('change', function() { CONFIG.showPreAct = this.checked; });
+
+    document.getElementById('sl-vol').addEventListener('input', function() {
+        CONFIG.volume = +this.value / 100;
+        document.getElementById('val-vol').textContent = this.value + '%';
+    });
+
+    document.getElementById('btn-audio').addEventListener('click', function() {
+        CONFIG.audioEnabled = !CONFIG.audioEnabled;
+        this.textContent = 'Audio: ' + (CONFIG.audioEnabled ? 'ON' : 'OFF');
+    });
+
+    // === INIT ===
+    initFCWeights();
+    loadDigit(3);
+    requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

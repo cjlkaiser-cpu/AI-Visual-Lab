@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergent Abilities - AI Visual Lab - EigenLab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --bg-primary: #030712;
+            --bg-secondary: #0f172a;
+            --bg-panel: #1e293b;
+            --accent: #ef4444;
+            --module-color: #8b5cf6;
+            --module-dim: rgba(139, 92, 246, 0.15);
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border: #1e293b;
+        }
+        body { font-family: 'Inter', system-ui, sans-serif; background: var(--bg-primary); color: var(--text-primary); overflow: hidden; height: 100vh; }
+        .header { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1.5rem; background: var(--bg-secondary); border-bottom: 1px solid var(--border); z-index: 10; }
+        .header h1 { font-size: 1rem; font-weight: 600; }
+        .breadcrumb { font-size: 0.8rem; color: var(--text-secondary); }
+        .breadcrumb a { color: var(--accent); text-decoration: none; }
+        .main { display: flex; height: calc(100vh - 49px); }
+        .canvas-container { flex: 1; position: relative; overflow: hidden; }
+        #canvas { width: 100%; height: 100%; display: block; }
+        .controls { width: 360px; background: var(--bg-secondary); border-left: 1px solid var(--border); padding: 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; }
+        .controls::-webkit-scrollbar { width: 4px; }
+        .controls::-webkit-scrollbar-track { background: transparent; }
+        .controls::-webkit-scrollbar-thumb { background: var(--module-color); border-radius: 2px; }
+        .control-section { background: var(--bg-panel); border-radius: 12px; padding: 1rem; }
+        .control-section h3 { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); margin-bottom: 0.75rem; }
+        .equation-box { background: var(--module-dim); border-left: 3px solid var(--module-color); padding: 0.75rem 1rem; border-radius: 0 8px 8px 0; font-family: 'Times New Roman', serif; font-style: italic; font-size: 1.05rem; color: var(--text-primary); line-height: 1.6; }
+        .slider-group { margin-bottom: 0.75rem; }
+        .slider-group label { display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 0.25rem; color: var(--text-secondary); }
+        .slider-group label span { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        input[type="range"] { width: 100%; height: 4px; -webkit-appearance: none; background: var(--bg-primary); border-radius: 2px; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; background: var(--module-color); border-radius: 50%; cursor: pointer; }
+        .btn { padding: 0.5rem 1rem; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-panel); color: var(--text-primary); font-family: 'Inter', sans-serif; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; }
+        .btn:hover { border-color: var(--module-color); color: var(--module-color); }
+        .btn-accent { background: var(--module-color); color: white; border-color: var(--module-color); }
+        .btn-accent:hover { opacity: 0.9; color: white; }
+        .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .stat { display: flex; justify-content: space-between; font-size: 0.8rem; padding: 0.25rem 0; }
+        .stat-value { font-family: 'JetBrains Mono', monospace; color: var(--module-color); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        select { width: 100%; padding: 0.5rem; background: var(--bg-primary); color: var(--text-primary); border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter', sans-serif; font-size: 0.8rem; }
+        .explain-section { background: rgba(139,92,246,0.05); border: 1px solid rgba(139,92,246,0.1); border-radius: 10px; padding: 0.85rem; font-size: 0.78rem; line-height: 1.55; color: var(--text-secondary); }
+        .explain-section .hl { color: var(--module-color); font-weight: 500; }
+        .explain-section .eq { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--module-color); background: rgba(139,92,246,0.1); padding: 1px 5px; border-radius: 3px; }
+        .model-legend { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+        .model-tag { font-size: 0.7rem; padding: 2px 8px; border-radius: 9999px; font-family: 'JetBrains Mono', monospace; cursor: pointer; transition: all 0.2s; }
+        .model-tag:hover { opacity: 1 !important; }
+        .task-legend { margin-top: 4px; }
+        .task-item { display: flex; align-items: center; gap: 6px; padding: 3px 0; font-size: 0.78rem; cursor: pointer; }
+        .task-item:hover { color: var(--module-color); }
+        .task-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .chart-container { position: relative; }
+        .chart-container canvas { width: 100%; border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div>
+            <h1>Emergent Abilities Phase Transition</h1>
+            <nav class="breadcrumb">
+                <a href="../../_portal/index.html">EigenLab</a> /
+                <a href="index.html">AI Visual Lab</a> /
+                Emergent Abilities
+            </nav>
+        </div>
+        <div class="mono" style="font-size: 0.75rem; color: var(--text-secondary);">
+            Escala: <span id="stat-scale">-</span> &nbsp;|&nbsp;
+            Rendimiento: <span id="stat-perf">-</span>
+        </div>
+    </header>
+    <main class="main">
+        <div class="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+        <aside class="controls">
+            <div class="equation-box">
+                L(N) = (N<sub>c</sub>/N)<sup>&alpha;</sup><br>
+                <span style="font-size:0.85rem;">Chinchilla scaling law</span>
+            </div>
+
+            <div class="control-section">
+                <h3>&#9881; Escala del Modelo</h3>
+                <div class="slider-group">
+                    <label>Parametros (log) <span id="val-params">1B</span></label>
+                    <input type="range" id="sl-params" min="0" max="100" value="40">
+                </div>
+                <div class="btn-group">
+                    <button class="btn btn-accent" id="btn-animate">&#9654; Animar Escala</button>
+                    <button class="btn" id="btn-reset">Reset</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#128200; Tarea / Benchmark</h3>
+                <select id="sel-task">
+                    <option value="all">Todas las tareas</option>
+                    <option value="0">Aritmetica (3 digitos)</option>
+                    <option value="1">Traduccion</option>
+                    <option value="2">Razonamiento Logico</option>
+                    <option value="3">Codigo (HumanEval)</option>
+                    <option value="4">Razonamiento Matematico</option>
+                </select>
+                <div class="task-legend" id="task-legend"></div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#129302; Modelos</h3>
+                <div class="model-legend" id="model-legend"></div>
+            </div>
+
+            <div class="control-section">
+                <h3>&#127925; Audio</h3>
+                <div class="slider-group">
+                    <label>Volumen <span id="val-vol">30%</span></label>
+                    <input type="range" id="sl-vol" min="0" max="100" value="30">
+                </div>
+                <button class="btn" id="btn-mute">Silenciar</button>
+            </div>
+
+            <div class="control-section">
+                <h3>&#128202; Metricas</h3>
+                <div class="stat"><span>Parametros</span><span class="stat-value" id="val-scale">-</span></div>
+                <div class="stat"><span>Tarea</span><span class="stat-value" id="val-task">-</span></div>
+                <div class="stat"><span>Rendimiento</span><span class="stat-value" id="val-perf">-</span></div>
+                <div class="stat"><span>Transicion</span><span class="stat-value" id="val-transition">-</span></div>
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128218; Cuando la Escala lo Cambia Todo</strong><br><br>
+                Las <span class="hl">habilidades emergentes</span> aparecen abruptamente al escalar modelos de lenguaje. Una tarea que un modelo de 1B no puede hacer, un modelo de 100B resuelve con facilidad.<br><br>
+                Esto se parece a una <span class="hl">transicion de fase</span> en fisica: el agua no se congela gradualmente — hay un punto critico.
+            </div>
+
+            <div class="explain-section">
+                <strong style="color:var(--module-color);">&#128161; Scaling Laws</strong><br><br>
+                Las <span class="hl">leyes de escala</span> predicen que el loss del modelo sigue <span class="eq">L(N) = (Nc/N)^α</span> donde N son los parametros.<br><br>
+                Pero el <span class="hl">rendimiento en tareas</span> no es una linea recta — hay saltos. <span class="hl">Chinchilla</span> (2022) demostro que el entrenamiento optimo requiere escalar datos y modelo proporcionalmente.
+            </div>
+        </aside>
+    </main>
+
+<script>
+// === CONFIG ===
+const CONFIG = { volume: 0.3, audioEnabled: true };
+
+// === CANVAS ===
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H, dpr;
+function resizeCanvas() {
+    dpr = window.devicePixelRatio || 1;
+    const rect = canvas.parentElement.getBoundingClientRect();
+    W = rect.width; H = rect.height;
+    canvas.width = W * dpr; canvas.height = H * dpr;
+    canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// === AUDIO ===
+let audioCtx = null, masterGain = null;
+function initAudio() {
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = CONFIG.volume;
+    const comp = audioCtx.createDynamicsCompressor();
+    masterGain.connect(comp); comp.connect(audioCtx.destination);
+}
+function playNote(freq, dur, vol = 0.1, type = 'sine') {
+    if (!audioCtx || !CONFIG.audioEnabled) return;
+    const now = audioCtx.currentTime;
+    const osc = audioCtx.createOscillator();
+    osc.type = type; osc.frequency.value = freq;
+    const env = audioCtx.createGain();
+    env.gain.setValueAtTime(0, now);
+    env.gain.linearRampToValueAtTime(vol * CONFIG.volume, now + 0.02);
+    env.gain.exponentialRampToValueAtTime(0.001, now + dur);
+    osc.connect(env); env.connect(masterGain);
+    osc.start(now); osc.stop(now + dur + 0.05);
+}
+
+// === DATA: Simulated benchmark performance ===
+// X-axis: log10(params) from 7 (10M) to 12 (1T)
+// Y-axis: performance 0-100
+
+const TASKS = [
+    { name: 'Aritmetica (3 dig)', color: '#ef4444', transition: 9.5, steepness: 3, baseline: 5, ceiling: 95 },
+    { name: 'Traduccion', color: '#3b82f6', transition: 8.5, steepness: 2, baseline: 15, ceiling: 85 },
+    { name: 'Razonamiento Logico', color: '#22c55e', transition: 10.0, steepness: 4, baseline: 2, ceiling: 90 },
+    { name: 'Codigo (HumanEval)', color: '#f59e0b', transition: 10.5, steepness: 3.5, baseline: 0, ceiling: 80 },
+    { name: 'Razonamiento Matematico', color: '#8b5cf6', transition: 11.0, steepness: 5, baseline: 0, ceiling: 70 }
+];
+
+const MODELS = [
+    { name: 'GPT-2', params: 9.18, color: '#94a3b8', marker: '○' },        // 1.5B
+    { name: 'GPT-3', params: 11.24, color: '#60a5fa', marker: '◆' },       // 175B
+    { name: 'Chinchilla', params: 10.85, color: '#f472b6', marker: '■' },   // 70B
+    { name: 'Claude 3', params: 11.5, color: '#c084fc', marker: '▲' },      // ~300B?
+    { name: 'Llama 3', params: 10.6, color: '#fb923c', marker: '●' },       // 70B
+    { name: 'GPT-4', params: 12.0, color: '#4ade80', marker: '★' }          // ~1T?
+];
+
+// Sigmoid-like emergence function
+function taskPerformance(task, logParams) {
+    const x = (logParams - task.transition) * task.steepness;
+    const sigmoid = 1 / (1 + Math.exp(-x));
+    return task.baseline + (task.ceiling - task.baseline) * sigmoid;
+}
+
+// Scaling law (loss)
+function scalingLoss(logParams) {
+    const Nc = 1e10;
+    const alpha = 0.076;
+    const N = Math.pow(10, logParams);
+    return Math.pow(Nc / N, alpha) * 3.5;
+}
+
+// === STATE ===
+let currentScale = 40; // slider value 0-100, maps to log10 7-12
+let selectedTask = 'all';
+let animating = false;
+let animTarget = 0;
+let hoverPoint = null;
+let time = 0;
+
+function sliderToLog(v) { return 7 + v / 100 * 5; }
+function logToSlider(l) { return (l - 7) / 5 * 100; }
+
+function formatParams(logP) {
+    const p = Math.pow(10, logP);
+    if (p >= 1e12) return (p / 1e12).toFixed(1) + 'T';
+    if (p >= 1e9) return (p / 1e9).toFixed(1) + 'B';
+    if (p >= 1e6) return (p / 1e6).toFixed(0) + 'M';
+    return p.toFixed(0);
+}
+
+// === CHART MAPPING ===
+const CHART = {
+    left: 80, right: 50,
+    top: 60, bottom: 70
+};
+
+function chartX(logP) {
+    return CHART.left + (logP - 7) / 5 * (W - CHART.left - CHART.right);
+}
+function chartY(perf) {
+    return (H - CHART.bottom) - perf / 100 * (H - CHART.top - CHART.bottom);
+}
+
+// === DRAWING ===
+function draw() {
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, W, H);
+
+    const chartW = W - CHART.left - CHART.right;
+    const chartH = H - CHART.top - CHART.bottom;
+    const logP = sliderToLog(currentScale);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(139,92,246,0.06)';
+    ctx.lineWidth = 1;
+    for (let l = 7; l <= 12; l++) {
+        const x = chartX(l);
+        ctx.beginPath(); ctx.moveTo(x, CHART.top); ctx.lineTo(x, H - CHART.bottom); ctx.stroke();
+    }
+    for (let p = 0; p <= 100; p += 20) {
+        const y = chartY(p);
+        ctx.beginPath(); ctx.moveTo(CHART.left, y); ctx.lineTo(W - CHART.right, y); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(CHART.left, CHART.top); ctx.lineTo(CHART.left, H - CHART.bottom); ctx.lineTo(W - CHART.right, H - CHART.bottom); ctx.stroke();
+
+    // X-axis labels
+    ctx.font = '10px JetBrains Mono';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    const labels = [
+        { l: 7, t: '10M' }, { l: 8, t: '100M' }, { l: 9, t: '1B' },
+        { l: 10, t: '10B' }, { l: 11, t: '100B' }, { l: 12, t: '1T' }
+    ];
+    labels.forEach(({ l, t }) => {
+        ctx.fillText(t, chartX(l), H - CHART.bottom + 18);
+    });
+    ctx.font = '11px Inter';
+    ctx.fillText('Parametros del modelo (escala log)', W / 2, H - 15);
+
+    // Y-axis labels
+    ctx.textAlign = 'right';
+    ctx.font = '10px JetBrains Mono';
+    for (let p = 0; p <= 100; p += 20) {
+        ctx.fillStyle = 'rgba(255,255,255,0.3)';
+        ctx.fillText(p + '%', CHART.left - 8, chartY(p) + 4);
+    }
+    ctx.save();
+    ctx.translate(15, H / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.font = '11px Inter';
+    ctx.fillStyle = 'rgba(255,255,255,0.4)';
+    ctx.textAlign = 'center';
+    ctx.fillText('Rendimiento en benchmark', 0, 0);
+    ctx.restore();
+
+    // Title
+    ctx.font = 'bold 14px Inter';
+    ctx.fillStyle = '#c4b5fd';
+    ctx.textAlign = 'left';
+    ctx.fillText('Habilidades Emergentes: Transiciones de Fase en LLMs', CHART.left, 30);
+    ctx.font = '11px Inter';
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.fillText('Rendimiento vs escala del modelo (datos simulados basados en publicaciones)', CHART.left, 48);
+
+    // Draw task curves
+    const tasksToShow = selectedTask === 'all' ? TASKS : [TASKS[parseInt(selectedTask)]];
+
+    for (const task of tasksToShow) {
+        ctx.strokeStyle = task.color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+
+        for (let i = 0; i <= 200; i++) {
+            const lp = 7 + i / 200 * 5;
+            const perf = taskPerformance(task, lp);
+            const x = chartX(lp);
+            const y = chartY(perf);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Transition point marker
+        const tX = chartX(task.transition);
+        const tY = chartY(taskPerformance(task, task.transition));
+        ctx.beginPath();
+        ctx.arc(tX, tY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = task.color + '40';
+        ctx.fill();
+        ctx.strokeStyle = task.color;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Vertical dashed line at transition
+        ctx.setLineDash([3, 3]);
+        ctx.strokeStyle = task.color + '30';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(tX, CHART.top);
+        ctx.lineTo(tX, H - CHART.bottom);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Label at top
+        ctx.font = '9px JetBrains Mono';
+        ctx.fillStyle = task.color + '80';
+        ctx.textAlign = 'center';
+        ctx.fillText(task.name, tX, CHART.top - 5);
+    }
+
+    // Model markers
+    for (const model of MODELS) {
+        const mx = chartX(model.params);
+
+        // Vertical line
+        ctx.strokeStyle = model.color + '15';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(mx, CHART.top);
+        ctx.lineTo(mx, H - CHART.bottom);
+        ctx.stroke();
+
+        // Performance dots on each task curve
+        for (const task of tasksToShow) {
+            const perf = taskPerformance(task, model.params);
+            const my = chartY(perf);
+
+            ctx.beginPath();
+            ctx.arc(mx, my, 4, 0, Math.PI * 2);
+            ctx.fillStyle = model.color;
+            ctx.fill();
+        }
+
+        // Model name label at bottom
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillStyle = model.color;
+        ctx.textAlign = 'center';
+        ctx.save();
+        ctx.translate(mx, H - CHART.bottom + 32);
+        ctx.rotate(-0.3);
+        ctx.fillText(model.name, 0, 0);
+        ctx.restore();
+    }
+
+    // Current scale indicator (vertical line)
+    const scaleX = chartX(logP);
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(scaleX, CHART.top);
+    ctx.lineTo(scaleX, H - CHART.bottom);
+    ctx.stroke();
+
+    // Current scale label
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 11px JetBrains Mono';
+    ctx.textAlign = 'center';
+    ctx.fillText(formatParams(logP), scaleX, H - CHART.bottom + 52);
+
+    // Performance at current scale
+    let perfY = CHART.top + 20;
+    for (const task of tasksToShow) {
+        const perf = taskPerformance(task, logP);
+        const dotY = chartY(perf);
+
+        // Highlight dot on curve
+        ctx.beginPath();
+        ctx.arc(scaleX, dotY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = task.color;
+        ctx.shadowColor = task.color;
+        ctx.shadowBlur = 10;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+
+        // Performance label
+        ctx.font = '10px JetBrains Mono';
+        ctx.fillStyle = task.color;
+        ctx.textAlign = 'left';
+        ctx.fillText(`${task.name}: ${perf.toFixed(1)}%`, scaleX + 12, dotY + 4);
+    }
+
+    // Scaling law loss in bottom-right inset
+    const insetX = W - CHART.right - 180;
+    const insetY = H - CHART.bottom - 130;
+    const insetW = 160;
+    const insetH = 100;
+
+    ctx.fillStyle = 'rgba(15,23,42,0.8)';
+    ctx.strokeStyle = 'rgba(139,92,246,0.2)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.roundRect(insetX, insetY, insetW, insetH, 8);
+    ctx.fill(); ctx.stroke();
+
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(139,92,246,0.6)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Loss (scaling law)', insetX + 8, insetY + 14);
+
+    // Draw loss curve
+    ctx.strokeStyle = '#c084fc';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    const lossMin = scalingLoss(12);
+    const lossMax = scalingLoss(7);
+    for (let i = 0; i <= 80; i++) {
+        const lp = 7 + i / 80 * 5;
+        const loss = scalingLoss(lp);
+        const x = insetX + 10 + i / 80 * (insetW - 20);
+        const y = insetY + 25 + (1 - (loss - lossMin) / (lossMax - lossMin)) * (insetH - 35);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Current loss
+    const cLoss = scalingLoss(logP);
+    const cLossX = insetX + 10 + (logP - 7) / 5 * (insetW - 20);
+    const cLossY = insetY + 25 + (1 - (cLoss - lossMin) / (lossMax - lossMin)) * (insetH - 35);
+    ctx.beginPath();
+    ctx.arc(cLossX, cLossY, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#c084fc';
+    ctx.fill();
+    ctx.font = '8px JetBrains Mono';
+    ctx.fillStyle = '#c084fc';
+    ctx.textAlign = 'left';
+    ctx.fillText(`L=${cLoss.toFixed(3)}`, cLossX + 8, cLossY + 3);
+
+    // Update stats
+    document.getElementById('stat-scale').textContent = formatParams(logP);
+    document.getElementById('val-scale').textContent = formatParams(logP);
+    const mainTask = tasksToShow[0];
+    const mainPerf = taskPerformance(mainTask, logP);
+    document.getElementById('stat-perf').textContent = mainPerf.toFixed(1) + '%';
+    document.getElementById('val-perf').textContent = mainPerf.toFixed(1) + '%';
+    document.getElementById('val-task').textContent = mainTask.name;
+
+    // Check if near a transition
+    let nearTransition = false;
+    for (const task of tasksToShow) {
+        if (Math.abs(logP - task.transition) < 0.3) {
+            nearTransition = true;
+            document.getElementById('val-transition').textContent = '⚡ ' + task.name;
+        }
+    }
+    if (!nearTransition) document.getElementById('val-transition').textContent = '-';
+
+    time += 0.016;
+}
+
+// === ANIMATION ===
+let animInterval = null;
+
+function startAnimation() {
+    initAudio();
+    animating = true;
+    currentScale = 0;
+    document.getElementById('sl-params').value = 0;
+
+    animInterval = setInterval(() => {
+        currentScale += 0.5;
+        if (currentScale >= 100) {
+            currentScale = 100;
+            clearInterval(animInterval);
+            animating = false;
+            document.getElementById('btn-animate').textContent = '⏵ Animar Escala';
+            // Final chord
+            playNote(523.25, 0.5, 0.12); playNote(659.25, 0.5, 0.10); playNote(783.99, 0.5, 0.08);
+        }
+        document.getElementById('sl-params').value = currentScale;
+        const logP = sliderToLog(currentScale);
+        document.getElementById('val-params').textContent = formatParams(logP);
+
+        // Check transitions for sound
+        for (const task of TASKS) {
+            const dist = Math.abs(logP - task.transition);
+            if (dist < 0.05) {
+                // Transition sound!
+                playNote(440, 0.3, 0.15, 'triangle');
+                playNote(554.37, 0.3, 0.12, 'triangle');
+                playNote(659.25, 0.3, 0.10, 'triangle');
+            }
+        }
+
+        // Ambient sound based on scale
+        if (Math.random() < 0.15) {
+            const voices = Math.floor(logP - 6);
+            for (let v = 0; v < Math.min(voices, 4); v++) {
+                playNote(200 + v * 100 + logP * 30, 0.15, 0.03, v < 2 ? 'sine' : 'triangle');
+            }
+        }
+    }, 50);
+    document.getElementById('btn-animate').textContent = '⏸ Pausar';
+}
+
+// === BUILD LEGENDS ===
+function buildLegends() {
+    const taskLegend = document.getElementById('task-legend');
+    TASKS.forEach((task, i) => {
+        const item = document.createElement('div');
+        item.className = 'task-item';
+        item.innerHTML = `<div class="task-dot" style="background:${task.color}"></div><span>${task.name}</span>`;
+        item.onclick = () => {
+            document.getElementById('sel-task').value = i.toString();
+            selectedTask = i.toString();
+        };
+        taskLegend.appendChild(item);
+    });
+
+    const modelLegend = document.getElementById('model-legend');
+    MODELS.forEach(model => {
+        const tag = document.createElement('span');
+        tag.className = 'model-tag';
+        tag.style.background = model.color + '20';
+        tag.style.color = model.color;
+        tag.style.border = `1px solid ${model.color}40`;
+        tag.textContent = `${model.marker} ${model.name}`;
+        tag.onclick = () => {
+            currentScale = logToSlider(model.params);
+            document.getElementById('sl-params').value = currentScale;
+            document.getElementById('val-params').textContent = formatParams(model.params);
+            initAudio();
+            playNote(330, 0.2, 0.1, 'sine');
+        };
+        modelLegend.appendChild(tag);
+    });
+}
+buildLegends();
+
+// === CONTROLS ===
+document.getElementById('sl-params').addEventListener('input', (e) => {
+    currentScale = parseInt(e.target.value);
+    const logP = sliderToLog(currentScale);
+    document.getElementById('val-params').textContent = formatParams(logP);
+});
+
+document.getElementById('btn-animate').addEventListener('click', () => {
+    if (animating) {
+        clearInterval(animInterval);
+        animating = false;
+        document.getElementById('btn-animate').textContent = '⏵ Animar Escala';
+    } else {
+        startAnimation();
+    }
+});
+
+document.getElementById('btn-reset').addEventListener('click', () => {
+    clearInterval(animInterval);
+    animating = false;
+    currentScale = 40;
+    document.getElementById('sl-params').value = 40;
+    document.getElementById('val-params').textContent = '1B';
+    document.getElementById('btn-animate').textContent = '⏵ Animar Escala';
+});
+
+document.getElementById('sel-task').addEventListener('change', (e) => { selectedTask = e.target.value; });
+
+document.getElementById('sl-vol').addEventListener('input', (e) => {
+    CONFIG.volume = e.target.value / 100;
+    document.getElementById('val-vol').textContent = e.target.value + '%';
+    if (masterGain) masterGain.gain.value = CONFIG.volume;
+});
+document.getElementById('btn-mute').addEventListener('click', () => {
+    CONFIG.audioEnabled = !CONFIG.audioEnabled;
+    document.getElementById('btn-mute').textContent = CONFIG.audioEnabled ? 'Silenciar' : 'Activar Audio';
+});
+
+// === MOUSE HOVER ===
+canvas.addEventListener('mousemove', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+
+    // Check if clicking on chart area
+    if (mx >= CHART.left && mx <= W - CHART.right && my >= CHART.top && my <= H - CHART.bottom) {
+        canvas.style.cursor = 'crosshair';
+    } else {
+        canvas.style.cursor = 'default';
+    }
+});
+
+canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    if (mx >= CHART.left && mx <= W - CHART.right) {
+        const logP = 7 + (mx - CHART.left) / (W - CHART.left - CHART.right) * 5;
+        currentScale = logToSlider(logP);
+        document.getElementById('sl-params').value = currentScale;
+        document.getElementById('val-params').textContent = formatParams(logP);
+        initAudio();
+        playNote(220 + logP * 40, 0.2, 0.08, 'triangle');
+    }
+});
+
+// === LOOP ===
+function loop() { draw(); requestAnimationFrame(loop); }
+loop();
+</script>
+</body>
+</html>
