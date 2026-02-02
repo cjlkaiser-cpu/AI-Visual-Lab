@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Visual Lab: Guía Científica Completa — EigenLab</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+        :root {
+            --primary: #1a365d;
+            --primary-dark: #0f2440;
+            --secondary: #4a5568;
+            --success: #276749;
+            --warning: #975a16;
+            --danger: #9b2c2c;
+            --bg-light: #faf9f7;
+            --bg-code: #1a202c;
+            --border: #d1d5db;
+            --text: #1a202c;
+            --text-light: #4a5568;
+            --accent: #744210;
+            --mod1: #ef4444;
+            --mod2: #f59e0b;
+            --mod3: #8b5cf6;
+            --mod4: #06b6d4;
+            --font-serif: 'Cormorant Garamond', Georgia, serif;
+            --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--font-serif); font-size:1.1rem; line-height:1.8; color: var(--text); background: var(--bg-light); }
+        header { background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color:white; padding:2.5rem 2rem; text-align:center; position:sticky; top:0; z-index:100; box-shadow:0 4px 12px -2px rgba(0,0,0,0.15); border-bottom:3px solid var(--mod1); }
+        header h1 { font-family: var(--font-serif); font-size:2.2rem; font-weight:600; margin-bottom:0.4rem; letter-spacing:0.02em; }
+        header p { font-family: var(--font-sans); opacity:0.95; font-size:1rem; }
+        .container { display:flex; max-width:1800px; margin:0 auto; }
+        .sidebar { width:280px; background:white; border-right:1px solid var(--border); height:calc(100vh - 105px); position:sticky; top:105px; overflow-y:auto; padding:1rem; }
+        .sidebar h3 { font-family: var(--font-sans); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.12em; font-weight:600; color: var(--secondary); margin-bottom:1rem; padding-bottom:0.5rem; border-bottom:2px solid var(--border); }
+        .sidebar ul { list-style:none; }
+        .sidebar li { margin-bottom:0.2rem; }
+        .sidebar a { display:block; padding:0.4rem 0.75rem; color: var(--text); text-decoration:none; border-radius:4px; font-family: var(--font-sans); font-size:0.88rem; transition:all 0.2s; }
+        .sidebar a:hover { background: var(--bg-light); color: var(--primary); }
+        .sidebar a.active { background: var(--primary); color:white; }
+        .sidebar .sub-item a { padding-left:1.5rem; font-size:0.82rem; color: var(--text-light); }
+        .main-content { flex:1; padding:2rem; max-width:920px; }
+        .notes-panel { width:320px; background:white; border-left:1px solid var(--border); height:calc(100vh - 105px); position:sticky; top:105px; overflow-y:auto; padding:1rem; }
+        .notes-panel h3 { font-family: var(--font-sans); font-size:0.8rem; text-transform:uppercase; letter-spacing:0.12em; font-weight:600; color: var(--secondary); margin-bottom:1rem; display:flex; justify-content:space-between; align-items:center; }
+        .notes-panel textarea { width:100%; height:160px; border:1px solid var(--border); border-radius:4px; padding:0.75rem; font-family: var(--font-serif); font-size:0.95rem; resize:vertical; margin-bottom:1rem; line-height:1.6; }
+        .notes-panel textarea:focus { outline:none; border-color: var(--primary); box-shadow:0 0 0 3px rgba(37,99,235,0.1); }
+        .note-card { background:#faf5eb; border:1px solid #d4c5a9; border-radius:4px; padding:0.85rem; margin-bottom:0.75rem; font-size:0.88rem; font-family: var(--font-sans); }
+        .note-card.tip { background:#f0f7f4; border-color:#a7d1be; }
+        .note-card h4 { font-family: var(--font-sans); font-size:0.7rem; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.4rem; color: var(--warning); }
+        .note-card.tip h4 { color: var(--success); }
+        .btn-save { background: var(--primary); color:white; border:none; padding:0.4rem 0.8rem; border-radius:3px; cursor:pointer; font-family: var(--font-sans); font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+        .btn-save:hover { background: var(--primary-dark); }
+        section { background:white; border-radius:4px; padding:2.5rem; margin-bottom:2rem; box-shadow:0 1px 4px rgba(0,0,0,0.08); border:1px solid var(--border); }
+        section h2 { font-family: var(--font-serif); color: var(--primary); font-size:1.7rem; font-weight:600; margin-bottom:1.25rem; padding-bottom:0.6rem; border-bottom:2px solid var(--primary); display:flex; align-items:center; gap:0.75rem; }
+        section h3 { font-family: var(--font-serif); color: var(--text); font-size:1.35rem; font-weight:600; margin:1.75rem 0 0.85rem; }
+        section h4 { font-family: var(--font-sans); color: var(--secondary); font-size:0.95rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; margin:1.25rem 0 0.6rem; }
+        p { margin-bottom:1.1rem; text-align:justify; hyphens:auto; }
+        .info-box { padding:1.25rem; border-radius:4px; margin:1.5rem 0; border-left:4px solid; font-size:0.98rem; }
+        .info-box.concept { background:#f0f4f8; border-color: var(--primary); }
+        .info-box.warning { background:#faf5eb; border-color: var(--warning); }
+        .info-box.success { background:#f0f7f4; border-color: var(--success); }
+        .info-box.danger { background:#fdf2f2; border-color: var(--danger); }
+        .info-box h4 { font-family: var(--font-sans); margin:0 0 0.6rem 0; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.1em; font-weight:600; }
+        .info-box.concept h4 { color: var(--primary); }
+        .info-box.warning h4 { color: var(--warning); }
+        .info-box.success h4 { color: var(--success); }
+        .info-box.danger h4 { color: var(--danger); }
+        .info-box a { color: var(--primary); font-weight:600; }
+        table { width:100%; border-collapse:collapse; margin:1.25rem 0; font-family: var(--font-sans); font-size:0.92rem; }
+        th,td { padding:0.75rem 0.85rem; text-align:left; border-bottom:1px solid var(--border); }
+        th { background: var(--primary); color:white; font-weight:600; text-transform:uppercase; font-size:0.72rem; letter-spacing:0.08em; }
+        tr:nth-child(even) { background:#f8f9fa; }
+        tr:hover { background:#edf2f7; }
+        .diagram { background:#f7f6f3; border:1px solid var(--border); border-radius:4px; padding:1.25rem; margin:1.5rem 0; font-family: var(--font-mono); font-size:0.82rem; overflow-x:auto; white-space:pre; line-height:1.5; }
+        ul,ol { margin:1rem 0; padding-left:1.75rem; }
+        li { margin-bottom:0.5rem; line-height:1.7; }
+        .eq { display:block; text-align:center; font-family: 'Times New Roman', serif; font-style:italic; font-size:1.15rem; padding:1rem; margin:1.25rem 0; background:rgba(26,54,93,0.04); border-left:3px solid var(--primary); border-radius:0 6px 6px 0; line-height:1.8; }
+        .eq-inline { font-family: 'Times New Roman', serif; font-style:italic; font-size:1.05em; }
+        .comparison { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1.5rem 0; }
+        .comparison-card { border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+        .comparison-card h4 { padding:0.75rem 1rem; margin:0; background:#f7f6f3; border-bottom:1px solid var(--border); font-size:0.85rem; }
+        .comparison-card .content { padding:1rem; font-size:0.92rem; }
+        .comparison-card.bad { border-color: var(--danger); }
+        .comparison-card.bad h4 { background:#fdf2f2; color: var(--danger); }
+        .comparison-card.good { border-color: var(--success); }
+        .comparison-card.good h4 { background:#f0f7f4; color: var(--success); }
+        .badge { display:inline-flex; padding:0.25rem 0.55rem; border-radius:3px; font-family: var(--font-sans); font-size:0.68rem; font-weight:600; text-transform:uppercase; letter-spacing:0.05em; }
+        .badge.beginner { background:#dbeafe; color: var(--primary); }
+        .badge.intermediate { background:#fef3c7; color:#92400e; }
+        .badge.advanced { background:#fce7f3; color:#9d174d; }
+        .badge.mod1 { background:#fef2f2; color: var(--mod1); }
+        .badge.mod2 { background:#fffbeb; color:#b45309; }
+        .badge.mod3 { background:#f5f3ff; color: var(--mod3); }
+        .badge.mod4 { background:#ecfeff; color:#0e7490; }
+        details { margin:1.25rem 0; border:1px solid var(--border); border-radius:4px; overflow:hidden; }
+        summary { padding:0.85rem 1.1rem; background:#f7f6f3; cursor:pointer; font-family: var(--font-serif); font-weight:600; font-size:1.05rem; display:flex; align-items:center; gap:0.75rem; }
+        summary:hover { background:#eeeee8; }
+        summary::before { content:'▸'; font-size:0.9rem; transition:transform 0.2s; color: var(--primary); }
+        details[open] summary::before { transform:rotate(90deg); }
+        details .content { padding:1.1rem; background:white; }
+        .sim-link { display:inline-flex; align-items:center; gap:0.4rem; background:#f0f7f4; border:1px solid #a7d1be; padding:0.5rem 1rem; border-radius:4px; font-family: var(--font-sans); font-size:0.88rem; color: var(--success); text-decoration:none; font-weight:600; margin:0.75rem 0; transition:all 0.2s; }
+        .sim-link:hover { background:#e6f4ee; transform:translateX(2px); }
+        .exercise-box { background:#faf5eb; border:1px solid #d4c5a9; border-radius:4px; padding:1.1rem; margin:1.25rem 0; }
+        .exercise-box h4 { font-family: var(--font-sans); font-size:0.75rem; text-transform:uppercase; letter-spacing:0.08em; color: var(--warning); margin-bottom:0.6rem; }
+        .mod-header { padding:0.5rem 1rem; border-radius:4px; margin-bottom:1rem; font-family: var(--font-sans); font-size:0.8rem; font-weight:600; text-transform:uppercase; letter-spacing:0.08em; }
+        .mod-header.m1 { background:#fef2f2; color: var(--mod1); border-left:4px solid var(--mod1); }
+        .mod-header.m2 { background:#fffbeb; color:#b45309; border-left:4px solid var(--mod2); }
+        .mod-header.m3 { background:#f5f3ff; color: var(--mod3); border-left:4px solid var(--mod3); }
+        .mod-header.m4 { background:#ecfeff; color:#0e7490; border-left:4px solid var(--mod4); }
+        .progress-tracker { display:flex; justify-content:space-between; margin:2rem 0; position:relative; }
+        .progress-tracker::before { content:''; position:absolute; top:20px; left:0; right:0; height:3px; background: var(--border); z-index:0; }
+        .progress-step { text-align:center; position:relative; z-index:1; }
+        .progress-step .circle { width:42px; height:42px; border-radius:50%; background:white; border:2px solid var(--border); display:flex; align-items:center; justify-content:center; margin:0 auto 0.4rem; font-family: var(--font-serif); font-weight:600; font-size:1.1rem; }
+        .progress-step span { font-family: var(--font-sans); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.05em; color: var(--secondary); }
+        .checklist label { display:block; margin:0.35rem 0; cursor:pointer; font-family: var(--font-sans); font-size:0.82rem; }
+        .checklist input { margin-right:0.4rem; accent-color: var(--primary); }
+        @media (max-width:1400px) { .notes-panel { width:280px; } }
+        @media (max-width:1200px) { .sidebar { display:none; } }
+        @media (max-width:900px) { .container { flex-direction:column; } .notes-panel { width:100%; height:auto; position:relative; top:0; } }
+        @media print { .sidebar,.notes-panel,header { display:none; } .main-content { max-width:100%; } section { break-inside:avoid; } }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>AI Visual Lab: Guía Científica Completa</h1>
+        <p>20 Simulaciones Interactivas de Inteligencia Artificial — De Perceptrones a Superposición · EigenLab</p>
+    </header>
+    <div class="container">
+        <nav class="sidebar">
+            <h3>Índice de Contenidos</h3>
+            <ul>
+                <li><a href="#intro">1. Introducción</a></li>
+                <li><a href="#prereqs">2. Prerrequisitos</a></li>
+                <li><a href="#mod1">3. Módulo 1: Fundamentos</a></li>
+                <li class="sub-item"><a href="#s01">3.1 El Perceptrón</a></li>
+                <li class="sub-item"><a href="#s02">3.2 Descenso de Gradiente</a></li>
+                <li class="sub-item"><a href="#s03">3.3 Backpropagation</a></li>
+                <li class="sub-item"><a href="#s04">3.4 Funciones de Activación</a></li>
+                <li class="sub-item"><a href="#s05">3.5 Inicialización de Pesos</a></li>
+                <li><a href="#mod2">4. Módulo 2: Arquitecturas</a></li>
+                <li class="sub-item"><a href="#s06">4.1 Autoencoders</a></li>
+                <li class="sub-item"><a href="#s07">4.2 LSTM</a></li>
+                <li class="sub-item"><a href="#s08">4.3 Mecanismo de Atención</a></li>
+                <li class="sub-item"><a href="#s09">4.4 Redes Convolucionales</a></li>
+                <li class="sub-item"><a href="#s10">4.5 GAN</a></li>
+                <li><a href="#mod3">5. Módulo 3: Transformers</a></li>
+                <li class="sub-item"><a href="#s11">5.1 Anatomía del Transformer</a></li>
+                <li class="sub-item"><a href="#s12">5.2 Embeddings</a></li>
+                <li class="sub-item"><a href="#s13">5.3 Self-Attention</a></li>
+                <li class="sub-item"><a href="#s14">5.4 Chain of Thought</a></li>
+                <li class="sub-item"><a href="#s15">5.5 Habilidades Emergentes</a></li>
+                <li><a href="#mod4">6. Módulo 4: Fronteras</a></li>
+                <li class="sub-item"><a href="#s16">6.1 Modelos de Difusión</a></li>
+                <li class="sub-item"><a href="#s17">6.2 Aprendizaje por Refuerzo</a></li>
+                <li class="sub-item"><a href="#s18">6.3 Destilación</a></li>
+                <li class="sub-item"><a href="#s19">6.4 Mixture of Experts</a></li>
+                <li class="sub-item"><a href="#s20">6.5 Superposición</a></li>
+                <li><a href="#exercises">7. Ejercicios Integrados</a></li>
+                <li><a href="#conceptmap">8. Mapa Conceptual</a></li>
+                <li><a href="#glossary">9. Glosario</a></li>
+                <li><a href="#refs">10. Referencias</a></li>
+                <li><a href="#faq">11. Preguntas Frecuentes</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+
+<!-- ============================================================ -->
+<!-- 1. INTRODUCCIÓN -->
+<!-- ============================================================ -->
+<section id="intro">
+    <h2>1. Introducción</h2>
+    <p><strong>AI Visual Lab</strong> es un laboratorio completo de inteligencia artificial explicable: 20 simulaciones interactivas que transforman los conceptos más abstractos del aprendizaje automático en experiencias sensoriales. Cada simulación se ve, se escucha y se manipula.</p>
+
+    <div class="info-box concept">
+        <h4>Filosofía: Explicabilidad Radical</h4>
+        <p>No basta con ver la red neuronal — hay que <strong>escuchar</strong> el gradiente desvanecerse, <strong>sentir</strong> la fricción del learning rate, <strong>oír</strong> la disonancia del error. La sonificación convierte magnitudes numéricas en señales auditivas: un intervalo de tritono señala error alto, un acorde mayor resuelto indica convergencia.</p>
+    </div>
+
+    <h3>¿Qué aprenderás?</h3>
+    <ul>
+        <li>Los fundamentos matemáticos del aprendizaje automático, desde el perceptrón hasta la superposición</li>
+        <li>Cómo funcionan las arquitecturas clásicas (CNN, LSTM, GAN, Autoencoder) desde dentro</li>
+        <li>La mecánica interna de los Transformers y los Large Language Models</li>
+        <li>Las fronteras de la investigación: modelos de difusión, MoE, interpretabilidad mecánica</li>
+    </ul>
+
+    <h3>Cómo usar esta guía</h3>
+    <ol>
+        <li><strong>Lee la teoría</strong> de cada sección para comprender los fundamentos matemáticos</li>
+        <li><strong>Abre la simulación</strong> correspondiente (enlaces en cada sección) y experimenta</li>
+        <li><strong>Realiza los ejercicios</strong> propuestos al final de cada sección</li>
+        <li><strong>Toma notas</strong> en el panel lateral derecho — se guardan automáticamente</li>
+    </ol>
+
+    <h3>Progreso del Tutorial</h3>
+    <div class="progress-tracker">
+        <div class="progress-step"><div class="circle">1</div><span>Fundamentos</span></div>
+        <div class="progress-step"><div class="circle">2</div><span>Arquitecturas</span></div>
+        <div class="progress-step"><div class="circle">3</div><span>Transformers</span></div>
+        <div class="progress-step"><div class="circle">4</div><span>Fronteras</span></div>
+        <div class="progress-step"><div class="circle">5</div><span>Maestría</span></div>
+    </div>
+
+    <h3>Estructura del Laboratorio</h3>
+    <table>
+        <thead><tr><th>Módulo</th><th>Tema</th><th>Simulaciones</th><th>Dificultad</th></tr></thead>
+        <tbody>
+            <tr><td style="color:var(--mod1);font-weight:600;">Módulo 1</td><td>Fundamentos del Aprendizaje</td><td>5 (Sims 1-5)</td><td><span class="badge beginner">Fundamental</span></td></tr>
+            <tr><td style="color:#b45309;font-weight:600;">Módulo 2</td><td>Arquitecturas Clásicas</td><td>5 (Sims 6-10)</td><td><span class="badge intermediate">Intermedio</span></td></tr>
+            <tr><td style="color:var(--mod3);font-weight:600;">Módulo 3</td><td>Transformers y LLMs</td><td>5 (Sims 11-15)</td><td><span class="badge intermediate">Intermedio</span></td></tr>
+            <tr><td style="color:#0e7490;font-weight:600;">Módulo 4</td><td>Fronteras de la IA</td><td>5 (Sims 16-20)</td><td><span class="badge advanced">Avanzado</span></td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 2. PRERREQUISITOS -->
+<!-- ============================================================ -->
+<section id="prereqs">
+    <h2>2. Prerrequisitos</h2>
+    <p>Las simulaciones están diseñadas para ser accesibles, pero ciertos fundamentos matemáticos enriquecerán significativamente tu comprensión.</p>
+    <table>
+        <thead><tr><th>Tema</th><th>Nivel</th><th>Conceptos Clave</th></tr></thead>
+        <tbody>
+            <tr><td>Álgebra Lineal</td><td><span class="badge intermediate">Intermedio</span></td><td>Vectores, matrices, producto punto, autovalores</td></tr>
+            <tr><td>Cálculo</td><td><span class="badge beginner">Básico</span></td><td>Derivadas, regla de la cadena, gradientes</td></tr>
+            <tr><td>Probabilidad</td><td><span class="badge beginner">Básico</span></td><td>Distribuciones, Bayes, entropía</td></tr>
+            <tr><td>Programación</td><td><span class="badge beginner">Básico</span></td><td>No necesario, pero ayuda leer JavaScript</td></tr>
+        </tbody>
+    </table>
+
+    <details>
+        <summary>Repaso: Vectores y producto punto</summary>
+        <div class="content">
+            <p>Un <strong>vector</strong> es una lista ordenada de números. En ML, los datos, pesos y gradientes son vectores. El <strong>producto punto</strong> mide la similitud entre dos vectores:</p>
+            <div class="eq">a · b = Σᵢ aᵢbᵢ = |a||b|cos(θ)</div>
+            <p>Cuando dos vectores apuntan en la misma dirección, su producto punto es máximo. Cuando son perpendiculares, es cero. Este concepto aparece en el perceptrón, en attention, y en embeddings.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Repaso: Derivadas y regla de la cadena</summary>
+        <div class="content">
+            <p>La <strong>derivada</strong> f'(x) indica la tasa de cambio de una función. En ML, usamos derivadas para encontrar cómo ajustar los pesos para reducir el error. La <strong>regla de la cadena</strong> permite derivar funciones compuestas:</p>
+            <div class="eq">∂L/∂w = (∂L/∂y) · (∂y/∂z) · (∂z/∂w)</div>
+            <p>Esta regla es la base matemática del algoritmo de backpropagation (Simulación 3).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>Repaso: Softmax y distribuciones de probabilidad</summary>
+        <div class="content">
+            <p>La función <strong>softmax</strong> convierte un vector de valores reales en una distribución de probabilidad:</p>
+            <div class="eq">softmax(zᵢ) = exp(zᵢ) / Σⱼ exp(zⱼ)</div>
+            <p>Aparece en clasificación (perceptrón multicapa), en attention (para normalizar pesos), y en la salida de LLMs. Un parámetro de <strong>temperatura</strong> T controla la nitidez: dividir los logits por T antes del softmax hace la distribución más uniforme (T alto) o más puntiaguda (T bajo).</p>
+        </div>
+    </details>
+</section>
+
+<!-- ============================================================ -->
+<!-- 3. MÓDULO 1: FUNDAMENTOS -->
+<!-- ============================================================ -->
+<section id="mod1">
+    <h2>3. Módulo 1: Fundamentos del Aprendizaje Automático</h2>
+    <div class="mod-header m1">Módulo 1 · Color: Rojo (#ef4444) · Simulaciones 1-5</div>
+    <p>Este módulo cubre los cimientos sobre los que se construye toda la inteligencia artificial moderna. Partimos de la unidad computacional más simple — el perceptrón — y construimos progresivamente las herramientas necesarias para entrenar redes profundas: optimización, propagación de gradientes, funciones de activación e inicialización.</p>
+</section>
+
+<!-- SIM 01: PERCEPTRÓN -->
+<section id="s01">
+    <h3>3.1 El Perceptrón Viviente</h3>
+    <a href="../perceptron-viviente.html" class="sim-link">&#128300; Abrir Simulación 1: Perceptrón Viviente</a>
+
+    <h4>Contexto Histórico</h4>
+    <p>En 1958, Frank Rosenblatt propuso el <strong>perceptrón</strong> como modelo computacional inspirado en la neurona biológica (Rosenblatt, 1958). La idea es directa: una unidad que recibe entradas ponderadas, las suma, y produce una salida binaria según un umbral. Este modelo fue el primer algoritmo capaz de <em>aprender</em> a clasificar datos a partir de ejemplos.</p>
+
+    <h4>Modelo Matemático</h4>
+    <p>El perceptrón computa una combinación lineal de las entradas y aplica una función escalón:</p>
+    <div class="eq">ŷ = sign(w₁x₁ + w₂x₂ + b) = sign(w · x + b)</div>
+    <p>Donde <span class="eq-inline">w</span> es el vector de pesos, <span class="eq-inline">x</span> el vector de entrada, y <span class="eq-inline">b</span> el sesgo (bias). La <strong>frontera de decisión</strong> es la recta donde <span class="eq-inline">w · x + b = 0</span>.</p>
+
+    <h4>Regla de Aprendizaje</h4>
+    <p>Cuando el perceptrón clasifica incorrectamente un punto, los pesos se actualizan:</p>
+    <div class="eq">wᵢ ← wᵢ + η(y − ŷ)xᵢ , &nbsp;&nbsp; b ← b + η(y − ŷ)</div>
+    <p>donde <span class="eq-inline">η</span> es la tasa de aprendizaje. El <strong>Teorema de Convergencia del Perceptrón</strong> (Novikoff, 1963) garantiza que si los datos son linealmente separables, el algoritmo converge en un número finito de pasos.</p>
+
+    <div class="info-box warning">
+        <h4>Limitación Fundamental</h4>
+        <p>En 1969, Minsky y Papert demostraron que un perceptrón simple no puede resolver problemas no linealmente separables, como la función XOR. Esta limitación provocó el primer "invierno de la IA" y motivó el desarrollo de redes multicapa.</p>
+    </div>
+
+    <div class="diagram">
+    Perceptrón:
+
+     x₁ ──[w₁]──┐
+                  ├──► Σ + b ──► sign() ──► ŷ ∈ {-1, +1}
+     x₂ ──[w₂]──┘
+
+    Frontera de decisión: w₁x₁ + w₂x₂ + b = 0
+    </div>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>La <strong>línea de decisión</strong> pivotea y se traslada con cada actualización de pesos</li>
+        <li>Los puntos mal clasificados parpadean en dorado antes de ser corregidos</li>
+        <li>El <strong>sonido</strong> de tritono (disonancia) se resuelve progresivamente hacia consonancia</li>
+        <li>Con el preset "circular", observa cómo el perceptrón <em>nunca</em> converge</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 1.1</h4>
+        <p>Abre la simulación y selecciona el preset <strong>"lineal"</strong>. Entrena hasta convergencia. Luego añade manualmente un punto de la clase opuesta <em>dentro</em> de la región clasificada. ¿Cuántas iteraciones necesita el perceptrón para ajustarse? Ahora selecciona el preset <strong>"circular"</strong>. ¿Por qué el perceptrón oscila sin converger?</p>
+    </div>
+</section>
+
+<!-- SIM 02: GRADIENT DESCENT -->
+<section id="s02">
+    <h3>3.2 Descenso de Gradiente</h3>
+    <a href="../gradient-descent-landscape.html" class="sim-link">&#128300; Abrir Simulación 2: Gradient Descent Landscape</a>
+
+    <h4>Optimización y Superficies de Pérdida</h4>
+    <p>Entrenar una red neuronal equivale a encontrar los parámetros <span class="eq-inline">θ</span> que minimizan una función de pérdida <span class="eq-inline">L(θ)</span>. La geometría de esta función — su <strong>superficie de pérdida</strong> — determina la dificultad del problema. Puede contener valles, mesetas, puntos de silla y mínimos locales.</p>
+
+    <h4>SGD (Stochastic Gradient Descent)</h4>
+    <div class="eq">θ_{t+1} = θ_t − η ∇L(θ_t)</div>
+    <p>El gradiente <span class="eq-inline">∇L</span> indica la dirección de máximo crecimiento; moverse en la dirección opuesta reduce la pérdida. La tasa de aprendizaje <span class="eq-inline">η</span> controla el tamaño del paso.</p>
+
+    <h4>Momentum</h4>
+    <div class="eq">v_t = β v_{t−1} + ∇L(θ_t) , &nbsp;&nbsp; θ_{t+1} = θ_t − η v_t</div>
+    <p>El momentum acumula velocidad, permitiendo atravesar mesetas y reducir oscilaciones en valles estrechos. El hiperparámetro <span class="eq-inline">β</span> (típicamente 0.9) controla cuánta "inercia" se conserva.</p>
+
+    <h4>Adam (Adaptive Moment Estimation)</h4>
+    <p>Combina momentum con tasas de aprendizaje adaptativas por parámetro (Kingma & Ba, 2015):</p>
+    <div class="eq">m_t = β₁ m_{t−1} + (1−β₁) g_t &nbsp;&nbsp; (primer momento)
+v_t = β₂ v_{t−1} + (1−β₂) g_t² &nbsp;&nbsp; (segundo momento)
+θ_{t+1} = θ_t − η · m̂_t / (√v̂_t + ε)</div>
+
+    <table>
+        <thead><tr><th>Optimizador</th><th>Ventaja</th><th>Riesgo</th><th>Mejor para</th></tr></thead>
+        <tbody>
+            <tr><td>SGD</td><td>Simple, generaliza bien</td><td>Lento en valles estrechos</td><td>Convergencia final</td></tr>
+            <tr><td>Momentum</td><td>Atraviesa mesetas</td><td>Puede "saltarse" mínimos</td><td>Superficies con momentum</td></tr>
+            <tr><td>RMSProp</td><td>Adaptativo por parámetro</td><td>Sin corrección de sesgo</td><td>RNNs</td></tr>
+            <tr><td>Adam</td><td>Robusto, rápido</td><td>Puede no generalizar tan bien</td><td>Uso general</td></tr>
+        </tbody>
+    </table>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>En la función <strong>Rastrigin</strong> (muchos mínimos locales), SGD queda atrapado mientras Adam escapa</li>
+        <li>En el <strong>punto de silla</strong>, el momentum ayuda a escapar de la meseta</li>
+        <li>Un learning rate demasiado alto causa <strong>divergencia</strong> — la partícula sale de la superficie</li>
+        <li>El <strong>pitch del sonido</strong> baja conforme la pérdida desciende</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 1.2</h4>
+        <p>Selecciona la superficie <strong>Rastrigin</strong> y coloca 4 partículas en diferentes posiciones (click en la superficie). Usa SGD con η=0.01. ¿Cuántas encuentran el mínimo global? Ahora cambia a Adam. ¿Mejora el resultado? Experimenta con η=1.0 — ¿qué ocurre?</p>
+    </div>
+</section>
+
+<!-- SIM 03: BACKPROPAGATION -->
+<section id="s03">
+    <h3>3.3 Backpropagation</h3>
+    <a href="../backpropagation-flow.html" class="sim-link">&#128300; Abrir Simulación 3: Backpropagation Flow</a>
+
+    <h4>La Regla de la Cadena Aplicada</h4>
+    <p>El algoritmo de <strong>backpropagation</strong> (Rumelhart, Hinton & Williams, 1986) es la aplicación sistemática de la regla de la cadena para calcular gradientes en redes multicapa. Permite saber <em>cuánto contribuye cada peso al error total</em>.</p>
+
+    <div class="eq">∂L/∂w_ij = (∂L/∂a_j) · (∂a_j/∂z_j) · (∂z_j/∂w_ij)</div>
+
+    <p>El proceso tiene dos fases:</p>
+    <ol>
+        <li><strong>Forward pass:</strong> Se computan las activaciones capa por capa, desde la entrada hasta la salida</li>
+        <li><strong>Backward pass:</strong> Se computan los gradientes capa por capa, desde la salida hasta la entrada</li>
+    </ol>
+
+    <div class="diagram">
+    Forward Pass (azul →):
+    Input → [Capa 1] → [Capa 2] → [Capa 3] → Output → Loss
+
+    Backward Pass (rojo ←):
+    Input ← ∂L/∂w₁ ← ∂L/∂w₂ ← ∂L/∂w₃ ← ∂L/∂ŷ ← Loss
+    </div>
+
+    <h4>Problemas del Gradiente</h4>
+    <div class="comparison">
+        <div class="comparison-card bad">
+            <h4>Vanishing Gradient</h4>
+            <div class="content">
+                <p>Con sigmoid/tanh, la derivada es siempre &lt;1. Al multiplicar muchas derivadas pequeñas capa tras capa, el gradiente se hace exponencialmente pequeño. Las capas iniciales apenas aprenden.</p>
+            </div>
+        </div>
+        <div class="comparison-card bad">
+            <h4>Exploding Gradient</h4>
+            <div class="content">
+                <p>Si los pesos son grandes, los gradientes crecen exponencialmente. Los pesos saltan erráticamente y el entrenamiento diverge. Solución: gradient clipping.</p>
+            </div>
+        </div>
+    </div>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>El <strong>grosor de las conexiones</strong> indica la magnitud de los pesos</li>
+        <li>Las <strong>partículas</strong> fluyen hacia adelante (azul) y hacia atrás (rojo)</li>
+        <li>Con sigmoid, los gradientes de las primeras capas se desvanecen — las notas se apagan</li>
+        <li>Con ReLU, los gradientes fluyen más uniformemente a través de la red</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 1.3</h4>
+        <p>Configura todas las capas con activación <strong>Sigmoid</strong> y observa el backward pass. ¿Las partículas de gradiente llegan a la primera capa? Ahora cambia a <strong>ReLU</strong>. ¿Qué diferencia observas? Activa el modo paso a paso y haz clic en una neurona intermedia para ver su responsabilidad en el error.</p>
+    </div>
+</section>
+
+<!-- SIM 04: ACTIVATION FUNCTIONS -->
+<section id="s04">
+    <h3>3.4 Funciones de Activación</h3>
+    <a href="../activation-function-orchestra.html" class="sim-link">&#128300; Abrir Simulación 4: Activation Function Orchestra</a>
+
+    <h4>¿Por qué la No-Linealidad?</h4>
+    <p>Sin funciones de activación no lineales, una red de <em>N</em> capas se reduce a una sola transformación lineal: <span class="eq-inline">W_N · ... · W_2 · W_1 · x = W'x</span>. El <strong>Teorema de Aproximación Universal</strong> (Cybenko, 1989; Hornik, 1991) establece que una red de una capa oculta con activación no lineal puede aproximar cualquier función continua, dada suficiente anchura.</p>
+
+    <h4>Las 8 Funciones</h4>
+    <table>
+        <thead><tr><th>Función</th><th>Ecuación</th><th>Rango</th><th>Propiedad clave</th></tr></thead>
+        <tbody>
+            <tr><td>Sigmoid</td><td><span class="eq-inline">σ(x) = 1/(1+e⁻ˣ)</span></td><td>(0, 1)</td><td>Saturación bilateral</td></tr>
+            <tr><td>Tanh</td><td><span class="eq-inline">tanh(x)</span></td><td>(-1, 1)</td><td>Centrada en cero</td></tr>
+            <tr><td>ReLU</td><td><span class="eq-inline">max(0, x)</span></td><td>[0, ∞)</td><td>Neuronas muertas si x&lt;0</td></tr>
+            <tr><td>Leaky ReLU</td><td><span class="eq-inline">max(0.01x, x)</span></td><td>(-∞, ∞)</td><td>Evita neuronas muertas</td></tr>
+            <tr><td>ELU</td><td><span class="eq-inline">x si x&gt;0, α(eˣ−1) si x≤0</span></td><td>(-α, ∞)</td><td>Suave en x=0</td></tr>
+            <tr><td>Swish</td><td><span class="eq-inline">x · σ(x)</span></td><td>≈(-0.28, ∞)</td><td>Autoregulada</td></tr>
+            <tr><td>GELU</td><td><span class="eq-inline">x · Φ(x)</span></td><td>≈(-0.17, ∞)</td><td>Usada en Transformers</td></tr>
+            <tr><td>Mish</td><td><span class="eq-inline">x · tanh(softplus(x))</span></td><td>≈(-0.31, ∞)</td><td>Suave, no monótona</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box concept">
+        <h4>Derivada y Saturación</h4>
+        <p>La derivada de sigmoid es <span class="eq-inline">σ'(x) = σ(x)(1−σ(x))</span>, con máximo 0.25 en x=0. Para valores grandes de |x|, la derivada tiende a cero: la neurona se <strong>satura</strong>. ReLU resuelve esto en la zona positiva (derivada = 1), pero introduce el problema de <strong>neuronas muertas</strong> cuando la entrada es siempre negativa.</p>
+    </div>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>Los 8 canales tipo osciloscopio muestran la transformación de la misma señal de entrada</li>
+        <li>La <strong>derivada</strong> (línea tenue) muestra dónde el gradiente fluye bien y dónde se satura</li>
+        <li>Con amplitud alta ("modo explosión"), sigmoid y tanh saturan completamente</li>
+        <li>ReLU "corta" la señal negativa — zona gris de muerte neuronal</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 1.4</h4>
+        <p>Activa la onda <strong>senoidal</strong> con amplitud 2. Observa las 8 salidas. Luego sube la amplitud a 10 (modo explosión). ¿Cuáles funciones saturan? ¿Cuáles mantienen información? Activa la visualización de derivadas: ¿dónde es la derivada prácticamente cero?</p>
+    </div>
+</section>
+
+<!-- SIM 05: WEIGHT INITIALIZATION -->
+<section id="s05">
+    <h3>3.5 Inicialización de Pesos</h3>
+    <a href="../weight-initialization-galaxy.html" class="sim-link">&#128300; Abrir Simulación 5: Weight Initialization Galaxy</a>
+
+    <h4>El Big Bang de los Pesos</h4>
+    <p>La inicialización de pesos determina el punto de partida del entrenamiento. Una inicialización incorrecta puede provocar que las activaciones se desvanezcan (colapsen a cero) o exploten (crezcan sin control) antes de que el entrenamiento comience. La clave es mantener la <strong>varianza de las activaciones estable</strong> a través de las capas.</p>
+
+    <div class="eq">Var[aₗ] = Var[aₗ₋₁] · nₗ · Var[wₗ]</div>
+
+    <p>Para que la varianza se conserve, necesitamos <span class="eq-inline">nₗ · Var[wₗ] = 1</span>, es decir, <span class="eq-inline">Var[wₗ] = 1/nₗ</span>.</p>
+
+    <h4>Estrategias de Inicialización</h4>
+    <table>
+        <thead><tr><th>Estrategia</th><th>Varianza</th><th>Mejor con</th><th>Referencia</th></tr></thead>
+        <tbody>
+            <tr><td>Xavier / Glorot</td><td><span class="eq-inline">σ² = 2/(n_in + n_out)</span></td><td>Sigmoid, Tanh</td><td>Glorot & Bengio, 2010</td></tr>
+            <tr><td>He / Kaiming</td><td><span class="eq-inline">σ² = 2/n_in</span></td><td>ReLU, Leaky ReLU</td><td>He et al., 2015</td></tr>
+            <tr><td>LeCun</td><td><span class="eq-inline">σ² = 1/n_in</span></td><td>SELU</td><td>LeCun et al., 1998</td></tr>
+            <tr><td>Normal(0, 1)</td><td><span class="eq-inline">σ² = 1</span></td><td>—</td><td>Demasiado grande</td></tr>
+            <tr><td>Zeros</td><td><span class="eq-inline">σ² = 0</span></td><td>—</td><td>Rompe simetría</td></tr>
+        </tbody>
+    </table>
+
+    <div class="info-box danger">
+        <h4>Inicializar en Cero</h4>
+        <p>Si todos los pesos son idénticos, todas las neuronas de una capa computan exactamente lo mismo. Los gradientes también son idénticos, y los pesos se actualizan de forma idéntica. La red nunca rompe esta <strong>simetría</strong> — equivale a tener una sola neurona por capa.</p>
+    </div>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>Los <strong>histogramas apilados</strong> muestran la distribución de activaciones por capa</li>
+        <li>Con Normal(0,1): los histogramas se expanden hasta explotar (rojo)</li>
+        <li>Con Normal(0,0.01): los histogramas colapsan a cero (azul)</li>
+        <li>Con He + ReLU: los histogramas mantienen una varianza estable (verde) a través de las 10 capas</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 1.5</h4>
+        <p>Configura 10 capas con activación <strong>ReLU</strong>. Prueba cada estrategia de inicialización y observa los histogramas. ¿Cuál mantiene la varianza más estable? Ahora cambia a <strong>Sigmoid</strong> y repite. ¿Por qué He ya no funciona tan bien con sigmoid?</p>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 4. MÓDULO 2: ARQUITECTURAS CLÁSICAS -->
+<!-- ============================================================ -->
+<section id="mod2">
+    <h2>4. Módulo 2: Arquitecturas Clásicas</h2>
+    <div class="mod-header m2">Módulo 2 · Color: Ámbar (#f59e0b) · Simulaciones 6-10</div>
+    <p>Con los fundamentos establecidos, este módulo explora las arquitecturas que definieron la primera era del deep learning. Cada una resuelve un problema específico: compresión de información (autoencoders), memoria secuencial (LSTM), atención selectiva, detección jerárquica de patrones (CNN), y generación adversaria (GAN).</p>
+</section>
+
+<!-- SIM 06: AUTOENCODER -->
+<section id="s06">
+    <h3>4.1 Autoencoder: Compresión como Arquitectura</h3>
+    <a href="../autoencoder-cathedral.html" class="sim-link">&#128300; Abrir Simulación 6: Autoencoder Cathedral</a>
+
+    <h4>Representación y Compresión</h4>
+    <p>Un <strong>autoencoder</strong> es una red neuronal entrenada para reconstruir su propia entrada, forzada a pasar por un cuello de botella (<em>bottleneck</em>) de dimensionalidad reducida. Al hacerlo, aprende una representación comprimida que captura las características esenciales de los datos.</p>
+
+    <div class="eq">z = f_enc(x) , &nbsp;&nbsp; x̂ = f_dec(z) , &nbsp;&nbsp; L = ||x − x̂||²</div>
+
+    <div class="diagram">
+    Autoencoder (reloj de arena):
+
+    Input [64] → Encoder [32] → Bottleneck [2-16] → Decoder [32] → Output [64]
+
+    64 dims                      2 dims                        64 dims
+    (imagen 8×8)              (espacio latente)              (reconstrucción)
+    </div>
+
+    <p>El <strong>espacio latente</strong> (la representación en el bottleneck) organiza los datos de forma significativa: dígitos similares quedan cerca. Interpolar entre dos puntos del espacio latente genera "transiciones" entre conceptos.</p>
+
+    <div class="info-box concept">
+        <h4>Conexión con PCA</h4>
+        <p>Un autoencoder lineal (sin activaciones) con bottleneck de dimensión <em>k</em> aprende exactamente las <em>k</em> primeras componentes principales (PCA). Los autoencoders no lineales son una generalización más potente.</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 2.1</h4>
+        <p>Entrena el autoencoder con bottleneck de <strong>16 dimensiones</strong>. Observa la reconstrucción. Ahora reduce a <strong>2 dimensiones</strong>. ¿Cuánta información se pierde? Usa el slider de interpolación para navegar entre dos dígitos en el espacio latente.</p>
+    </div>
+</section>
+
+<!-- SIM 07: LSTM -->
+<section id="s07">
+    <h3>4.2 LSTM: Neuronas con Memoria</h3>
+    <a href="../lstm-memory-cells.html" class="sim-link">&#128300; Abrir Simulación 7: LSTM Memory Cells</a>
+
+    <h4>El Problema de las RNN Simples</h4>
+    <p>Las redes recurrentes simples (RNN) sufren el problema del <strong>vanishing gradient</strong> en secuencias largas: la información de pasos tempranos se pierde exponencialmente. Las <strong>Long Short-Term Memory</strong> (Hochreiter & Schmidhuber, 1997) resuelven esto con un mecanismo de compuertas.</p>
+
+    <h4>Las Tres Compuertas</h4>
+    <div class="eq">f_t = σ(W_f · [h_{t−1}, x_t] + b_f) &nbsp;&nbsp;&nbsp; (Forget gate)
+i_t = σ(W_i · [h_{t−1}, x_t] + b_i) &nbsp;&nbsp;&nbsp; (Input gate)
+o_t = σ(W_o · [h_{t−1}, x_t] + b_o) &nbsp;&nbsp;&nbsp; (Output gate)</div>
+
+    <p>El <strong>cell state</strong> C_t funciona como una cinta transportadora de información:</p>
+    <div class="eq">C_t = f_t ⊙ C_{t−1} + i_t ⊙ tanh(W_C · [h_{t−1}, x_t] + b_C)
+h_t = o_t ⊙ tanh(C_t)</div>
+
+    <div class="diagram">
+    LSTM Cell:
+
+          ┌──────── f_t ⊙ ────────────── + ──────────┐
+          │        (forget)            (input)         │
+    C_{t-1}                    i_t ⊙ C̃_t            C_t
+          │                                            │
+          │    ┌───────────────────────────────────┐   │
+    h_{t-1}───┤  σ  σ  tanh  σ  ├──── o_t ⊙ tanh(C_t) = h_t
+    x_t ──────┤  f   i   C̃   o  │
+              └───────────────────────────────────┘
+    </div>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>Las <strong>compuertas coloreadas</strong>: Forget (rojo), Input (verde), Output (azul)</li>
+        <li>El <strong>cell state</strong> como río horizontal — su grosor indica cuánta información fluye</li>
+        <li>Con secuencias repetitivas ("abcabc"), el forget gate aprende a filtrar y el input gate se estabiliza</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 2.2</h4>
+        <p>Selecciona una secuencia <strong>repetitiva</strong> y observa cómo los gates se estabilizan. Luego fuerza el forget gate a 0 (memoria perfecta). ¿Qué efecto tiene sobre la predicción? ¿Y si lo fuerzas a 1 (amnesia completa)?</p>
+    </div>
+</section>
+
+<!-- SIM 08: ATTENTION -->
+<section id="s08">
+    <h3>4.3 Mecanismo de Atención</h3>
+    <a href="../attention-heatmap.html" class="sim-link">&#128300; Abrir Simulación 8: Attention Heatmap</a>
+
+    <h4>Atención como Alineamiento</h4>
+    <p>El mecanismo de <strong>atención</strong> (Bahdanau et al., 2014) permite a una red neuronal "mirar" selectivamente diferentes partes de la entrada al producir cada elemento de la salida. La idea fundamental es computar un promedio ponderado donde los pesos reflejan la relevancia de cada posición:</p>
+
+    <div class="eq">Attention(Q, K, V) = softmax(QK<sup>T</sup> / √d_k) V</div>
+
+    <p><strong>Multi-head attention</strong> ejecuta la operación en paralelo con diferentes proyecciones, capturando distintos tipos de relación (sintáctica, semántica, posicional).</p>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>La <strong>matriz de atención</strong> como mapa de calor N×N — celdas brillantes indican alta atención</li>
+        <li>Las <strong>líneas animadas</strong> conectan tokens con grosor proporcional al peso</li>
+        <li>Con <strong>temperatura baja</strong>, la atención se concentra en pocos tokens (sharp)</li>
+        <li>Con <strong>temperatura alta</strong>, la atención se distribuye uniformemente (flat)</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 2.3</h4>
+        <p>Escribe o selecciona una frase y haz clic en diferentes tokens query. ¿Qué tokens reciben más atención? Experimenta con la temperatura del softmax: ¿qué ocurre con la distribución cuando T → 0? ¿Y cuando T → ∞?</p>
+    </div>
+</section>
+
+<!-- SIM 09: CNN -->
+<section id="s09">
+    <h3>4.4 Redes Convolucionales: Detectives de Patrones</h3>
+    <a href="../cnn-feature-detectives.html" class="sim-link">&#128300; Abrir Simulación 9: CNN Feature Detectives</a>
+
+    <h4>Inspiración Biológica</h4>
+    <p>Las CNN están inspiradas en el trabajo de Hubel y Wiesel (1962) sobre la corteza visual: diferentes neuronas responden a diferentes orientaciones de bordes. En una CNN, los <strong>filtros</strong> (kernels) aprenden a detectar patrones locales, y las capas sucesivas detectan patrones cada vez más abstractos.</p>
+
+    <h4>La Operación de Convolución</h4>
+    <div class="eq">(f * g)(x, y) = Σᵢ Σⱼ f(i, j) · g(x−i, y−j)</div>
+
+    <p>Cada capa produce <strong>feature maps</strong>: representaciones espaciales que resaltan la presencia de patrones específicos. El <strong>pooling</strong> reduce la resolución espacial, creando invariancia a pequeñas traslaciones.</p>
+
+    <div class="diagram">
+    Jerarquía de features en una CNN:
+
+    Capa 1: Bordes (horizontales, verticales, diagonales)
+         ↓
+    Capa 2: Texturas (esquinas, curvas, cruces)
+         ↓
+    Capa 3: Partes (ojos, ruedas, ventanas)
+         ↓
+    FC:    Objetos (gato, coche, casa)
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 2.4</h4>
+        <p>Dibuja un dígito en el canvas de entrada y observa los feature maps de cada capa. ¿Qué detectan los filtros de la capa 1? Haz clic en un feature map para ver el filtro 3×3 que lo genera. Usa la oclusión: ¿qué parte del dígito es más importante para la clasificación?</p>
+    </div>
+</section>
+
+<!-- SIM 10: GAN -->
+<section id="s10">
+    <h3>4.5 Redes Generativas Adversarias</h3>
+    <a href="../gan-duel.html" class="sim-link">&#128300; Abrir Simulación 10: GAN Duel</a>
+
+    <h4>El Juego Adversario</h4>
+    <p>Las <strong>GANs</strong> (Goodfellow et al., 2014) formulan la generación como un juego entre dos redes: un <strong>Generador</strong> G que crea datos falsos, y un <strong>Discriminador</strong> D que intenta distinguir los datos reales de los falsos.</p>
+
+    <div class="eq">min_G max_D V(D, G) = E_{x~p_data}[log D(x)] + E_{z~p_z}[log(1 − D(G(z)))]</div>
+
+    <p>En el equilibrio de Nash, G genera datos indistinguibles de los reales, y D no puede hacer mejor que adivinar al azar (D(x) = 0.5).</p>
+
+    <div class="info-box danger">
+        <h4>Mode Collapse</h4>
+        <p>Un problema frecuente donde el generador colapsa a producir solo unos pocos ejemplos que engañan al discriminador, sacrificando la diversidad. En la simulación, todos los puntos rojos convergen a un solo punto.</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 2.5</h4>
+        <p>Selecciona la distribución target <strong>"anillo"</strong> y entrena. ¿Los puntos generados (rojos) cubren todo el anillo? Ahora pulsa "Force Collapse". ¿Qué le ocurre a la diversidad? Experimenta con los learning rates relativos de G y D: ¿qué pasa si D es mucho más fuerte?</p>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 5. MÓDULO 3: TRANSFORMERS Y LLMS -->
+<!-- ============================================================ -->
+<section id="mod3">
+    <h2>5. Módulo 3: Transformers y LLMs</h2>
+    <div class="mod-header m3">Módulo 3 · Color: Violeta (#8b5cf6) · Simulaciones 11-15</div>
+    <p>El Transformer (Vaswani et al., 2017) revolucionó el procesamiento de lenguaje natural y, progresivamente, toda la IA. Este módulo disecciona su anatomía pieza por pieza, explora cómo las palabras se convierten en vectores, y examina los fenómenos emergentes que surgen cuando estos modelos escalan.</p>
+</section>
+
+<!-- SIM 11: TRANSFORMER -->
+<section id="s11">
+    <h3>5.1 Anatomía del Transformer</h3>
+    <a href="../transformer-anatomy.html" class="sim-link">&#128300; Abrir Simulación 11: Transformer Anatomy</a>
+
+    <h4>"Attention Is All You Need"</h4>
+    <p>El paper de Vaswani et al. (2017) propuso reemplazar completamente las recurrencias con mecanismos de atención. El resultado fue una arquitectura paralelizable que superó a las RNN/LSTM en traducción automática y, eventualmente, en casi toda tarea de lenguaje.</p>
+
+    <h4>Componentes del Bloque Transformer</h4>
+    <div class="eq">Output = LayerNorm(x + MultiHeadAttention(x))
+Output = LayerNorm(x + FFN(x))</div>
+
+    <table>
+        <thead><tr><th>Componente</th><th>Función</th><th>Analogía</th></tr></thead>
+        <tbody>
+            <tr><td>Embedding</td><td>Convierte tokens en vectores</td><td>Diccionario numérico</td></tr>
+            <tr><td>Positional Encoding</td><td>Inyecta información de posición</td><td>Números de página</td></tr>
+            <tr><td>Multi-Head Attention</td><td>Permite que cada token atienda a todos</td><td>Conversación grupal</td></tr>
+            <tr><td>Feed-Forward Network</td><td>Transformación no lineal por posición</td><td>Procesamiento individual</td></tr>
+            <tr><td>Layer Normalization</td><td>Estabiliza las activaciones</td><td>Nivelación de volumen</td></tr>
+            <tr><td>Residual Connection</td><td>Permite flujo directo de información</td><td>Atajo en la autopista</td></tr>
+        </tbody>
+    </table>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 3.1</h4>
+        <p>Abre la simulación y selecciona una frase. Haz clic en cada componente del diagrama arquitectural para leer su tooltip. Avanza paso a paso por el forward pass. ¿Cómo cambian las activaciones al pasar por attention vs FFN?</p>
+    </div>
+</section>
+
+<!-- SIM 12: TOKEN EMBEDDINGS -->
+<section id="s12">
+    <h3>5.2 Embeddings de Tokens: El Espacio Semántico</h3>
+    <a href="../token-embeddings-constellation.html" class="sim-link">&#128300; Abrir Simulación 12: Token Embeddings Constellation</a>
+
+    <h4>Hipótesis Distribucional</h4>
+    <p><em>"Conocerás una palabra por la compañía que mantiene"</em> (Firth, 1957). Los embeddings de palabras capturan significado a través de co-ocurrencia estadística. Palabras que aparecen en contextos similares obtienen vectores similares.</p>
+
+    <h4>Aritmética Vectorial</h4>
+    <p>La propiedad más sorprendente de los embeddings (Mikolov et al., 2013) es la posibilidad de realizar analogías mediante aritmética vectorial:</p>
+    <div class="eq">vec("king") − vec("man") + vec("woman") ≈ vec("queen")</div>
+    <p>Esto sugiere que las relaciones semánticas se codifican como direcciones consistentes en el espacio vectorial.</p>
+
+    <h4>Qué Observar en la Simulación</h4>
+    <ul>
+        <li>~200 palabras proyectadas de 50D a 2D mediante PCA, coloreadas por campo semántico</li>
+        <li>Palabras del mismo campo (animales, colores, emociones) forman clusters visibles</li>
+        <li>La función de <strong>analogía</strong> computa y muestra el resultado de la aritmética vectorial</li>
+    </ul>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 3.2</h4>
+        <p>Busca la palabra "king" y observa sus vecinos más cercanos. Usa la función de analogía: <strong>king − man + woman = ?</strong>. ¿El resultado es "queen"? Filtra por campo semántico y observa cómo se agrupan los clusters. ¿Hay campos que se solapan?</p>
+    </div>
+</section>
+
+<!-- SIM 13: SELF-ATTENTION -->
+<section id="s13">
+    <h3>5.3 Self-Attention: Paso a Paso</h3>
+    <a href="../self-attention-mechanism.html" class="sim-link">&#128300; Abrir Simulación 13: Self-Attention Mechanism</a>
+
+    <h4>Los 7 Pasos del Self-Attention</h4>
+    <p>La simulación descompone el mecanismo de self-attention en pasos individuales, haciendo visible cada operación matricial.</p>
+
+    <ol>
+        <li><strong>Embeddings de entrada:</strong> Cada token se representa como un vector</li>
+        <li><strong>Proyección Q:</strong> Q = X · W_Q (¿qué busca este token?)</li>
+        <li><strong>Proyección K:</strong> K = X · W_K (¿qué ofrece este token?)</li>
+        <li><strong>Scores:</strong> S = Q · K<sup>T</sup> (compatibilidad entre todos los pares)</li>
+        <li><strong>Escalado:</strong> S = S / √d_k (estabilizar la magnitud)</li>
+        <li><strong>Softmax:</strong> A = softmax(S) (normalizar a distribución de probabilidad)</li>
+        <li><strong>Output:</strong> O = A · V (promedio ponderado de valores)</li>
+    </ol>
+
+    <div class="info-box concept">
+        <h4>¿Por qué escalar por √d_k?</h4>
+        <p>Sin escalado, cuando d_k es grande, los productos punto QK<sup>T</sup> crecen en magnitud, empujando el softmax hacia regiones saturadas donde los gradientes son extremadamente pequeños. Dividir por <span class="eq-inline">√d_k</span> mantiene la varianza del producto punto en ~1.</p>
+    </div>
+
+    <div class="comparison">
+        <div class="comparison-card">
+            <h4>Causal Mask (GPT)</h4>
+            <div class="content">
+                <p>Cada token solo puede atender a tokens anteriores. Se aplica una máscara triangular inferior que pone −∞ en posiciones futuras antes del softmax. Usado en modelos autoregresivos (generación de texto).</p>
+            </div>
+        </div>
+        <div class="comparison-card">
+            <h4>Bidireccional (BERT)</h4>
+            <div class="content">
+                <p>Cada token puede atender a todos los demás, tanto anteriores como posteriores. Captura contexto completo pero no puede generar secuencialmente. Usado para comprensión de texto.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 3.3</h4>
+        <p>Avanza paso a paso por los 7 stages. En el paso 4 (scores), ¿qué pares de tokens tienen scores más altos? Activa la <strong>causal mask</strong> y observa cómo la mitad superior de la matriz se anula. Experimenta con la temperatura: ¿cómo cambia la distribución de atención?</p>
+    </div>
+</section>
+
+<!-- SIM 14: CHAIN OF THOUGHT -->
+<section id="s14">
+    <h3>5.4 Chain of Thought: Razonamiento Paso a Paso</h3>
+    <a href="../chain-of-thought-unrolled.html" class="sim-link">&#128300; Abrir Simulación 14: Chain of Thought Unrolled</a>
+
+    <h4>Razonamiento Emergente</h4>
+    <p>Wei et al. (2022) descubrieron que los LLMs mejoran dramáticamente en tareas de razonamiento cuando se les pide que generen pasos intermedios antes de la respuesta final. Esta técnica — <strong>Chain of Thought (CoT)</strong> — convierte problemas complejos en secuencias de subproblemas más simples.</p>
+
+    <div class="eq">P(respuesta | CoT) > P(respuesta | directa) &nbsp;&nbsp; para tareas complejas</div>
+
+    <h4>Alucinación</h4>
+    <p>Un riesgo del razonamiento en cadena es que un paso erróneo puede propagarse y contaminar toda la cadena. La simulación incluye un <strong>modo alucinación</strong> que muestra caminos de razonamiento incorrectos, permitiendo comparar con el razonamiento correcto.</p>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 3.4</h4>
+        <p>Selecciona el problema de <strong>aritmética</strong> y observa el árbol de razonamiento. Cada nodo tiene un color de confianza (verde = alta, rojo = baja). Activa el <strong>modo alucinación</strong>. ¿En qué paso comienza el error? Compara la respuesta directa con la respuesta CoT.</p>
+    </div>
+</section>
+
+<!-- SIM 15: EMERGENT ABILITIES -->
+<section id="s15">
+    <h3>5.5 Habilidades Emergentes y Transiciones de Fase</h3>
+    <a href="../emergent-abilities.html" class="sim-link">&#128300; Abrir Simulación 15: Emergent Abilities</a>
+
+    <h4>Leyes de Escala</h4>
+    <p>Kaplan et al. (2020) descubrieron que la pérdida de un modelo de lenguaje sigue una ley de potencias respecto al número de parámetros:</p>
+    <div class="eq">L(N) = (N_c / N)<sup>α</sup></div>
+    <p>donde N son los parámetros, N_c es una constante y α ≈ 0.076 para modelos tipo Transformer.</p>
+
+    <h4>Emergencia como Transición de Fase</h4>
+    <p>Ciertas habilidades (aritmética de múltiples dígitos, razonamiento lógico, traducción) aparecen <strong>abruptamente</strong> a cierta escala, siguiendo una curva sigmoide en vez de una mejora gradual. Esto recuerda las transiciones de fase en física (agua → hielo).</p>
+
+    <div class="info-box warning">
+        <h4>Debate Abierto</h4>
+        <p>Schaeffer et al. (2023) argumentan que la "emergencia" puede ser un artefacto de las métricas discontinuas utilizadas, y que con métricas continuas la mejora es gradual. El debate sobre si las habilidades emergen realmente o son una ilusión métrica permanece abierto.</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 3.5</h4>
+        <p>Mueve el slider de escala de 10M a 1T parámetros. ¿En qué punto la aritmética de 3 dígitos "emerge"? ¿Es el mismo punto para todas las tareas? Haz clic en los marcadores de modelos (GPT-2, GPT-3, GPT-4) para saltar a su escala. Observa la curva de loss en el recuadro inferior derecho.</p>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 6. MÓDULO 4: FRONTERAS -->
+<!-- ============================================================ -->
+<section id="mod4">
+    <h2>6. Módulo 4: Fronteras de la Inteligencia Artificial</h2>
+    <div class="mod-header m4">Módulo 4 · Color: Cyan (#06b6d4) · Simulaciones 16-20</div>
+    <p>Este módulo explora las áreas más activas de la investigación actual. Los modelos de difusión están detrás de la generación de imágenes; el aprendizaje por refuerzo fundamenta el alineamiento de LLMs; la destilación y los MoE abordan la eficiencia; y la superposición abre la puerta a entender qué ocurre dentro de las redes neuronales.</p>
+</section>
+
+<!-- SIM 16: DIFFUSION MODELS -->
+<section id="s16">
+    <h3>6.1 Modelos de Difusión: De Ruido a Estructura</h3>
+    <a href="../diffusion-models.html" class="sim-link">&#128300; Abrir Simulación 16: Diffusion Models</a>
+
+    <h4>El Proceso de Difusión</h4>
+    <p>Los <strong>Denoising Diffusion Probabilistic Models</strong> (Ho et al., 2020) definen dos procesos: uno que gradualmente destruye la estructura añadiendo ruido gaussiano (forward), y otro que aprende a revertir ese proceso (reverse).</p>
+
+    <h4>Forward Process</h4>
+    <div class="eq">x_t = √ᾱ_t · x₀ + √(1 − ᾱ_t) · ε , &nbsp;&nbsp; ε ~ N(0, I)</div>
+    <p>Donde <span class="eq-inline">ᾱ_t = Πₛ₌₁ᵗ (1 − βₛ)</span> y <span class="eq-inline">β_t</span> es el noise schedule. Tras T pasos, x_T es ruido puro.</p>
+
+    <h4>Noise Schedules</h4>
+    <div class="comparison">
+        <div class="comparison-card">
+            <h4>Lineal</h4>
+            <div class="content"><p>β crece linealmente de β₁ a β_T. Simple pero destruye la información demasiado rápido al principio.</p></div>
+        </div>
+        <div class="comparison-card good">
+            <h4>Coseno (Nichol & Dhariwal, 2021)</h4>
+            <div class="content"><p>ᾱ_t sigue un coseno, preservando más estructura en los primeros pasos y destruyéndola suavemente al final. Mejores resultados empíricos.</p></div>
+        </div>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 4.1</h4>
+        <p>Selecciona la imagen target <strong>"corazón"</strong>. Observa el forward process paso a paso: ¿en qué punto la estructura deja de ser reconocible? Ahora ejecuta el reverse process. Compara los schedules lineal y coseno: ¿cuál reconstruye mejor? Observa el histograma de píxeles en cada paso.</p>
+    </div>
+</section>
+
+<!-- SIM 17: REINFORCEMENT LEARNING -->
+<section id="s17">
+    <h3>6.2 Aprendizaje por Refuerzo: Grid World</h3>
+    <a href="../reinforcement-learning.html" class="sim-link">&#128300; Abrir Simulación 17: Reinforcement Learning</a>
+
+    <h4>Procesos de Decisión de Markov</h4>
+    <p>El aprendizaje por refuerzo modela la interacción agente-entorno como un <strong>MDP</strong> (Markov Decision Process): en cada estado, el agente elige una acción, recibe una recompensa, y transita a un nuevo estado.</p>
+
+    <h4>Q-Learning</h4>
+    <div class="eq">Q(s, a) ← Q(s, a) + α [r + γ · max_{a'} Q(s', a') − Q(s, a)]</div>
+    <p>Es un algoritmo <strong>off-policy</strong>: la actualización usa el máximo Q futuro independientemente de la acción realmente tomada. El parámetro <span class="eq-inline">γ</span> (descuento) controla cuánto importa el futuro vs. el presente.</p>
+
+    <h4>SARSA</h4>
+    <div class="eq">Q(s, a) ← Q(s, a) + α [r + γ · Q(s', a') − Q(s, a)]</div>
+    <p>A diferencia de Q-Learning, SARSA es <strong>on-policy</strong>: usa la acción a' que el agente realmente toma (incluyendo exploración), lo que produce políticas más conservadoras.</p>
+
+    <div class="comparison">
+        <div class="comparison-card">
+            <h4>Q-Learning (Off-policy)</h4>
+            <div class="content"><p>Aprende la política óptima independientemente de la exploración. Más agresivo cerca de trampas — asume que actuará óptimamente en el futuro.</p></div>
+        </div>
+        <div class="comparison-card">
+            <h4>SARSA (On-policy)</h4>
+            <div class="content"><p>Aprende la política que realmente ejecuta, incluyendo movimientos exploratorios. Más conservador — evita caminos peligrosos donde la exploración podría causar daño.</p></div>
+        </div>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 4.2</h4>
+        <p>Configura el grid con varias trampas cerca del camino óptimo. Entrena con <strong>Q-Learning</strong> y observa la política resultante. Luego entrena con <strong>SARSA</strong>. ¿Cuál evita más las trampas? Experimenta con epsilon (exploración): ¿qué ocurre con epsilon=1 (totalmente aleatorio)?</p>
+    </div>
+</section>
+
+<!-- SIM 18: KNOWLEDGE DISTILLATION -->
+<section id="s18">
+    <h3>6.3 Destilación de Conocimiento: Maestro y Alumno</h3>
+    <a href="../knowledge-distillation.html" class="sim-link">&#128300; Abrir Simulación 18: Knowledge Distillation</a>
+
+    <h4>Dark Knowledge</h4>
+    <p>Hinton, Vidal y Dean (2015) propusieron que una red grande (teacher) contiene "conocimiento oscuro" en sus distribuciones de salida suavizadas. Un dígito "7" no solo es 7: la red grande sabe que se parece un poco a "1" y nada a "0". Esta información relacional se pierde con labels duros (one-hot) pero se preserva con <strong>soft labels</strong>.</p>
+
+    <div class="eq">L = α · KL(σ(z_T/T) || σ(z_S/T)) · T² + (1−α) · CE(y, σ(z_S))</div>
+
+    <p>El parámetro <span class="eq-inline">T</span> (temperatura) suaviza las distribuciones: a mayor T, más "dark knowledge" se transfiere. El factor <span class="eq-inline">T²</span> compensa la reducción de magnitud del gradiente.</p>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 4.3</h4>
+        <p>Entrena el student con <strong>soft labels</strong> (T=5, α=0.7) durante 50 épocas. Anota la accuracy. Luego reinicia y entrena con <strong>hard labels</strong> (toggle). ¿Cuál método alcanza mejor accuracy? Observa la curva de KL divergence: ¿cómo disminuye durante el entrenamiento?</p>
+    </div>
+</section>
+
+<!-- SIM 19: MIXTURE OF EXPERTS -->
+<section id="s19">
+    <h3>6.4 Mixture of Experts: Routing Inteligente</h3>
+    <a href="../mixture-of-experts.html" class="sim-link">&#128300; Abrir Simulación 19: Mixture of Experts</a>
+
+    <h4>Especialización y Eficiencia</h4>
+    <p>Un modelo <strong>Mixture of Experts</strong> (Shazeer et al., 2017) contiene múltiples subredes "expertas", pero solo activa un subconjunto para cada entrada. Un <strong>router</strong> (gating network) decide qué expertos activar:</p>
+
+    <div class="eq">y = Σᵢ g(x)ᵢ · Eᵢ(x) , &nbsp;&nbsp; g(x) = TopK(softmax(W_g · x))</div>
+
+    <p>Con Top-1 routing, solo un experto procesa cada input (sparse). Esto permite escalar el número de parámetros sin aumentar proporcionalmente el cómputo.</p>
+
+    <div class="info-box concept">
+        <h4>Load Balancing</h4>
+        <p>Sin regularización, el router podría enviar todo el tráfico a un solo experto (colapso). La <strong>auxiliary loss de balance</strong> penaliza distribuciones de carga desiguales, fomentando que todos los expertos se utilicen.</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 4.4</h4>
+        <p>Genera puntos aleatorios y entrena con <strong>4 expertos y Top-1</strong>. Observa el heatmap del router: ¿cada experto se especializa en una región del espacio? Cambia a <strong>Top-2</strong>. ¿Cómo cambian las fronteras de decisión? Desactiva el load balancing loss y entrena — ¿qué le ocurre a la distribución de carga?</p>
+    </div>
+</section>
+
+<!-- SIM 20: SUPERPOSITION -->
+<section id="s20">
+    <h3>6.5 Superposición: Dentro de la Caja Negra</h3>
+    <a href="../superposition-black-box.html" class="sim-link">&#128300; Abrir Simulación 20: Superposition</a>
+
+    <h4>Interpretabilidad Mecánica</h4>
+    <p>Elhage et al. (2022, Anthropic) demostraron que las redes neuronales pueden codificar más features (M) de los que tienen dimensiones (N), un fenómeno llamado <strong>superposición</strong>. Esto ocurre cuando las features son <em>sparse</em> (raramente activas simultáneamente).</p>
+
+    <h4>Modelo Toy de Superposición</h4>
+    <div class="eq">x̂ = W<sup>T</sup>Wx , &nbsp;&nbsp; L = ||x − x̂||² + λ · sparsity</div>
+    <p>La matriz W (N×M) codifica M features en N dimensiones. Si M ≤ N, cada feature puede tener su propia dimensión. Si M > N, los vectores de features deben compartir espacio, creando interferencia.</p>
+
+    <h4>Diagrama de Fase</h4>
+    <p>El comportamiento del modelo depende de dos variables: la relación <span class="eq-inline">M/N</span> y la <strong>sparsity</strong> de las features. Cuando la sparsity es alta (features raramente activas), la superposición es posible sin mucha interferencia. Cuando es baja, la interferencia destruye la información.</p>
+
+    <div class="diagram">
+    Diagrama de Fase:
+
+    Sparsity ↑   ┌────────────────────────────────┐
+       1.0       │          SUPERPOSICIÓN          │
+                 │    (M features en N dims)       │
+                 │    Interferencia tolerable       │
+                 ├────────── S = 1 - N/M ──────────┤
+                 │     SIN SUPERPOSICIÓN            │
+       0.0       │    (features independientes)     │
+                 └────────────────────────────────┘
+                 1.0            M/N →            5.0
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio 4.5</h4>
+        <p>Configura <strong>N=2 dimensiones, M=5 features</strong>. Observa cómo los vectores de features se aglomeran en el espacio 2D. Aumenta la sparsity. ¿Los vectores se separan más? Cambia a la vista de <strong>diagrama de fase</strong> y observa la transición. Usa "Optimize W" para ver cómo el gradiente reordena los vectores.</p>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 7. EJERCICIOS INTEGRADOS -->
+<!-- ============================================================ -->
+<section id="exercises">
+    <h2>7. Ejercicios Integrados</h2>
+    <p>Estos ejercicios combinan conceptos de múltiples simulaciones para reforzar la comprensión global.</p>
+
+    <h3>Módulo 1: Cadena de Fundamentos</h3>
+    <div class="exercise-box">
+        <h4>Ejercicio Integrado A · <span class="badge beginner">Fundamental</span></h4>
+        <p><strong>Del Perceptrón a la Red Profunda.</strong> Abre la Sim 1 (Perceptrón) y demuestra que no puede resolver XOR. Luego abre la Sim 3 (Backpropagation) con una red de 4 capas entrenando en XOR. Documenta: ¿cuántas capas ocultas son necesarias para resolver XOR? ¿Qué función de activación funciona mejor? (Verifica con la Sim 4).</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio Integrado B · <span class="badge intermediate">Intermedio</span></h4>
+        <p><strong>Inicialización y Gradientes.</strong> Abre la Sim 5 (Weight Initialization) con 10 capas + Sigmoid. Observa el colapso con inicialización "Normal(0,0.01)". Luego abre la Sim 3 (Backpropagation) con la misma configuración. ¿La velocidad de entrenamiento correlaciona con lo que predicen los histogramas de activación?</p>
+    </div>
+
+    <h3>Módulo 2: Arquitecturas en Contexto</h3>
+    <div class="exercise-box">
+        <h4>Ejercicio Integrado C · <span class="badge intermediate">Intermedio</span></h4>
+        <p><strong>Attention vs. Recurrencia.</strong> Compara la Sim 7 (LSTM) con la Sim 8 (Attention) procesando la misma frase. ¿Cuál captura mejor las dependencias a larga distancia? ¿El mecanismo de atención es más "transparente" que las compuertas LSTM?</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Ejercicio Integrado D · <span class="badge intermediate">Intermedio</span></h4>
+        <p><strong>Compresión y Generación.</strong> El Autoencoder (Sim 6) comprime datos y el GAN (Sim 10) los genera. Reflexiona: ¿en qué se parecen los espacios latentes de ambos? ¿Podrían combinarse? (Hint: el VAE-GAN combina ambas ideas).</p>
+    </div>
+
+    <h3>Módulo 3: Diseccionando el Transformer</h3>
+    <div class="exercise-box">
+        <h4>Ejercicio Integrado E · <span class="badge advanced">Avanzado</span></h4>
+        <p><strong>De Attention a Self-Attention a Transformer.</strong> Abre las Sims 8, 13 y 11 en orden. Documenta la progresión: (1) Attention básica sobre Q/K/V, (2) Self-attention con los 7 pasos, (3) Transformer completo con múltiples bloques. ¿Cómo cada capa de abstracción construye sobre la anterior?</p>
+    </div>
+
+    <h3>Módulo 4: Retos de Frontera</h3>
+    <div class="exercise-box">
+        <h4>Ejercicio Integrado F · <span class="badge advanced">Avanzado</span></h4>
+        <p><strong>Eficiencia y Escala.</strong> La Sim 18 (Distillation) comprime modelos, la Sim 19 (MoE) los hace sparse, y la Sim 15 (Emergent Abilities) muestra que la escala importa. Reflexiona: ¿cuál es el equilibrio óptimo entre tamaño, eficiencia y capacidad? ¿La destilación puede preservar habilidades emergentes?</p>
+    </div>
+
+    <div class="exercise-box">
+        <h4>Reto Final · <span class="badge advanced">Maestría</span></h4>
+        <p>Completa las 20 simulaciones y escribe un ensayo de una página respondiendo: <strong>¿Cómo se conectan los fundamentos del Módulo 1 con las fronteras del Módulo 4?</strong> Traza al menos 3 líneas conceptuales que recorran los 4 módulos (ejemplo: "gradientes → backpropagation → training de transformers → RLHF en alineamiento de LLMs").</p>
+    </div>
+</section>
+
+<!-- ============================================================ -->
+<!-- 8. MAPA CONCEPTUAL -->
+<!-- ============================================================ -->
+<section id="conceptmap">
+    <h2>8. Mapa Conceptual</h2>
+    <p>Este diagrama muestra las conexiones entre los 20 conceptos del laboratorio. Las flechas indican "construye sobre" o "habilita".</p>
+
+    <div class="diagram">
+                            ┌─────────────────────────────────────────────────────┐
+                            │              MAPA CONCEPTUAL                        │
+                            │           AI Visual Lab · 20 Sims                   │
+                            └─────────────────────────────────────────────────────┘
+
+    ┌──────────┐    ┌──────────────┐    ┌────────────────┐
+    │Perceptrón├───►│Backpropagation├───►│Redes Profundas │
+    │   (1)    │    │     (3)      │    │                │
+    └──────────┘    └──────┬───────┘    └───┬────────┬───┘
+                           │                │        │
+    ┌──────────────┐       │    ┌───────────▼──┐  ┌──▼──────────┐
+    │Grad. Descent ├───────┘    │    CNN (9)   │  │  LSTM (7)   │
+    │     (2)      │            └───────┬──────┘  └──────┬──────┘
+    └──────────────┘                    │                │
+                                        │     ┌──────────▼────────┐
+    ┌──────────────┐                    │     │  Attention (8)    │
+    │Activation (4)├────────────────────┤     └────────┬──────────┘
+    └──────────────┘                    │              │
+                                        │     ┌────────▼──────────┐
+    ┌──────────────┐                    │     │Self-Attention (13)│
+    │Weight Init(5)├────────────────────┘     └────────┬──────────┘
+    └──────────────┘                                   │
+                                              ┌────────▼──────────┐
+    ┌──────────────┐                          │ Transformer (11)  │
+    │Autoencoder(6)├─────────┐                └──┬──────────┬─────┘
+    └──────────────┘         │                   │          │
+                             │     ┌─────────────▼──┐  ┌───▼──────────────┐
+    ┌──────────────┐         ├────►│Embeddings (12) │  │Emergent Abil.(15)│
+    │   GAN (10)   ├─────┐   │     └────────────────┘  └──────────────────┘
+    └──────────────┘     │   │                   │
+                         │   │     ┌─────────────▼──┐
+                         ├───┼────►│  CoT (14)      │
+                         │   │     └────────────────┘
+                         │   │
+              ┌──────────▼───▼──┐  ┌────────────────┐  ┌────────────────┐
+              │ Diffusion (16)  │  │     RL (17)    │  │  MoE (19)     │
+              └─────────────────┘  └────────────────┘  └────────────────┘
+
+              ┌─────────────────┐  ┌────────────────┐
+              │Distillation (18)│  │Superposition(20)│
+              └─────────────────┘  └────────────────┘
+    </div>
+
+    <h4>Líneas Conceptuales Principales</h4>
+    <ul>
+        <li><strong>Línea de Optimización:</strong> Perceptrón → Gradient Descent → Backpropagation → Weight Init → entrenamiento de toda arquitectura</li>
+        <li><strong>Línea de Atención:</strong> LSTM → Attention → Self-Attention → Transformer → LLMs → Emergent Abilities</li>
+        <li><strong>Línea Generativa:</strong> Autoencoder → GAN → Diffusion Models</li>
+        <li><strong>Línea de Eficiencia:</strong> Knowledge Distillation → MoE → Scaling Laws</li>
+        <li><strong>Línea de Interpretabilidad:</strong> Activation Functions → Backprop Flow → Superposition</li>
+    </ul>
+</section>
+
+<!-- ============================================================ -->
+<!-- 9. GLOSARIO -->
+<!-- ============================================================ -->
+<section id="glossary">
+    <h2>9. Glosario</h2>
+    <table>
+        <thead><tr><th>Término</th><th>Definición</th></tr></thead>
+        <tbody>
+            <tr><td><strong>Activación</strong></td><td>Salida de una neurona tras aplicar la función de activación a la combinación lineal de sus entradas.</td></tr>
+            <tr><td><strong>Attention</strong></td><td>Mecanismo que permite a una red ponderar dinámicamente la importancia de diferentes partes de la entrada.</td></tr>
+            <tr><td><strong>Backpropagation</strong></td><td>Algoritmo para calcular gradientes en redes multicapa mediante la regla de la cadena.</td></tr>
+            <tr><td><strong>Batch Size</strong></td><td>Número de ejemplos procesados simultáneamente antes de una actualización de pesos.</td></tr>
+            <tr><td><strong>Bottleneck</strong></td><td>Capa intermedia de dimensionalidad reducida en un autoencoder que fuerza compresión.</td></tr>
+            <tr><td><strong>Cell State</strong></td><td>Vector de memoria a largo plazo en una LSTM, regulado por compuertas.</td></tr>
+            <tr><td><strong>Chain of Thought</strong></td><td>Técnica de prompting que pide al modelo generar pasos de razonamiento intermedios.</td></tr>
+            <tr><td><strong>Convergencia</strong></td><td>Estado donde la pérdida deja de disminuir significativamente durante el entrenamiento.</td></tr>
+            <tr><td><strong>Diffusion</strong></td><td>Proceso de añadir ruido gradualmente (forward) o eliminarlo (reverse) para generación.</td></tr>
+            <tr><td><strong>Discriminador</strong></td><td>Red en una GAN que clasifica datos como reales o generados.</td></tr>
+            <tr><td><strong>Embedding</strong></td><td>Representación vectorial densa de un objeto discreto (palabra, token, etc.).</td></tr>
+            <tr><td><strong>Epoch</strong></td><td>Una pasada completa por todo el dataset de entrenamiento.</td></tr>
+            <tr><td><strong>Feature Map</strong></td><td>Salida de un filtro convolucional aplicado a una imagen; resalta un patrón específico.</td></tr>
+            <tr><td><strong>Generador</strong></td><td>Red en una GAN que transforma ruido en datos que imitan la distribución real.</td></tr>
+            <tr><td><strong>Gradiente</strong></td><td>Vector de derivadas parciales de la pérdida respecto a cada parámetro.</td></tr>
+            <tr><td><strong>KL Divergence</strong></td><td>Medida de cuánto una distribución de probabilidad difiere de otra de referencia.</td></tr>
+            <tr><td><strong>Latent Space</strong></td><td>Espacio de representaciones internas aprendidas por un modelo (ej: bottleneck de autoencoder).</td></tr>
+            <tr><td><strong>Learning Rate</strong></td><td>Hiperparámetro que controla el tamaño de cada paso de actualización de pesos.</td></tr>
+            <tr><td><strong>Loss Function</strong></td><td>Función que mide la discrepancia entre las predicciones del modelo y los valores reales.</td></tr>
+            <tr><td><strong>Mode Collapse</strong></td><td>Fallo en GANs donde el generador produce solo unos pocos tipos de salida.</td></tr>
+            <tr><td><strong>Perceptrón</strong></td><td>Modelo lineal con umbral; la unidad computacional más simple de una red neuronal.</td></tr>
+            <tr><td><strong>Pooling</strong></td><td>Operación que reduce la resolución espacial de feature maps, creando invariancia local.</td></tr>
+            <tr><td><strong>Q-Value</strong></td><td>Valor estimado de la recompensa futura esperada al tomar una acción en un estado dado.</td></tr>
+            <tr><td><strong>Residual Connection</strong></td><td>Conexión directa que suma la entrada a la salida de un bloque, facilitando el flujo de gradientes.</td></tr>
+            <tr><td><strong>Softmax</strong></td><td>Función que convierte un vector de valores reales en una distribución de probabilidad.</td></tr>
+            <tr><td><strong>Superposición</strong></td><td>Fenómeno donde una red codifica más features que sus dimensiones, compartiendo el espacio.</td></tr>
+            <tr><td><strong>Temperatura</strong></td><td>Parámetro que controla la nitidez de distribuciones softmax o de soft labels.</td></tr>
+            <tr><td><strong>Transformer</strong></td><td>Arquitectura basada enteramente en mecanismos de atención, sin recurrencia.</td></tr>
+            <tr><td><strong>Vanishing Gradient</strong></td><td>Problema donde los gradientes se hacen exponencialmente pequeños en capas profundas.</td></tr>
+        </tbody>
+    </table>
+</section>
+
+<!-- ============================================================ -->
+<!-- 10. REFERENCIAS BIBLIOGRÁFICAS -->
+<!-- ============================================================ -->
+<section id="refs">
+    <h2>10. Referencias Bibliográficas</h2>
+    <p>Las siguientes publicaciones fundamentan los conceptos presentados en este laboratorio, ordenadas cronológicamente.</p>
+    <ol>
+        <li><strong>Rosenblatt, F.</strong> (1958). The Perceptron: A Probabilistic Model for Information Storage and Organization in the Brain. <em>Psychological Review</em>, 65(6), 386-408.</li>
+        <li><strong>Hubel, D. H. & Wiesel, T. N.</strong> (1962). Receptive Fields, Binocular Interaction and Functional Architecture in the Cat's Visual Cortex. <em>The Journal of Physiology</em>, 160(1), 106-154.</li>
+        <li><strong>Minsky, M. & Papert, S.</strong> (1969). <em>Perceptrons: An Introduction to Computational Geometry</em>. MIT Press.</li>
+        <li><strong>Rumelhart, D. E., Hinton, G. E. & Williams, R. J.</strong> (1986). Learning Representations by Back-propagating Errors. <em>Nature</em>, 323, 533-536.</li>
+        <li><strong>Cybenko, G.</strong> (1989). Approximation by Superpositions of a Sigmoidal Function. <em>Mathematics of Control, Signals, and Systems</em>, 2, 303-314.</li>
+        <li><strong>LeCun, Y., Bottou, L., Bengio, Y. & Haffner, P.</strong> (1998). Gradient-Based Learning Applied to Document Recognition. <em>Proceedings of the IEEE</em>, 86(11), 2278-2324.</li>
+        <li><strong>Hochreiter, S. & Schmidhuber, J.</strong> (1997). Long Short-Term Memory. <em>Neural Computation</em>, 9(8), 1735-1780.</li>
+        <li><strong>Glorot, X. & Bengio, Y.</strong> (2010). Understanding the Difficulty of Training Deep Feedforward Neural Networks. <em>AISTATS 2010</em>.</li>
+        <li><strong>Krizhevsky, A., Sutskever, I. & Hinton, G. E.</strong> (2012). ImageNet Classification with Deep Convolutional Neural Networks. <em>NeurIPS 2012</em>.</li>
+        <li><strong>Mikolov, T., Chen, K., Corrado, G. & Dean, J.</strong> (2013). Efficient Estimation of Word Representations in Vector Space. <em>arXiv:1301.3781</em>.</li>
+        <li><strong>Bahdanau, D., Cho, K. & Bengio, Y.</strong> (2014). Neural Machine Translation by Jointly Learning to Align and Translate. <em>arXiv:1409.0473</em>.</li>
+        <li><strong>Goodfellow, I. J. et al.</strong> (2014). Generative Adversarial Networks. <em>arXiv:1406.2661</em>.</li>
+        <li><strong>Pennington, J., Socher, R. & Manning, C. D.</strong> (2014). GloVe: Global Vectors for Word Representation. <em>EMNLP 2014</em>.</li>
+        <li><strong>He, K., Zhang, X., Ren, S. & Sun, J.</strong> (2015). Delving Deep into Rectifiers: Surpassing Human-Level Performance on ImageNet Classification. <em>ICCV 2015</em>.</li>
+        <li><strong>Hinton, G., Vinyals, O. & Dean, J.</strong> (2015). Distilling the Knowledge in a Neural Network. <em>arXiv:1503.02531</em>.</li>
+        <li><strong>Kingma, D. P. & Ba, J.</strong> (2015). Adam: A Method for Stochastic Optimization. <em>ICLR 2015</em>.</li>
+        <li><strong>Vaswani, A. et al.</strong> (2017). Attention Is All You Need. <em>NeurIPS 2017</em>. <em>arXiv:1706.03762</em>.</li>
+        <li><strong>Shazeer, N. et al.</strong> (2017). Outrageously Large Neural Networks: The Sparsely-Gated Mixture-of-Experts Layer. <em>ICLR 2017</em>.</li>
+        <li><strong>Ho, J., Jain, A. & Abbeel, P.</strong> (2020). Denoising Diffusion Probabilistic Models. <em>NeurIPS 2020</em>. <em>arXiv:2006.11239</em>.</li>
+        <li><strong>Kaplan, J. et al.</strong> (2020). Scaling Laws for Neural Language Models. <em>arXiv:2001.08361</em>.</li>
+        <li><strong>Fedus, W., Zoph, B. & Shazeer, N.</strong> (2021). Switch Transformers: Scaling to Trillion Parameter Models with Simple and Efficient Sparsity. <em>arXiv:2101.03961</em>.</li>
+        <li><strong>Nichol, A. & Dhariwal, P.</strong> (2021). Improved Denoising Diffusion Probabilistic Models. <em>ICML 2021</em>. <em>arXiv:2102.09672</em>.</li>
+        <li><strong>Wei, J. et al.</strong> (2022). Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. <em>NeurIPS 2022</em>. <em>arXiv:2201.11903</em>.</li>
+        <li><strong>Elhage, N. et al.</strong> (2022). Toy Models of Superposition. <em>Anthropic Research</em>. <em>arXiv:2209.10652</em>.</li>
+        <li><strong>Schaeffer, R., Miranda, B. & Koyejo, S.</strong> (2023). Are Emergent Abilities of Large Language Models a Mirage? <em>NeurIPS 2023</em>. <em>arXiv:2304.15004</em>.</li>
+    </ol>
+</section>
+
+<!-- ============================================================ -->
+<!-- 11. FAQ -->
+<!-- ============================================================ -->
+<section id="faq">
+    <h2>11. Preguntas Frecuentes</h2>
+
+    <details>
+        <summary>¿Necesito saber programar para usar las simulaciones?</summary>
+        <div class="content">
+            <p><strong>No.</strong> Todas las simulaciones funcionan en el navegador sin necesidad de instalar nada. Solo necesitas abrir los archivos HTML. La guía teórica complementa la experiencia interactiva. Si deseas entender el código fuente, cada simulación está implementada en JavaScript vanilla — todo el código es legible en el propio archivo HTML.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>¿En qué orden debo recorrer las simulaciones?</summary>
+        <div class="content">
+            <p>El orden recomendado es seguir los módulos secuencialmente (1 → 2 → 3 → 4), ya que cada módulo construye sobre conceptos del anterior. Dentro de cada módulo, las simulaciones están ordenadas por complejidad creciente. Sin embargo, cada simulación es autocontenida: si solo te interesa un tema específico (ej: Transformers), puedes saltar directamente al Módulo 3.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>¿Puedo usar las simulaciones para enseñar en clase?</summary>
+        <div class="content">
+            <p><strong>Sí.</strong> AI Visual Lab está diseñado como recurso educativo. Las simulaciones funcionan sin conexión a internet (excepto las fuentes de Google), son interactivas, y esta guía proporciona ejercicios estructurados por nivel de dificultad. Sugerimos proyectar las simulaciones mientras se explica la teoría, y usar los ejercicios como actividades prácticas.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>¿Qué navegador es recomendado?</summary>
+        <div class="content">
+            <p>Chrome, Firefox, Safari o Edge modernos (2023+). Las simulaciones usan Canvas 2D con soporte Retina (devicePixelRatio) y Web Audio API con inicialización lazy compatible con iOS/Safari. Para la mejor experiencia de sonificación, usa auriculares y haz clic en cualquier control para activar el audio (requerido por políticas de autoplay del navegador).</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>¿Cómo funciona la sonificación?</summary>
+        <div class="content">
+            <p>Cada simulación mapea magnitudes numéricas a parámetros acústicos usando la Web Audio API:</p>
+            <ul>
+                <li><strong>Error / pérdida:</strong> Intervalos musicales (tritono = error alto, octava = error bajo)</li>
+                <li><strong>Gradientes:</strong> Volumen (fuerte = gradiente grande, silencio = vanishing gradient)</li>
+                <li><strong>Convergencia:</strong> Progresión armónica (acorde disminuido → dominante → mayor)</li>
+                <li><strong>Confianza:</strong> Claridad tímbrica (notas puras = alta confianza, clusters = incertidumbre)</li>
+            </ul>
+            <p>La cadena de audio incluye: oscilador → filtro lowpass → envolvente ADSR → ganancia → compresor → salida.</p>
+        </div>
+    </details>
+
+    <details>
+        <summary>¿Las redes neuronales en las simulaciones son reales?</summary>
+        <div class="content">
+            <p><strong>Sí.</strong> No son visualizaciones mockup — son implementaciones funcionales en JavaScript puro. El perceptrón entrena con la regla real de aprendizaje. Las redes del Módulo 2 ejecutan forward y backward pass con matrices de pesos reales. El micro-transformer del Módulo 3 tiene 2 capas, 2 heads y d=32, con embedding, positional encoding, multi-head attention, FFN y layer norm implementados from scratch. Los modelos del Módulo 4 (Q-learning, diffusion, distillation, MoE, superposition) ejecutan algoritmos reales con gradientes y optimización.</p>
+        </div>
+    </details>
+</section>
+
+        </main>
+
+        <!-- Notes Panel -->
+        <aside class="notes-panel">
+            <h3>Mis Notas <button class="btn-save" onclick="saveNotes()">Guardar</button></h3>
+            <textarea id="user-notes" placeholder="Escribe tus notas aquí..."></textarea>
+
+            <div class="note-card tip">
+                <h4>Sugerencia</h4>
+                <p>Tus notas y checkboxes se guardan automáticamente en el navegador (localStorage).</p>
+            </div>
+
+            <div class="note-card">
+                <h4>Recordatorio</h4>
+                <p>Las 5 líneas conceptuales del mapa:</p>
+                <ul style="margin:0.4rem 0 0 1rem;font-size:0.82rem;">
+                    <li>Optimización</li>
+                    <li>Atención → Transformer</li>
+                    <li>Generativa</li>
+                    <li>Eficiencia</li>
+                    <li>Interpretabilidad</li>
+                </ul>
+            </div>
+
+            <h3 style="margin-top:1.5rem;">Checklist: 20 Simulaciones</h3>
+            <div class="checklist">
+                <label><input type="checkbox" data-id="c1"> 1. Perceptrón Viviente</label>
+                <label><input type="checkbox" data-id="c2"> 2. Gradient Descent</label>
+                <label><input type="checkbox" data-id="c3"> 3. Backpropagation Flow</label>
+                <label><input type="checkbox" data-id="c4"> 4. Activation Orchestra</label>
+                <label><input type="checkbox" data-id="c5"> 5. Weight Initialization</label>
+                <label><input type="checkbox" data-id="c6"> 6. Autoencoder Cathedral</label>
+                <label><input type="checkbox" data-id="c7"> 7. LSTM Memory Cells</label>
+                <label><input type="checkbox" data-id="c8"> 8. Attention Heatmap</label>
+                <label><input type="checkbox" data-id="c9"> 9. CNN Feature Detectives</label>
+                <label><input type="checkbox" data-id="c10"> 10. GAN Duel</label>
+                <label><input type="checkbox" data-id="c11"> 11. Transformer Anatomy</label>
+                <label><input type="checkbox" data-id="c12"> 12. Token Embeddings</label>
+                <label><input type="checkbox" data-id="c13"> 13. Self-Attention</label>
+                <label><input type="checkbox" data-id="c14"> 14. Chain of Thought</label>
+                <label><input type="checkbox" data-id="c15"> 15. Emergent Abilities</label>
+                <label><input type="checkbox" data-id="c16"> 16. Diffusion Models</label>
+                <label><input type="checkbox" data-id="c17"> 17. Reinforcement Learning</label>
+                <label><input type="checkbox" data-id="c18"> 18. Knowledge Distillation</label>
+                <label><input type="checkbox" data-id="c19"> 19. Mixture of Experts</label>
+                <label><input type="checkbox" data-id="c20"> 20. Superposición</label>
+            </div>
+        </aside>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Load notes
+        const saved = localStorage.getItem('aivisuallab-notes');
+        if (saved) document.getElementById('user-notes').value = saved;
+
+        // Auto-save notes
+        document.getElementById('user-notes').addEventListener('input', function() {
+            localStorage.setItem('aivisuallab-notes', this.value);
+        });
+
+        // Load & save checkboxes
+        document.querySelectorAll('.checklist input[type="checkbox"]').forEach(cb => {
+            const key = 'aivisuallab-' + cb.dataset.id;
+            cb.checked = localStorage.getItem(key) === 'true';
+            cb.addEventListener('change', function() {
+                localStorage.setItem(key, this.checked);
+            });
+        });
+
+        // Sidebar active tracking
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                    const link = document.querySelector('.sidebar a[href="#' + entry.target.id + '"]');
+                    if (link) link.classList.add('active');
+                }
+            });
+        }, { threshold: 0.2 });
+        document.querySelectorAll('section[id]').forEach(s => observer.observe(s));
+
+        // Smooth scroll
+        document.querySelectorAll('.sidebar a').forEach(a => {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                const t = document.querySelector(this.getAttribute('href'));
+                if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            });
+        });
+    });
+
+    function saveNotes() {
+        localStorage.setItem('aivisuallab-notes', document.getElementById('user-notes').value);
+        alert('Notas guardadas.');
+    }
+    </script>
+</body>
+</html>
