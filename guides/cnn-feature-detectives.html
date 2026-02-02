@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CNN
+Feature Detectives — Detectives de Características Visuales</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
+    --primary-light: #fcd34d;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #f59e0b;
+    --accent-light: #fcd34d;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #451a03 0%, #0f0a0a 60%, #1a0f05 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fcd34d; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fffbeb;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #92400e;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fffbeb;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fffbeb; }
+tr:hover { background: #fcd34d22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de una red neuronal convolucional (CNN) que
+clasifica dígitos escritos a mano. Dibuja un dígito en el lienzo de 8×8,
+observa...</p>
+        <div class="badge">Arquitecturas Clasicas</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#la-operacion-de-convolucion">2.1 La operación de
+convolución</a></li>
+  <li class="sub-item"><a href="#filtros-como-detectores">2.2 Filtros como detectores</a></li>
+  <li class="sub-item"><a href="#feature-maps">2.3 Feature maps</a></li>
+  <li class="sub-item"><a href="#jerarquia-de-features">2.4 Jerarquía de features</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#visualizacion-del-flujo">3.2 Visualización del flujo</a></li>
+  <li class="sub-item"><a href="#header">3.3 Header</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#input-88">4.1 Input (8×8)</a></li>
+  <li class="sub-item"><a href="#filtros">4.2 Filtros</a></li>
+  <li class="sub-item"><a href="#audio-y-clasificacion">4.3 Audio y clasificación</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#arquitectura-de-la-red">5.1 Arquitectura de la red</a></li>
+  <li class="sub-item"><a href="#dimensiones-de-salida">5.2 Dimensiones de salida</a></li>
+  <li class="sub-item"><a href="#numero-de-parametros">5.3 Número de parámetros</a></li>
+  <li class="sub-item"><a href="#relu-como-no-linealidad">5.4 ReLU como no-linealidad</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#mapeo-audio">6.1 Mapeo audio</a></li>
+  <li class="sub-item"><a href="#interpretacion">6.2 Interpretación</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li class="sub-item"><a href="#clasificacion-basica">7.1 Clasificación básica</a></li>
+  <li class="sub-item"><a href="#explorar-filtros">7.2 Explorar filtros</a></li>
+  <li class="sub-item"><a href="#dibujar-propio">7.3 Dibujar propio</a></li>
+  <li class="sub-item"><a href="#pre-activacion-vs-post-activacion">7.4 Pre-activación vs
+post-activ...</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#equivarianza-traslacional">8.1 Equivarianza traslacional</a></li>
+  <li class="sub-item"><a href="#comparticion-de-parametros">8.2 Compartición de parámetros</a></li>
+  <li class="sub-item"><a href="#receptive-field">8.3 Receptive field</a></li>
+  <li class="sub-item"><a href="#max-pooling">8.4 Max Pooling</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Una <strong>red neuronal convolucional</strong> (CNN) es la
+arquitectura estándar para procesar imágenes. En lugar de conectar cada
+píxel con cada neurona (lo que sería costosísimo), una CNN aplica
+<strong>filtros pequeños</strong> (típicamente 3×3) que se deslizan
+sobre la imagen detectando patrones locales: bordes, esquinas,
+texturas.</p>
+<p>Esta simulación implementa una CNN compacta con dos capas
+convolucionales y una capa fully-connected que clasifica dígitos de
+<span class="math inline">8 \times 8</span> píxeles. Puedes dibujar
+dígitos con el mouse, cargar ejemplos predefinidos (0-9), y observar en
+tiempo real:</p>
+<ul>
+<li>Los <strong>filtros 3×3</strong> aprendidos por cada capa (qué
+patrones buscan)</li>
+<li>Los <strong>feature maps</strong> resultantes (dónde se activan esos
+patrones)</li>
+<li>La <strong>clasificación final</strong> con barras de confianza para
+cada dígito</li>
+</ul>
+<p>Los filtros de la capa 1 detectan bordes simples; los de la capa 2
+combinan esos bordes en formas más complejas. Esta jerarquía de features
+es la esencia del deep learning visual.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="la-operacion-de-convolucion">2.1 La operación de
+convolución</h3>
+<p>Un filtro <span class="math inline">F</span> de tamaño <span class="math inline">k \times k</span> se desplaza sobre la imagen <span class="math inline">I</span>:</p>
+<p><span class="math display">(F * I)(x, y) = \sum_{i=0}^{k-1}
+\sum_{j=0}^{k-1} F(i, j) \cdot I(x+i, y+j)</span></p>
+<p>Cada posición produce un solo número: la suma de productos elemento a
+elemento entre el filtro y la región de la imagen que cubre.</p>
+<h3 id="filtros-como-detectores">2.2 Filtros como detectores</h3>
+<p>Cada filtro se especializa en detectar un patrón:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Filtro ejemplo (3×3)</th>
+<th>Detecta</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>[-1, 0, 1; -1, 0, 1; -1, 0, 1]</code></td>
+<td>Bordes verticales</td>
+</tr>
+<tr>
+<td><code>[-1, -1, -1; 0, 0, 0; 1, 1, 1]</code></td>
+<td>Bordes horizontales</td>
+</tr>
+<tr>
+<td><code>[0, -1, 0; -1, 4, -1; 0, -1, 0]</code></td>
+<td>Puntos/esquinas</td>
+</tr>
+</tbody>
+</table>
+<p>Los filtros no se diseñan manualmente: la red los
+<strong>aprende</strong> durante el entrenamiento para maximizar la
+precisión de clasificación.</p>
+<h3 id="feature-maps">2.3 Feature maps</h3>
+<p>El resultado de aplicar un filtro a toda la imagen es un
+<strong>feature map</strong>: una imagen más pequeña donde cada píxel
+indica cuánto se activó el filtro en esa posición. Si la capa tiene
+<span class="math inline">n</span> filtros, produce <span class="math inline">n</span> feature maps.</p>
+<h3 id="jerarquia-de-features">2.4 Jerarquía de features</h3>
+<ul>
+<li><strong>Capa 1</strong> (6 filtros): detecta features de bajo nivel
+(bordes, gradientes)</li>
+<li><strong>Capa 2</strong> (4 filtros): combina features de la capa 1
+en patrones de nivel medio (esquinas, curvas, intersecciones)</li>
+<li><strong>Capa FC</strong>: combina toda la información espacial para
+la clasificación</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Diagrama del flujo CNN: input → conv1 → conv2 → FC →
+clasificación</td>
+</tr>
+<tr>
+<td><strong>Tooltip</strong></td>
+<td>Flotante</td>
+<td>Valor de activación al pasar el mouse</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Dibujo, filtros, audio, barras de clasificación</td>
+</tr>
+</tbody>
+</table>
+<h3 id="visualizacion-del-flujo">3.2 Visualización del flujo</h3>
+<p>El canvas muestra la arquitectura de izquierda a derecha:</p>
+<ol type="1">
+<li><strong>Input 8×8</strong>: la imagen dibujada, ampliada para
+visibilidad</li>
+<li><strong>Conv1 feature maps</strong>: 6 mapas de <span class="math inline">6 \times 6</span> (sin padding)</li>
+<li><strong>Conv2 feature maps</strong>: 4 mapas de <span class="math inline">4 \times 4</span></li>
+<li><strong>Barras de clasificación</strong>: 10 barras (dígitos 0-9)
+con la predicción resaltada</li>
+<li><strong>Flechas de conexión</strong>: muestran el flujo de datos
+entre capas</li>
+<li><strong>Filtros 3×3</strong>: visualización opcional de los kernels
+aprendidos</li>
+</ol>
+<h3 id="header">3.3 Header</h3>
+<p>Muestra la predicción actual y el nivel de confianza.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="input-88">4.1 Input (8×8)</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lienzo de dibujo</strong></td>
+<td>Canvas 160×160px mapeado a 8×8 píxeles</td>
+</tr>
+<tr>
+<td><strong>Botones 0-9</strong></td>
+<td>Cargar dígitos predefinidos del dataset</td>
+</tr>
+<tr>
+<td><strong>Limpiar</strong></td>
+<td>Borra el lienzo</td>
+</tr>
+<tr>
+<td><strong>Shift + click</strong></td>
+<td>Modo borrar (en lugar de dibujar)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="filtros">4.2 Filtros</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 36%" />
+<col style="width: 28%" />
+<col style="width: 36%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Capa activa</strong></td>
+<td>-1 (todas), 0, 1</td>
+<td>Qué capa visualizar en detalle</td>
+</tr>
+<tr>
+<td><strong>Mostrar filtros 3×3</strong></td>
+<td>Checkbox</td>
+<td>Visualizar los kernels convolucionales</td>
+</tr>
+<tr>
+<td><strong>Mostrar pre-activación</strong></td>
+<td>Checkbox</td>
+<td>Ver valores antes de ReLU</td>
+</tr>
+</tbody>
+</table>
+<h3 id="audio-y-clasificacion">4.3 Audio y clasificación</h3>
+<ul>
+<li><strong>Volumen</strong>: 0-100%</li>
+<li><strong>Audio ON/OFF</strong>: toggle</li>
+<li><strong>Barras de clasificación</strong>: 10 barras horizontales
+mostrando la probabilidad para cada dígito (0-9)</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="arquitectura-de-la-red">5.1 Arquitectura de la red</h3>
+<div class="diagram">Input: 8×8×1
+  ↓ Conv1: 6 filtros 3×3, stride 1, no padding
+  ↓ ReLU
+Feature maps: 6×6×6
+  ↓ Conv2: 4 filtros 3×3, stride 1, no padding
+  ↓ ReLU
+Feature maps: 4×4×4
+  ↓ Flatten: 64 valores
+  ↓ FC: 64 → 10
+  ↓ Softmax
+Output: 10 probabilidades</div>
+<h3 id="dimensiones-de-salida">5.2 Dimensiones de salida</h3>
+<p>Para una imagen de tamaño <span class="math inline">W</span> con
+filtro de tamaño <span class="math inline">k</span>, stride <span class="math inline">s</span> y padding <span class="math inline">p</span>:</p>
+<p><span class="math display">W_\text{out} = \frac{W - k + 2p}{s} +
+1</span></p>
+<p>Con <span class="math inline">W=8</span>, <span class="math inline">k=3</span>, <span class="math inline">s=1</span>,
+<span class="math inline">p=0</span>: <span class="math inline">W_\text{out} = 6</span>. Luego <span class="math inline">W=6</span>, <span class="math inline">k=3</span>:
+<span class="math inline">W_\text{out} = 4</span>.</p>
+<h3 id="numero-de-parametros">5.3 Número de parámetros</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Capa</th>
+<th>Parámetros</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Conv1</strong></td>
+<td><span class="math inline">6 \times (3 \times 3 \times 1 + 1) =
+60</span></td>
+</tr>
+<tr>
+<td><strong>Conv2</strong></td>
+<td><span class="math inline">4 \times (3 \times 3 \times 6 + 1) =
+220</span></td>
+</tr>
+<tr>
+<td><strong>FC</strong></td>
+<td><span class="math inline">(4 \times 4 \times 4 + 1) \times 10 =
+650</span></td>
+</tr>
+<tr>
+<td><strong>Total</strong></td>
+<td><strong>930</strong></td>
+</tr>
+</tbody>
+</table>
+<h3 id="relu-como-no-linealidad">5.4 ReLU como no-linealidad</h3>
+<p><span class="math display">\text{ReLU}(x) = \max(0, x)</span></p>
+<p>Sin la no-linealidad, apilar capas convolucionales sería equivalente
+a una sola convolución (por linealidad). ReLU introduce la capacidad de
+representar funciones no lineales.</p>
+<h3 id="softmax-para-clasificacion">5.5 Softmax para clasificación</h3>
+<p><span class="math display">P(\text{dígito} = k) =
+\frac{e^{z_k}}{\sum_{j=0}^{9} e^{z_j}}</span></p>
+<p>donde <span class="math inline">z</span> es la salida de la capa FC
+(logits).</p>
+<h3 id="cross-entropy-loss">5.6 Cross-entropy loss</h3>
+<p><span class="math display">L = -\sum_{k=0}^{9} y_k \log P_k = -\log
+P_\text{correcto}</span></p>
+<p>donde <span class="math inline">y</span> es el vector one-hot del
+dígito correcto.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="mapeo-audio">6.1 Mapeo audio</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 54%" />
+</colgroup>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Sonido</th>
+<th>Parámetro mapeado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Trazo de dibujo</strong></td>
+<td>Click suave</td>
+<td>Intensidad del píxel dibujado</td>
+</tr>
+<tr>
+<td><strong>Activación de filtro</strong></td>
+<td>Nota por filtro</td>
+<td>Magnitud de la activación máxima</td>
+</tr>
+<tr>
+<td><strong>Clasificación</strong></td>
+<td>Acorde</td>
+<td>Las 3 clases más probables como notas</td>
+</tr>
+<tr>
+<td><strong>Confianza alta</strong></td>
+<td>Nota pura</td>
+<td>Frecuencia clara y definida</td>
+</tr>
+<tr>
+<td><strong>Confianza baja</strong></td>
+<td>Ruido</td>
+<td>Múltiples frecuencias simultáneas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="interpretacion">6.2 Interpretación</h3>
+<p>Cuando dibujas un dígito claro (como el “1”), escucharás un sonido
+definido al clasificar. Dígitos ambiguos producen sonidos más complejos
+y disonantes, reflejando la incertidumbre del modelo.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="clasificacion-basica">7.1 Clasificación básica</h3>
+<ol type="1">
+<li>Haz clic en el botón <strong>1</strong> para cargar un dígito
+predefinido</li>
+<li>Observa los feature maps de la capa 1: los filtros detectan los
+bordes del trazo vertical</li>
+<li>Observa los feature maps de la capa 2: combinan esos bordes</li>
+<li>Mira las barras de clasificación: el “1” debería tener la barra más
+larga</li>
+<li>Repite con el <strong>0</strong> y nota cómo los filtros responden
+diferente a las curvas</li>
+</ol>
+<h3 id="explorar-filtros">7.2 Explorar filtros</h3>
+<ol type="1">
+<li>Activa <strong>Mostrar filtros 3×3</strong></li>
+<li>Selecciona <strong>Capa activa = 0</strong>: observa los 6 filtros
+de la primera capa</li>
+<li>Identifica patrones: ¿cuáles detectan bordes horizontales?
+¿verticales? ¿diagonales?</li>
+<li>Cambia a <strong>Capa activa = 1</strong>: los filtros son más
+complejos (3×3×6 canales)</li>
+</ol>
+<h3 id="dibujar-propio">7.3 Dibujar propio</h3>
+<ol type="1">
+<li>Pulsa <strong>Limpiar</strong></li>
+<li>Dibuja un dígito con el mouse (el lienzo mapea a 8×8)</li>
+<li>Observa cómo la clasificación cambia en tiempo real mientras
+dibujas</li>
+<li>Intenta dibujar un dígito ambiguo (entre “3” y “8”) y observa las
+barras</li>
+</ol>
+<h3 id="pre-activacion-vs-post-activacion">7.4 Pre-activación vs
+post-activación</h3>
+<ol type="1">
+<li>Activa <strong>Mostrar pre-activación</strong></li>
+<li>Nota los valores negativos (mostrados en otro color)</li>
+<li>Desactiva: ReLU convierte todos los negativos en 0</li>
+<li>Compara: ¿cuánta información se pierde con ReLU?</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="equivarianza-traslacional">8.1 Equivarianza traslacional</h3>
+<p>La convolución es <strong>equivariante a traslaciones</strong>: si
+desplazas la imagen, los feature maps se desplazan igual. Si dibujas un
+“1” a la izquierda o a la derecha del lienzo, los mismos filtros se
+activan, solo cambia la posición de la activación.</p>
+<h3 id="comparticion-de-parametros">8.2 Compartición de parámetros</h3>
+<p>El mismo filtro 3×3 se aplica en todas las posiciones de la imagen.
+Esto reduce drásticamente el número de parámetros: en vez de <span class="math inline">8 \times 8 \times 6 \times 6 = 2304</span>
+conexiones, solo 9 pesos por filtro. La compartición de parámetros
+también actúa como regularización.</p>
+<h3 id="receptive-field">8.3 Receptive field</h3>
+<p>Cada neurona de la capa 2 “ve” una región de <span class="math inline">5 \times 5</span> de la imagen original (3×3 de la
+capa 2, más el contexto 3×3 de la capa 1). Este es el <strong>receptive
+field</strong>. Redes más profundas tienen receptive fields más grandes,
+capturando patrones más globales.</p>
+<h3 id="max-pooling">8.4 Max Pooling</h3>
+<p>Aunque esta simulación no usa pooling (la imagen ya es pequeña), las
+CNNs típicas intercalan capas de <strong>max pooling</strong> que
+reducen la resolución espacial a la mitad tomando el máximo de cada
+ventana <span class="math inline">2 \times 2</span>:</p>
+<p><span class="math display">\text{MaxPool}_{2\times 2}(x) =
+\max(x_{00}, x_{01}, x_{10}, x_{11})</span></p>
+<p>Esto da invariancia parcial a pequeñas traslaciones y reduce el
+cómputo.</p>
+<h3 id="de-cnns-a-vision-transformers">8.5 De CNNs a Vision
+Transformers</h3>
+<p>Los Vision Transformers (ViT) dividen la imagen en parches (como
+“tokens”) y aplican atención. A diferencia de las CNNs, no tienen sesgo
+inductivo de localidad ni equivariancia traslacional built-in, pero con
+suficientes datos superan a las CNNs en muchos benchmarks.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-digitos-similares">Ejercicio 1: Dígitos
+similares</h3>
+<p>Carga el dígito “3” y luego el “8”. Compara los feature maps de la
+capa 1. ¿Qué filtros se activan de forma similar? ¿Cuáles son
+diferentes? ¿Cómo distingue la red un 3 de un 8?</p>
+<h3 id="ejercicio-2-el-poder-de-los-bordes">Ejercicio 2: El poder de los
+bordes</h3>
+<p>Dibuja un cuadrado (contorno del “0”) y un cuadrado relleno. Compara
+los feature maps. ¿Se activan los mismos filtros? ¿La clasificación
+cambia? Esto ilustra que las CNNs inicialmente detectan bordes, no
+regiones rellenas.</p>
+<h3 id="ejercicio-3-conteo-de-parametros">Ejercicio 3: Conteo de
+parámetros</h3>
+<p>Calcula manualmente el número total de parámetros de la red
+(incluyendo biases). Verifica: Conv1 tiene <span class="math inline">6
+\times (3 \times 3 + 1) = 60</span> parámetros, Conv2 tiene <span class="math inline">4 \times (3 \times 3 \times 6 + 1) = 220</span>, FC
+tiene <span class="math inline">(64 + 1) \times 10 = 650</span>.
+¿Cuántos parámetros tiene una red fully-connected equivalente (64 inputs
+→ 10 outputs con una capa oculta de 64)?</p>
+<h3 id="ejercicio-4-efecto-de-borrar">Ejercicio 4: Efecto de borrar</h3>
+<p>Dibuja un “7” claro. Usa Shift+click para borrar la barra horizontal
+superior. ¿Cómo cambia la clasificación? ¿A qué dígito se parece un 7
+sin la barra superior? Esto muestra qué features son críticas para la
+clasificación.</p>
+<h3 id="ejercicio-5-relu-vs-pre-activacion">Ejercicio 5: ReLU vs
+pre-activación</h3>
+<p>Con un dígito cargado, activa y desactiva “Mostrar pre-activación”.
+Cuenta cuántos valores negativos hay en los feature maps de la capa 1.
+¿Qué porcentaje de activaciones mata ReLU? Relaciona esto con el
+problema de “dying ReLU”.</p>
+<h3 id="ejercicio-6-receptive-field">Ejercicio 6: Receptive field</h3>
+<p>Dibuja un solo píxel brillante en el centro del lienzo 8×8. ¿Cuántas
+posiciones del feature map de capa 1 se activan? ¿Y del feature map de
+capa 2? Esto visualiza el receptive field: el área de la imagen que
+influye en cada neurona.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CNN</strong></td>
+<td>Red Neuronal Convolucional: arquitectura que usa filtros locales
+para procesar imágenes</td>
+</tr>
+<tr>
+<td><strong>Convolución</strong></td>
+<td>Operación que aplica un filtro deslizante sobre una imagen,
+produciendo un feature map</td>
+</tr>
+<tr>
+<td><strong>Filtro/Kernel</strong></td>
+<td>Matriz pequeña de pesos (típicamente 3×3) que detecta un patrón
+local</td>
+</tr>
+<tr>
+<td><strong>Feature map</strong></td>
+<td>Resultado de aplicar un filtro a una imagen: mapa de
+activaciones</td>
+</tr>
+<tr>
+<td><strong>Stride</strong></td>
+<td>Paso del desplazamiento del filtro (stride 1 = un píxel a la
+vez)</td>
+</tr>
+<tr>
+<td><strong>Padding</strong></td>
+<td>Píxeles añadidos al borde de la imagen para controlar el tamaño de
+salida</td>
+</tr>
+<tr>
+<td><strong>ReLU</strong></td>
+<td><span class="math inline">\max(0, x)</span>: función de activación
+que elimina valores negativos</td>
+</tr>
+<tr>
+<td><strong>Max Pooling</strong></td>
+<td>Reducción espacial tomando el máximo de cada ventana</td>
+</tr>
+<tr>
+<td><strong>Fully Connected</strong></td>
+<td>Capa donde cada neurona está conectada a todas las de la capa
+anterior</td>
+</tr>
+<tr>
+<td><strong>Softmax</strong></td>
+<td>Convierte logits en probabilidades que suman 1</td>
+</tr>
+<tr>
+<td><strong>Receptive field</strong></td>
+<td>Región de la imagen original que influye en una neurona de una capa
+profunda</td>
+</tr>
+<tr>
+<td><strong>Equivarianza</strong></td>
+<td>Si la entrada se traslada, la salida se traslada de la misma
+manera</td>
+</tr>
+<tr>
+<td><strong>Feature hierarchy</strong></td>
+<td>Capas tempranas detectan features simples, capas profundas features
+complejas</td>
+</tr>
+<tr>
+<td><strong>One-hot</strong></td>
+<td>Vector con un 1 en la posición del dígito correcto y 0s en el
+resto</td>
+</tr>
+<tr>
+<td><strong>Logits</strong></td>
+<td>Salida cruda de la capa final antes de aplicar softmax</td>
+</tr>
+<tr>
+<td><strong>Cross-entropy</strong></td>
+<td>Función de pérdida estándar para clasificación multiclase</td>
+</tr>
+<tr>
+<td><strong>Parámetros compartidos</strong></td>
+<td>Mismo filtro aplicado en todas las posiciones (reduce
+parámetros)</td>
+</tr>
+<tr>
+<td><strong>Pre-activación</strong></td>
+<td>Valor de la neurona antes de aplicar la función de activación</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>LeCun, Y. et al. (1998). “Gradient-Based Learning Applied to
+Document Recognition.” <em>Proceedings of the IEEE</em>, 86(11),
+2278-2324.</li>
+<li>Krizhevsky, A., Sutskever, I. &amp; Hinton, G. (2012). “ImageNet
+Classification with Deep Convolutional Neural Networks.”
+<em>NeurIPS</em>.</li>
+<li>Zeiler, M.D. &amp; Fergus, R. (2014). “Visualizing and Understanding
+Convolutional Networks.” <em>ECCV</em>.</li>
+<li>He, K. et al. (2016). “Deep Residual Learning for Image
+Recognition.” <em>CVPR</em>.</li>
+<li>Dosovitskiy, A. et al. (2021). “An Image is Worth 16x16 Words:
+Transformers for Image Recognition at Scale.” <em>ICLR</em>.</li>
+<li>Olah, C. et al. (2017). “Feature Visualization.”
+<em>Distill</em>.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diffusion Models — De Ruido a
+Arte</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #06b6d4;
+    --primary-dark: #0891b2;
+    --primary-light: #67e8f9;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #06b6d4;
+    --accent-light: #67e8f9;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #083344 0%, #0a0f1a 60%, #051a1a 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #67e8f9; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #ecfeff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #155e75;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #ecfeff;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #ecfeff; }
+tr:hover { background: #67e8f922; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del proceso de difusión: observa cómo una
+imagen limpia se destruye progresivamente con ruido gaussiano (forward
+process) y ...</p>
+        <div class="badge">Fronteras de IA</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#el-proceso-forward">2.1 El proceso forward</a></li>
+  <li class="sub-item"><a href="#la-formula-cerrada">2.2 La fórmula cerrada</a></li>
+  <li class="sub-item"><a href="#el-proceso-reverse">2.3 El proceso reverse</a></li>
+  <li class="sub-item"><a href="#imagenes-objetivo">2.4 Imágenes objetivo</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#canvas-principal">3.1 Canvas principal</a></li>
+  <li class="sub-item"><a href="#panel-lateral">3.2 Panel lateral</a></li>
+  <li class="sub-item"><a href="#barra-de-estado">3.3 Barra de estado</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#seleccion-de-imagen">4.1 Selección de imagen</a></li>
+  <li class="sub-item"><a href="#parametros-de-difusion">4.2 Parámetros de difusión</a></li>
+  <li class="sub-item"><a href="#botones-de-accion">4.3 Botones de acción</a></li>
+  <li class="sub-item"><a href="#audio">4.4 Audio</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#schedule-lineal">5.1 Schedule lineal</a></li>
+  <li class="sub-item"><a href="#schedule-coseno">5.2 Schedule coseno</a></li>
+  <li class="sub-item"><a href="#signal-to-noise-ratio-snr">5.3 Signal-to-Noise Ratio (SNR)</a></li>
+  <li class="sub-item"><a href="#funcion-de-perdida">5.4 Función de pérdida</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#diseno-de-audio">6.1 Diseño de audio</a></li>
+  <li class="sub-item"><a href="#mapeo">6.2 Mapeo</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#denoising-diffusion-probabilistic-models-ddpm">8.1 Denoising
+Diffusion Probabil...</a></li>
+  <li class="sub-item"><a href="#ddim-denoising-diffusion-implicit-models">8.2 DDIM (Denoising
+Diffusion Im...</a></li>
+  <li class="sub-item"><a href="#guidance-classifier-free">8.3 Guidance (Classifier-Free)</a></li>
+  <li class="sub-item"><a href="#latent-diffusion-stable-diffusion">8.4 Latent Diffusion (Stable
+Dif...</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Los <strong>modelos de difusión</strong> son la tecnología detrás de
+la revolución en generación de imágenes. Su principio es
+sorprendentemente simple: si sabes cómo destruir algo (añadir ruido),
+puedes aprender a reconstruirlo (quitar ruido).</p>
+<p>El proceso tiene dos fases: 1. <strong>Forward</strong>
+(destrucción): se añade ruido gaussiano progresivamente a una imagen
+hasta convertirla en ruido puro 2. <strong>Reverse</strong> (creación):
+una red neuronal aprende a revertir cada paso, reconstruyendo la imagen
+desde el ruido</p>
+<p>Esta simulación trabaja con imágenes de 16×16 píxeles — lo
+suficientemente pequeñas para ver cada píxel, pero lo suficientemente
+complejas para apreciar cómo el ruido destruye y se revierte la
+estructura.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="el-proceso-forward">2.1 El proceso forward</h3>
+<p>Dado una imagen limpia <span class="math inline">x_0</span>, el
+proceso forward añade ruido en <span class="math inline">T</span>
+pasos:</p>
+<p><span class="math display">q(x_t | x_{t-1}) = \mathcal{N}(x_t;
+\sqrt{1 - \beta_t}\, x_{t-1}, \beta_t I)</span></p>
+<p>donde <span class="math inline">\beta_t</span> es el <strong>schedule
+de ruido</strong> que controla cuánto ruido se añade en cada paso.</p>
+<h3 id="la-formula-cerrada">2.2 La fórmula cerrada</h3>
+<p>Gracias a las propiedades de la gaussiana, podemos saltar
+directamente al paso <span class="math inline">t</span> sin calcular
+todos los intermedios:</p>
+<p><span class="math display">x_t = \sqrt{\bar{\alpha}_t}\, x_0 +
+\sqrt{1 - \bar{\alpha}_t}\, \epsilon, \quad \epsilon \sim \mathcal{N}(0,
+I)</span></p>
+<p>donde <span class="math inline">\alpha_t = 1 - \beta_t</span> y <span class="math inline">\bar{\alpha}_t = \prod_{s=1}^{t} \alpha_s</span> es
+el producto acumulado.</p>
+<h3 id="el-proceso-reverse">2.3 El proceso reverse</h3>
+<p>El objetivo es aprender una red <span class="math inline">\epsilon_\theta(x_t, t)</span> que predice el ruido
+añadido:</p>
+<p><span class="math display">p_\theta(x_{t-1} | x_t) =
+\mathcal{N}(x_{t-1}; \mu_\theta(x_t, t), \sigma_t^2 I)</span></p>
+<p>La media se computa como:</p>
+<p><span class="math display">\mu_\theta(x_t, t) =
+\frac{1}{\sqrt{\alpha_t}} \left( x_t - \frac{\beta_t}{\sqrt{1 -
+\bar{\alpha}_t}} \epsilon_\theta(x_t, t) \right)</span></p>
+<h3 id="imagenes-objetivo">2.4 Imágenes objetivo</h3>
+<p>La simulación ofrece 4 targets de 16×16: - <strong>Dígito 3</strong>
+— patrón curvo - <strong>Cruz</strong> — líneas rectas ortogonales -
+<strong>Círculo</strong> — simetría radial - <strong>Corazón</strong> —
+curva paramétrica <span class="math inline">(x^2 + y^2 - 1)^3 - x^2 y^3
+< 0</span></p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="canvas-principal">3.1 Canvas principal</h3>
+<p>El canvas muestra la imagen actual como una cuadrícula de 16×16
+píxeles:</p>
+<ul>
+<li><strong>Píxeles brillantes</strong>: valor alto (parte de la
+imagen)</li>
+<li><strong>Píxeles oscuros</strong>: valor bajo (fondo)</li>
+<li><strong>Ruido</strong>: valores intermedios aleatorios</li>
+<li><strong>Transición visual</strong>: se ve cómo la estructura emerge
+o desaparece paso a paso</li>
+</ul>
+<p>Se muestran además gráficas del schedule de ruido (<span class="math inline">\beta_t</span> y <span class="math inline">\bar{\alpha}_t</span>) y la señal vs. ruido a lo
+largo de los pasos.</p>
+<h3 id="panel-lateral">3.2 Panel lateral</h3>
+<ul>
+<li><strong>Ecuación</strong>: <span class="math inline">x_t =
+\sqrt{\bar{\alpha}_t} \cdot x_0 + \sqrt{1-\bar{\alpha}_t} \cdot
+\epsilon</span></li>
+<li><strong>Selector de target</strong>: dígito 3, cruz, círculo,
+corazón</li>
+<li><strong>Sliders</strong>: pasos totales <span class="math inline">T</span>, paso actual <span class="math inline">t</span></li>
+<li><strong>Selector de schedule</strong>: lineal o coseno</li>
+<li><strong>Métricas</strong>: paso actual, varianza del ruido, SNR
+(dB), entropía</li>
+</ul>
+<h3 id="barra-de-estado">3.3 Barra de estado</h3>
+<p>Muestra “Paso: t/T” y la varianza del ruido actual.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="seleccion-de-imagen">4.1 Selección de imagen</h3>
+<p>Dropdown con 4 targets. Cada target tiene estructura geométrica
+diferente, lo que afecta cómo el ruido interactúa con la señal.</p>
+<h3 id="parametros-de-difusion">4.2 Parámetros de difusión</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 29%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Pasos T</td>
+<td>10 – 100</td>
+<td>Total de pasos de difusión</td>
+</tr>
+<tr>
+<td>Paso actual</td>
+<td>0 – T</td>
+<td>Posición en la cadena (0 = limpia, T = ruido puro)</td>
+</tr>
+<tr>
+<td>Schedule</td>
+<td>Lineal / Coseno</td>
+<td>Cómo se distribuye el ruido a lo largo de los pasos</td>
+</tr>
+</tbody>
+</table>
+<h3 id="botones-de-accion">4.3 Botones de acción</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Denoise (Reverse)</td>
+<td>Anima el proceso inverso: de ruido a imagen</td>
+</tr>
+<tr>
+<td>Añadir Ruido (Forward)</td>
+<td>Anima el proceso forward: de imagen a ruido</td>
+</tr>
+<tr>
+<td>Reset</td>
+<td>Restaura la imagen limpia en paso 0</td>
+</tr>
+</tbody>
+</table>
+<h3 id="audio">4.4 Audio</h3>
+<ul>
+<li><strong>Volumen</strong> (0–100%)</li>
+<li><strong>Silenciar</strong> — desactiva audio</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="schedule-lineal">5.1 Schedule lineal</h3>
+<p>El schedule lineal distribuye <span class="math inline">\beta_t</span> uniformemente:</p>
+<p><span class="math display">\beta_t = \beta_{\min} +
+\frac{t-1}{T-1}(\beta_{\max} - \beta_{\min})</span></p>
+<p>Típicamente <span class="math inline">\beta_{\min} = 10^{-4}</span> y
+<span class="math inline">\beta_{\max} = 0.02</span>. Esto destruye la
+imagen rápidamente al inicio.</p>
+<h3 id="schedule-coseno">5.2 Schedule coseno</h3>
+<p>Propuesto por Nichol &amp; Dhariwal (2021), preserva más estructura
+al inicio:</p>
+<p><span class="math display">\bar{\alpha}_t = \frac{f(t)}{f(0)}, \quad
+f(t) = \cos\!\left(\frac{t/T + s}{1 + s} \cdot
+\frac{\pi}{2}\right)^2</span></p>
+<p>donde <span class="math inline">s = 0.008</span> es un offset para
+evitar <span class="math inline">\beta_t</span> demasiado pequeño en
+<span class="math inline">t = 0</span>.</p>
+<h3 id="signal-to-noise-ratio-snr">5.3 Signal-to-Noise Ratio (SNR)</h3>
+<p>El SNR en el paso <span class="math inline">t</span> mide cuánta
+señal queda respecto al ruido:</p>
+<p><span class="math display">\text{SNR}(t) = \frac{\bar{\alpha}_t}{1 -
+\bar{\alpha}_t}</span></p>
+<p>En decibeles: <span class="math inline">\text{SNR}_{\text{dB}}(t) =
+10 \log_{10} \text{SNR}(t)</span>. A <span class="math inline">t =
+0</span>, SNR = <span class="math inline">\infty</span> (imagen pura). A
+<span class="math inline">t = T</span>, SNR <span class="math inline">\approx 0</span> (ruido puro).</p>
+<h3 id="funcion-de-perdida">5.4 Función de pérdida</h3>
+<p>La red de denoising se entrena minimizando:</p>
+<p><span class="math display">\mathcal{L} = \mathbb{E}_{t, x_0,
+\epsilon} \left[ \| \epsilon - \epsilon_\theta(x_t, t) \|^2
+\right]</span></p>
+<p>Es decir: predice el ruido que se añadió, y minimiza el error
+cuadrático medio.</p>
+<h3 id="varianza-y-entropia">5.5 Varianza y entropía</h3>
+<p>La simulación calcula en tiempo real: - <strong>Varianza del
+ruido</strong>: <span class="math inline">\sigma^2_{\text{noise}} = 1 -
+\bar{\alpha}_t</span> - <strong>Entropía</strong>: medida de desorden en
+la imagen, calculada sobre el histograma de valores de píxel</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="diseno-de-audio">6.1 Diseño de audio</h3>
+<p>El audio mapea el estado de la difusión a sonido:</p>
+<ul>
+<li><strong>Proceso forward</strong>: frecuencia descendente (más grave
+= más ruido)</li>
+<li><strong>Proceso reverse</strong>: frecuencia ascendente (más agudo =
+más señal)</li>
+<li><strong>Cada paso</strong>: click percusivo cuyo timbre cambia con
+el SNR</li>
+<li><strong>Filtro lowpass</strong>: frecuencia de corte proporcional a
+<span class="math inline">\bar{\alpha}_t</span> (más señal = más
+brillo)</li>
+</ul>
+<h3 id="mapeo">6.2 Mapeo</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Estado</th>
+<th>Frecuencia</th>
+<th>Filtro LP</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math inline">t = 0</span> (limpia)</td>
+<td>800 Hz</td>
+<td>3000 Hz</td>
+<td>sine</td>
+</tr>
+<tr>
+<td><span class="math inline">t = T/2</span> (parcial)</td>
+<td>400 Hz</td>
+<td>1500 Hz</td>
+<td>sine</td>
+</tr>
+<tr>
+<td><span class="math inline">t = T</span> (ruido)</td>
+<td>150 Hz</td>
+<td>500 Hz</td>
+<td>noise-like</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="paso-1-observar-la-imagen-limpia">Paso 1: Observar la imagen
+limpia</h3>
+<ol type="1">
+<li>Selecciona “Dígito 3” como target</li>
+<li>El canvas muestra la imagen limpia (paso <span class="math inline">t
+= 0</span>)</li>
+<li>Observa la estructura clara: píxeles brillantes forman el
+dígito</li>
+</ol>
+<h3 id="paso-2-proceso-forward-paso-a-paso">Paso 2: Proceso forward paso
+a paso</h3>
+<ol type="1">
+<li>Usa el slider de “Paso actual” para mover de 0 a T gradualmente</li>
+<li>Observa cómo el ruido corrompe la imagen progresivamente</li>
+<li>Nota el punto donde el dígito deja de ser reconocible</li>
+</ol>
+<h3 id="paso-3-forward-animado">Paso 3: Forward animado</h3>
+<ol type="1">
+<li>Pulsa <strong>Añadir Ruido (Forward)</strong></li>
+<li>La animación avanza de <span class="math inline">t = 0</span> a
+<span class="math inline">t = T</span></li>
+<li>Observa las métricas: SNR cae, varianza sube, entropía aumenta</li>
+</ol>
+<h3 id="paso-4-reverse-denoising">Paso 4: Reverse (denoising)</h3>
+<ol type="1">
+<li>Con la imagen en ruido puro, pulsa <strong>Denoise
+(Reverse)</strong></li>
+<li>Observa cómo la estructura emerge paso a paso</li>
+<li>Primero aparecen las formas globales, luego los detalles</li>
+</ol>
+<h3 id="paso-5-comparar-schedules">Paso 5: Comparar schedules</h3>
+<ol type="1">
+<li>Con schedule lineal, ejecuta forward + reverse</li>
+<li>Cambia a schedule coseno y repite</li>
+<li>Nota cómo el coseno preserva más estructura en los primeros
+pasos</li>
+</ol>
+<h3 id="paso-6-cambiar-targets">Paso 6: Cambiar targets</h3>
+<ol type="1">
+<li>Prueba con cruz, círculo y corazón</li>
+<li>Observa que formas con más simetría son más fáciles de
+reconstruir</li>
+<li>El corazón (curva suave) vs. la cruz (ángulos rectos) muestran
+diferencias</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="denoising-diffusion-probabilistic-models-ddpm">8.1 Denoising
+Diffusion Probabilistic Models (DDPM)</h3>
+<p>El framework original de Ho et al. (2020) fija la varianza del
+reverse process y entrena solo la media. La pérdida simplificada es
+equivalente a predecir el ruido <span class="math inline">\epsilon</span>.</p>
+<h3 id="ddim-denoising-diffusion-implicit-models">8.2 DDIM (Denoising
+Diffusion Implicit Models)</h3>
+<p>Song et al. (2021) mostraron que se puede hacer el sampling
+<strong>determinista</strong> y con menos pasos, usando la misma red
+entrenada:</p>
+<p><span class="math display">x_{t-1} = \sqrt{\bar{\alpha}_{t-1}} \left(
+\frac{x_t -
+\sqrt{1-\bar{\alpha}_t}\,\epsilon_\theta}{\sqrt{\bar{\alpha}_t}} \right)
++ \sqrt{1 - \bar{\alpha}_{t-1}}\, \epsilon_\theta</span></p>
+<h3 id="guidance-classifier-free">8.3 Guidance (Classifier-Free)</h3>
+<p>Para generar imágenes condicionadas en texto, se usa:</p>
+<p><span class="math display">\tilde{\epsilon}_\theta =
+\epsilon_\theta(x_t, \varnothing) + w \cdot [\epsilon_\theta(x_t, c) -
+\epsilon_\theta(x_t, \varnothing)]</span></p>
+<p>donde <span class="math inline">c</span> es el prompt de texto y
+<span class="math inline">w</span> es la escala de guidance. <span class="math inline">w > 1</span> amplifica la señal del texto,
+produciendo imágenes más fieles al prompt.</p>
+<h3 id="latent-diffusion-stable-diffusion">8.4 Latent Diffusion (Stable
+Diffusion)</h3>
+<p>En lugar de difundir en el espacio de píxeles, se trabaja en el
+espacio latente de un autoencoder:</p>
+<p><span class="math display">z = \text{Encoder}(x), \quad
+\text{difusión sobre } z, \quad x = \text{Decoder}(\hat{z})</span></p>
+<p>Esto reduce la dimensionalidad y el costo computacional
+dramáticamente.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-punto-de-no-retorno">Ejercicio 1: Punto de no
+retorno</h3>
+<p>Para cada target, encuentra el paso <span class="math inline">t^*</span> donde la imagen deja de ser reconocible
+visualmente (usa el slider). ¿Es <span class="math inline">t^*</span>
+similar para todos los targets? Registra el SNR en ese punto.</p>
+<h3 id="ejercicio-2-lineal-vs.-coseno">Ejercicio 2: Lineal
+vs. coseno</h3>
+<p>Fija <span class="math inline">T = 50</span>. Para el dígito 3,
+compara el SNR en <span class="math inline">t = 10</span> entre schedule
+lineal y coseno. ¿Cuál preserva más señal en pasos tempranos? Calcula
+<span class="math inline">\bar{\alpha}_{10}</span> para ambos
+schedules.</p>
+<h3 id="ejercicio-3-efecto-de-t">Ejercicio 3: Efecto de T</h3>
+<p>Ejecuta el reverse process con <span class="math inline">T =
+10</span>, <span class="math inline">T = 50</span> y <span class="math inline">T = 100</span> para el mismo target. ¿La calidad de
+reconstrucción mejora con más pasos? ¿Hay rendimientos decrecientes?</p>
+<h3 id="ejercicio-4-simetria-y-reconstruccion">Ejercicio 4: Simetría y
+reconstrucción</h3>
+<p>Compara la reconstrucción (reverse) del círculo vs. el dígito 3.
+¿Cuál se reconstruye mejor con menos pasos (<span class="math inline">T
+= 10</span>)? Relaciona con la complejidad geométrica del target.</p>
+<h3 id="ejercicio-5-calcular-baralpha_t">Ejercicio 5: Calcular <span class="math inline">\bar{\alpha}_t</span></h3>
+<p>Para el schedule lineal con <span class="math inline">\beta_{\min} =
+0.0001</span>, <span class="math inline">\beta_{\max} = 0.02</span> y
+<span class="math inline">T = 50</span>, calcula manualmente <span class="math inline">\beta_1</span>, <span class="math inline">\beta_{25}</span> y <span class="math inline">\beta_{50}</span>. Luego calcula <span class="math inline">\bar{\alpha}_{50}</span> (el producto acumulado).
+¿Cuánta señal queda?</p>
+<h3 id="ejercicio-6-snr-y-percepcion">Ejercicio 6: SNR y percepción</h3>
+<p>Registra el SNR (dB) en pasos <span class="math inline">t = 0, T/4,
+T/2, 3T/4, T</span> para cualquier target con schedule lineal. Grafica
+SNR vs. <span class="math inline">t</span>. ¿La curva es lineal? ¿Qué
+forma tiene?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Difusión</td>
+<td>Proceso estocástico de añadir ruido gaussiano progresivamente</td>
+</tr>
+<tr>
+<td>Forward process</td>
+<td>Fase de destrucción: imagen → ruido</td>
+</tr>
+<tr>
+<td>Reverse process</td>
+<td>Fase de creación: ruido → imagen</td>
+</tr>
+<tr>
+<td><span class="math inline">\beta_t</span> (beta)</td>
+<td>Varianza del ruido añadido en el paso <span class="math inline">t</span></td>
+</tr>
+<tr>
+<td><span class="math inline">\alpha_t</span></td>
+<td><span class="math inline">1 - \beta_t</span>, fracción de señal
+retenida en un paso</td>
+</tr>
+<tr>
+<td><span class="math inline">\bar{\alpha}_t</span></td>
+<td>Producto acumulado <span class="math inline">\prod \alpha_s</span>,
+señal total retenida hasta <span class="math inline">t</span></td>
+</tr>
+<tr>
+<td>Schedule</td>
+<td>Función que define cómo <span class="math inline">\beta_t</span>
+varía con <span class="math inline">t</span></td>
+</tr>
+<tr>
+<td>SNR</td>
+<td>Signal-to-Noise Ratio: <span class="math inline">\bar{\alpha}_t / (1
+- \bar{\alpha}_t)</span></td>
+</tr>
+<tr>
+<td>Denoiser</td>
+<td>Red neuronal que predice el ruido para revertir un paso</td>
+</tr>
+<tr>
+<td><span class="math inline">\epsilon</span> (epsilon)</td>
+<td>Ruido gaussiano estándar <span class="math inline">\mathcal{N}(0,
+I)</span></td>
+</tr>
+<tr>
+<td>DDPM</td>
+<td>Denoising Diffusion Probabilistic Model (Ho et al., 2020)</td>
+</tr>
+<tr>
+<td>DDIM</td>
+<td>Variante determinista que permite sampling con menos pasos</td>
+</tr>
+<tr>
+<td>Guidance</td>
+<td>Técnica para condicionar la generación en texto u otra señal</td>
+</tr>
+<tr>
+<td>Latent Diffusion</td>
+<td>Difusión en el espacio latente de un autoencoder</td>
+</tr>
+<tr>
+<td>Entropía</td>
+<td>Medida de desorden en la distribución de píxeles</td>
+</tr>
+<tr>
+<td>Varianza</td>
+<td>Dispersión de los valores de píxel respecto a la media</td>
+</tr>
+<tr>
+<td>Ruido gaussiano</td>
+<td>Ruido con distribución normal (campana de Gauss)</td>
+</tr>
+<tr>
+<td>Markov chain</td>
+<td>Cadena donde cada paso depende solo del estado anterior</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Ho, J., Jain, A. &amp; Abbeel, P. (2020). <em>Denoising Diffusion
+Probabilistic Models</em>. NeurIPS.</li>
+<li>Nichol, A. &amp; Dhariwal, P. (2021). <em>Improved Denoising
+Diffusion Probabilistic Models</em>. ICML.</li>
+<li>Song, J., Meng, C. &amp; Ermon, S. (2021). <em>Denoising Diffusion
+Implicit Models</em>. ICLR.</li>
+<li>Rombach, R., et al. (2022). <em>High-Resolution Image Synthesis with
+Latent Diffusion Models</em>. CVPR.</li>
+<li>Lilian Weng (2021). <em>What are Diffusion Models?</em>.
+lilianweng.github.io.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reinforcement
+Learning — Grid World: Aprender de la Experiencia</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #06b6d4;
+    --primary-dark: #0891b2;
+    --primary-light: #67e8f9;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #06b6d4;
+    --accent-light: #67e8f9;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #083344 0%, #0a0f1a 60%, #051a1a 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #67e8f9; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #ecfeff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #155e75;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #ecfeff;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #ecfeff; }
+tr:hover { background: #67e8f922; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de aprendizaje por refuerzo en un mundo de
+cuadrícula 8×8. Un agente aprende a navegar entre muros, trampas y
+recompensas pa...</p>
+        <div class="badge">Fronteras de IA</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#el-framework-mdp">2.1 El framework MDP</a></li>
+  <li class="sub-item"><a href="#q-values">2.2 Q-values</a></li>
+  <li class="sub-item"><a href="#politica">2.3 Política</a></li>
+  <li class="sub-item"><a href="#el-grid-world">2.4 El grid world</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#canvas-principal">3.1 Canvas principal</a></li>
+  <li class="sub-item"><a href="#panel-lateral">3.2 Panel lateral</a></li>
+  <li class="sub-item"><a href="#barra-de-estado">3.3 Barra de estado</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#entrenamiento">4.1 Entrenamiento</a></li>
+  <li class="sub-item"><a href="#hiperparametros">4.2 Hiperparámetros</a></li>
+  <li class="sub-item"><a href="#algoritmo">4.3 Algoritmo</a></li>
+  <li class="sub-item"><a href="#estadisticas">4.4 Estadísticas</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#actualizacion-q-learning">5.1 Actualización Q-Learning</a></li>
+  <li class="sub-item"><a href="#actualizacion-sarsa">5.2 Actualización SARSA</a></li>
+  <li class="sub-item"><a href="#politica-epsilon-greedy">5.3 Política \epsilon-greedy</a></li>
+  <li class="sub-item"><a href="#factor-de-descuento">5.4 Factor de descuento</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#diseno-de-audio">6.1 Diseño de audio</a></li>
+  <li class="sub-item"><a href="#mapeo">6.2 Mapeo</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#on-policy-vs.-off-policy">8.1 On-policy vs. Off-policy</a></li>
+  <li class="sub-item"><a href="#dilema-exploracion-explotacion">8.2 Dilema
+exploración-explotación</a></li>
+  <li class="sub-item"><a href="#deep-q-networks-dqn">8.3 Deep Q-Networks (DQN)</a></li>
+  <li class="sub-item"><a href="#rlhf-y-llms">8.4 RLHF y LLMs</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>El <strong>aprendizaje por refuerzo</strong> (RL) es el paradigma
+donde un agente aprende a tomar decisiones interactuando con un entorno.
+No hay un dataset de entrenamiento con respuestas correctas — solo
+señales de <strong>recompensa</strong> que indican cuán buena fue cada
+acción.</p>
+<p>Este es el paradigma detrás de AlphaGo (DeepMind, 2016), la robótica
+autónoma, y el fine-tuning de LLMs con RLHF (Reinforcement Learning from
+Human Feedback).</p>
+<p>Esta simulación presenta un <strong>Grid World</strong> de 8×8: un
+entorno simple pero completo donde un agente debe aprender a navegar
+desde la esquina superior izquierda hasta la meta en la esquina inferior
+derecha, evitando trampas y recolectando recompensas. El agente no
+conoce el mapa — debe descubrirlo por exploración.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="el-framework-mdp">2.1 El framework MDP</h3>
+<p>Un <strong>Proceso de Decisión de Markov</strong> (MDP) se define por
+la tupla <span class="math inline">(S, A, P, R, \gamma)</span>:</p>
+<ul>
+<li><span class="math inline">S</span>: conjunto de estados (celdas del
+grid)</li>
+<li><span class="math inline">A</span>: conjunto de acciones (<span class="math inline">\uparrow, \downarrow, \leftarrow,
+\rightarrow</span>)</li>
+<li><span class="math inline">P(s' | s, a)</span>: probabilidad de
+transición</li>
+<li><span class="math inline">R(s, a)</span>: recompensa por tomar
+acción <span class="math inline">a</span> en estado <span class="math inline">s</span></li>
+<li><span class="math inline">\gamma \in [0, 1]</span>: factor de
+descuento temporal</li>
+</ul>
+<h3 id="q-values">2.2 Q-values</h3>
+<p>El <strong>Q-value</strong> <span class="math inline">Q(s, a)</span>
+estima la recompensa total esperada de tomar acción <span class="math inline">a</span> en estado <span class="math inline">s</span> y seguir la política óptima después:</p>
+<p><span class="math display">Q^*(s, a) = R(s, a) + \gamma \sum_{s'}
+P(s' | s, a) \max_{a'} Q^*(s', a')</span></p>
+<h3 id="politica">2.3 Política</h3>
+<p>La <strong>política</strong> <span class="math inline">\pi(s)</span>
+determina qué acción tomar en cada estado. La política óptima es:</p>
+<p><span class="math display">\pi^*(s) = \arg\max_a Q^*(s, a)</span></p>
+<p>En la simulación, las flechas en cada celda muestran la dirección de
+la acción con mayor Q-value.</p>
+<h3 id="el-grid-world">2.4 El grid world</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Celda</th>
+<th>Símbolo</th>
+<th>Recompensa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vacía</td>
+<td>-</td>
+<td><span class="math inline">-0.01</span> (pequeño costo por paso)</td>
+</tr>
+<tr>
+<td>Muro</td>
+<td>Bloque gris</td>
+<td>No transitable</td>
+</tr>
+<tr>
+<td>Trampa</td>
+<td>Rojo</td>
+<td><span class="math inline">-1.0</span> (penalización fuerte)</td>
+</tr>
+<tr>
+<td>Recompensa</td>
+<td>Amarillo</td>
+<td><span class="math inline">+0.5</span></td>
+</tr>
+<tr>
+<td>Meta</td>
+<td>Verde</td>
+<td><span class="math inline">+1.0</span> (episodio termina)</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="canvas-principal">3.1 Canvas principal</h3>
+<p>El canvas muestra el grid 8×8 con:</p>
+<ul>
+<li><strong>Celdas coloreadas</strong>: vacías (oscuro), muros (gris),
+trampas (rojo), recompensas (amarillo), meta (verde)</li>
+<li><strong>Flechas</strong>: en cada celda, la dirección de la mejor
+acción según los Q-values actuales</li>
+<li><strong>Intensidad de color</strong>: refleja el Q-value máximo —
+celdas con Q-values altos brillan más</li>
+<li><strong>Agente</strong>: círculo azul que se mueve durante la
+ejecución</li>
+<li><strong>Camino</strong>: rastro del agente durante la ejecución
+(trazado en azul)</li>
+</ul>
+<h3 id="panel-lateral">3.2 Panel lateral</h3>
+<ul>
+<li><strong>Ecuación</strong>: <span class="math inline">Q(s,a)
+\leftarrow Q(s,a) + \alpha[r + \gamma \cdot \max_{a'}
+Q(s',a') - Q(s,a)]</span></li>
+<li><strong>Botones de entrenamiento</strong>: Train 1 Ep, Train 100,
+Train 1000</li>
+<li><strong>Correr Agente</strong>: ejecuta la política actual
+visualmente</li>
+<li><strong>Sliders</strong>: epsilon, gamma, alpha</li>
+<li><strong>Selector de algoritmo</strong>: Q-Learning / SARSA</li>
+<li><strong>Gráfico de recompensa</strong>: historial de reward por
+episodio</li>
+</ul>
+<h3 id="barra-de-estado">3.3 Barra de estado</h3>
+<p>Muestra el episodio actual y la recompensa acumulada.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="entrenamiento">4.1 Entrenamiento</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Train 1 Ep</td>
+<td>Ejecuta 1 episodio de entrenamiento (invisible, actualiza Q)</td>
+</tr>
+<tr>
+<td>Train 100</td>
+<td>Ejecuta 100 episodios rápidamente</td>
+</tr>
+<tr>
+<td>Train 1000</td>
+<td>Ejecuta 1000 episodios</td>
+</tr>
+<tr>
+<td>Correr Agente</td>
+<td>Visualiza al agente siguiendo la política actual</td>
+</tr>
+<tr>
+<td>Reset Q</td>
+<td>Reinicia todos los Q-values a 0</td>
+</tr>
+<tr>
+<td>Reset Grid</td>
+<td>Restaura el mapa original</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hiperparametros">4.2 Hiperparámetros</h3>
+<table style="width:100%;">
+<colgroup>
+<col style="width: 31%" />
+<col style="width: 20%" />
+<col style="width: 25%" />
+<col style="width: 22%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Epsilon (<span class="math inline">\epsilon</span>)</td>
+<td>0 – 1.0</td>
+<td>0.30</td>
+<td>Probabilidad de exploración aleatoria</td>
+</tr>
+<tr>
+<td>Gamma (<span class="math inline">\gamma</span>)</td>
+<td>0 – 1.0</td>
+<td>0.95</td>
+<td>Descuento temporal: cuánto valora el futuro</td>
+</tr>
+<tr>
+<td>Alpha (<span class="math inline">\alpha</span>)</td>
+<td>0.01 – 1.0</td>
+<td>0.10</td>
+<td>Learning rate: velocidad de actualización de Q</td>
+</tr>
+</tbody>
+</table>
+<h3 id="algoritmo">4.3 Algoritmo</h3>
+<ul>
+<li><strong>Q-Learning</strong> (off-policy): actualiza con el máximo Q
+del siguiente estado</li>
+<li><strong>SARSA</strong> (on-policy): actualiza con la acción
+realmente tomada</li>
+</ul>
+<h3 id="estadisticas">4.4 Estadísticas</h3>
+<ul>
+<li>Episodios totales entrenados</li>
+<li>Reward promedio (últimos 200 episodios)</li>
+<li>Número de éxitos (llegó a la meta)</li>
+<li>Gráfico de reward acumulado por episodio</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="actualizacion-q-learning">5.1 Actualización Q-Learning</h3>
+<p>Q-Learning es un algoritmo <strong>off-policy</strong>: la regla de
+actualización usa la mejor acción posible en el siguiente estado,
+independientemente de qué acción se tomó realmente:</p>
+<p><span class="math display">Q(s, a) \leftarrow Q(s, a) + \alpha \left[
+r + \gamma \max_{a'} Q(s', a') - Q(s, a) \right]</span></p>
+<p>El término entre corchetes es el <strong>TD error</strong> (temporal
+difference error):</p>
+<p><span class="math display">\delta = r + \gamma \max_{a'}
+Q(s', a') - Q(s, a)</span></p>
+<h3 id="actualizacion-sarsa">5.2 Actualización SARSA</h3>
+<p>SARSA es <strong>on-policy</strong>: usa la acción que realmente se
+tomó en el siguiente estado:</p>
+<p><span class="math display">Q(s, a) \leftarrow Q(s, a) + \alpha \left[
+r + \gamma Q(s', a') - Q(s, a) \right]</span></p>
+<p>donde <span class="math inline">a'</span> es la acción elegida
+por la política actual (incluyendo exploración).</p>
+<h3 id="politica-epsilon-greedy">5.3 Política <span class="math inline">\epsilon</span>-greedy</h3>
+<p>Para balancear exploración y explotación:</p>
+<p><span class="math display">a = \begin{cases} \text{acción aleatoria}
+& \text{con probabilidad } \epsilon \\ \arg\max_a Q(s, a) &
+\text{con probabilidad } 1 - \epsilon \end{cases}</span></p>
+<h3 id="factor-de-descuento">5.4 Factor de descuento</h3>
+<p>El valor de un estado es la suma descontada de recompensas
+futuras:</p>
+<p><span class="math display">V(s) = \sum_{t=0}^{\infty} \gamma^t
+r_{t+1}</span></p>
+<p>Con <span class="math inline">\gamma = 0.95</span>, una recompensa de
+<span class="math inline">+1</span> en 10 pasos vale <span class="math inline">0.95^{10} \approx 0.60</span> hoy. Con <span class="math inline">\gamma = 0.5</span>, vale solo <span class="math inline">0.5^{10} \approx 0.001</span>.</p>
+<h3 id="convergencia">5.5 Convergencia</h3>
+<p>Q-Learning converge a <span class="math inline">Q^*</span> bajo
+condiciones: 1. Cada par <span class="math inline">(s, a)</span> se
+visita infinitas veces 2. El learning rate decrece: <span class="math inline">\sum \alpha_t = \infty</span>, <span class="math inline">\sum \alpha_t^2 < \infty</span> 3. Las
+recompensas están acotadas</p>
+<p>En la práctica, un <span class="math inline">\alpha</span> fijo
+pequeño funciona bien para entornos simples.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="diseno-de-audio">6.1 Diseño de audio</h3>
+<p>El audio representa eventos del agente:</p>
+<ul>
+<li><strong>Paso del agente</strong>: click cuya frecuencia refleja el
+Q-value de la celda visitada</li>
+<li><strong>Trampa</strong>: tono grave descendente (penalización)</li>
+<li><strong>Recompensa</strong>: nota aguda ascendente</li>
+<li><strong>Meta alcanzada</strong>: acorde de victoria</li>
+<li><strong>Episodio fallido</strong>: tono bajo</li>
+</ul>
+<h3 id="mapeo">6.2 Mapeo</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Evento</th>
+<th>Frecuencia</th>
+<th>Duración</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Paso normal</td>
+<td>300 + Q × 400 Hz</td>
+<td>0.08s</td>
+<td>triangle</td>
+</tr>
+<tr>
+<td>Trampa</td>
+<td>200 → 100 Hz</td>
+<td>0.3s</td>
+<td>sawtooth</td>
+</tr>
+<tr>
+<td>Recompensa</td>
+<td>500 → 700 Hz</td>
+<td>0.2s</td>
+<td>sine</td>
+</tr>
+<tr>
+<td>Meta</td>
+<td>Acorde C-E-G</td>
+<td>0.5s</td>
+<td>sine</td>
+</tr>
+<tr>
+<td>Exploración (ε)</td>
+<td>250 Hz (detuned)</td>
+<td>0.05s</td>
+<td>square</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="paso-1-explorar-el-entorno">Paso 1: Explorar el entorno</h3>
+<ol type="1">
+<li>Observa el grid: identifica muros (gris), trampas (rojo),
+recompensas (amarillo), meta (verde)</li>
+<li>Nota que el agente empieza en (0,0) y la meta está en (7,7)</li>
+<li>Los Q-values están todos en 0 — el agente no sabe nada</li>
+</ol>
+<h3 id="paso-2-primer-entrenamiento">Paso 2: Primer entrenamiento</h3>
+<ol type="1">
+<li>Pulsa <strong>Train 1 Ep</strong> con <span class="math inline">\epsilon = 0.3</span></li>
+<li>Observa que las flechas apenas cambian — un solo episodio no es
+suficiente</li>
+<li>Revisa la recompensa del episodio en la gráfica</li>
+</ol>
+<h3 id="paso-3-entrenamiento-significativo">Paso 3: Entrenamiento
+significativo</h3>
+<ol type="1">
+<li>Pulsa <strong>Train 100</strong></li>
+<li>Las flechas empiezan a apuntar hacia la meta</li>
+<li>Las celdas cercanas a la meta tienen Q-values más altos (más
+brillantes)</li>
+<li>El reward promedio sube en el gráfico</li>
+</ol>
+<h3 id="paso-4-convergencia">Paso 4: Convergencia</h3>
+<ol type="1">
+<li>Pulsa <strong>Train 1000</strong></li>
+<li>Las flechas forman caminos claros evitando trampas</li>
+<li>Pulsa <strong>Correr Agente</strong> para ver la política en
+acción</li>
+<li>El agente debería llegar a la meta eficientemente</li>
+</ol>
+<h3 id="paso-5-q-learning-vs.-sarsa">Paso 5: Q-Learning vs. SARSA</h3>
+<ol type="1">
+<li>Resetea Q, cambia a <strong>SARSA</strong>, entrena 1000
+episodios</li>
+<li>Compara las políticas: SARSA tiende a ser más conservador (evita
+pasar cerca de trampas)</li>
+<li>Q-Learning puede aprender caminos más cortos que pasan cerca de
+trampas</li>
+</ol>
+<h3 id="paso-6-experimenta-con-parametros">Paso 6: Experimenta con
+parámetros</h3>
+<ol type="1">
+<li>Cambia <span class="math inline">\epsilon = 0</span> (sin
+exploración) y entrena — ¿converge?</li>
+<li>Cambia <span class="math inline">\gamma = 0.1</span> (muy miope) —
+¿qué política emerge?</li>
+<li>Cambia <span class="math inline">\alpha = 0.9</span> (learning rate
+alto) — ¿es estable?</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="on-policy-vs.-off-policy">8.1 On-policy vs. Off-policy</h3>
+<p><strong>Q-Learning</strong> (off-policy) aprende la política óptima
+independientemente de cómo explora. <strong>SARSA</strong> (on-policy)
+aprende el valor de la política que realmente sigue, incluyendo la
+exploración.</p>
+<p>Consecuencia práctica: con <span class="math inline">\epsilon >
+0</span>, SARSA aprende a evitar caminos donde una acción exploratoria
+podría ser catastrófica (e.g., celda adyacente a una trampa).</p>
+<h3 id="dilema-exploracion-explotacion">8.2 Dilema
+exploración-explotación</h3>
+<p>Con <span class="math inline">\epsilon = 0</span>: el agente explota
+lo que sabe, pero puede quedar atrapado en óptimos locales (nunca
+descubre caminos mejores). Con <span class="math inline">\epsilon =
+1</span>: el agente explora todo pero nunca aprovecha lo aprendido.</p>
+<p>Estrategia común: <span class="math inline">\epsilon</span>-decay,
+donde <span class="math inline">\epsilon</span> decrece con el
+tiempo.</p>
+<h3 id="deep-q-networks-dqn">8.3 Deep Q-Networks (DQN)</h3>
+<p>Para entornos con espacios de estado grandes (imágenes), se reemplaza
+la tabla Q con una red neuronal:</p>
+<p><span class="math display">Q(s, a; \theta) \approx Q^*(s,
+a)</span></p>
+<p>DQN (Mnih et al., 2015) combinó Q-Learning con redes profundas para
+jugar Atari directamente desde píxeles.</p>
+<h3 id="rlhf-y-llms">8.4 RLHF y LLMs</h3>
+<p>El mismo principio de RL se usa para alinear LLMs con preferencias
+humanas:</p>
+<p><span class="math display">\text{reward}(s, a) =
+\text{modelo\_de\_reward}(\text{prompt}, \text{respuesta})</span></p>
+<p>PPO (Proximal Policy Optimization) optimiza la política del LLM para
+maximizar esta recompensa.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-entrenamiento-minimo">Ejercicio 1: Entrenamiento
+mínimo</h3>
+<p>¿Cuántos episodios necesita Q-Learning para que el agente alcance la
+meta consistentemente (&gt;80% de éxito en los últimos 50 episodios)?
+Prueba con <span class="math inline">\epsilon = 0.3</span>, <span class="math inline">\gamma = 0.95</span>, <span class="math inline">\alpha = 0.1</span>.</p>
+<h3 id="ejercicio-2-impacto-de-gamma">Ejercicio 2: Impacto de gamma</h3>
+<p>Entrena 1000 episodios con <span class="math inline">\gamma =
+0.1</span>, <span class="math inline">\gamma = 0.5</span>, <span class="math inline">\gamma = 0.99</span>. ¿Qué política emerge con cada
+valor? ¿Un gamma bajo hace que el agente tome atajos peligrosos o rodeos
+seguros?</p>
+<h3 id="ejercicio-3-q-learning-vs.-sarsa-cuantitativo">Ejercicio 3:
+Q-Learning vs. SARSA cuantitativo</h3>
+<p>Entrena 1000 episodios con cada algoritmo (mismos hiperparámetros).
+Compara: reward promedio final, tasa de éxito, y longitud promedio del
+camino. ¿Cuál es “mejor”?</p>
+<h3 id="ejercicio-4-el-papel-de-alpha">Ejercicio 4: El papel de
+alpha</h3>
+<p>Con <span class="math inline">\alpha = 0.01</span>, <span class="math inline">\alpha = 0.1</span> y <span class="math inline">\alpha = 0.5</span>, entrena 500 episodios cada uno.
+¿Cuál converge más rápido? ¿Cuál es más estable? Grafica el reward
+promedio para cada caso.</p>
+<h3 id="ejercicio-5-exploracion-pura">Ejercicio 5: Exploración pura</h3>
+<p>Fija <span class="math inline">\epsilon = 1.0</span> (totalmente
+aleatorio) y corre el agente 100 veces. ¿Qué fracción de las veces
+alcanza la meta? Calcula la probabilidad teórica de llegar en un camino
+aleatorio de 200 pasos.</p>
+<h3 id="ejercicio-6-diseno-de-recompensas">Ejercicio 6: Diseño de
+recompensas</h3>
+<p>¿Qué pasaría si cambias la recompensa de la trampa de <span class="math inline">-1</span> a <span class="math inline">-0.1</span>?
+¿Y si el costo por paso fuera <span class="math inline">-0.1</span> en
+vez de <span class="math inline">-0.01</span>? Razona sobre cómo el
+diseño de recompensas afecta la política resultante.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Reinforcement Learning</td>
+<td>Paradigma donde un agente aprende mediante interacción y
+recompensas</td>
+</tr>
+<tr>
+<td>Agente</td>
+<td>Entidad que toma decisiones (elige acciones)</td>
+</tr>
+<tr>
+<td>Entorno</td>
+<td>Sistema con el que el agente interactúa</td>
+</tr>
+<tr>
+<td>Estado (<span class="math inline">s</span>)</td>
+<td>Configuración actual del entorno</td>
+</tr>
+<tr>
+<td>Acción (<span class="math inline">a</span>)</td>
+<td>Decisión del agente (<span class="math inline">\uparrow, \downarrow,
+\leftarrow, \rightarrow</span>)</td>
+</tr>
+<tr>
+<td>Recompensa (<span class="math inline">r</span>)</td>
+<td>Señal numérica de retroalimentación</td>
+</tr>
+<tr>
+<td>Q-value</td>
+<td>Estimación de recompensa futura para un par estado-acción</td>
+</tr>
+<tr>
+<td>Política (<span class="math inline">\pi</span>)</td>
+<td>Regla que mapea estados a acciones</td>
+</tr>
+<tr>
+<td>Epsilon (<span class="math inline">\epsilon</span>)</td>
+<td>Probabilidad de tomar una acción aleatoria (exploración)</td>
+</tr>
+<tr>
+<td>Gamma (<span class="math inline">\gamma</span>)</td>
+<td>Factor de descuento: cuánto se valora la recompensa futura</td>
+</tr>
+<tr>
+<td>Alpha (<span class="math inline">\alpha</span>)</td>
+<td>Learning rate: velocidad de actualización de Q</td>
+</tr>
+<tr>
+<td>TD error</td>
+<td>Diferencia entre recompensa esperada y obtenida</td>
+</tr>
+<tr>
+<td>Q-Learning</td>
+<td>Algoritmo off-policy que actualiza con <span class="math inline">\max Q(s', a')</span></td>
+</tr>
+<tr>
+<td>SARSA</td>
+<td>Algoritmo on-policy que actualiza con <span class="math inline">Q(s', a')</span> real</td>
+</tr>
+<tr>
+<td>Episodio</td>
+<td>Secuencia completa desde el inicio hasta meta o fallo</td>
+</tr>
+<tr>
+<td><span class="math inline">\epsilon</span>-greedy</td>
+<td>Política que explora con probabilidad <span class="math inline">\epsilon</span></td>
+</tr>
+<tr>
+<td>MDP</td>
+<td>Proceso de Decisión de Markov: formalismo del RL</td>
+</tr>
+<tr>
+<td>Convergencia</td>
+<td>Cuando los Q-values se estabilizan en sus valores óptimos</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Sutton, R. &amp; Barto, A. (2018). <em>Reinforcement Learning: An
+Introduction</em>. 2nd ed. MIT Press.</li>
+<li>Watkins, C. &amp; Dayan, P. (1992). <em>Q-Learning</em>. Machine
+Learning, 8(3-4).</li>
+<li>Mnih, V., et al. (2015). <em>Human-level control through deep
+reinforcement learning</em>. Nature.</li>
+<li>Ouyang, L., et al. (2022). <em>Training language models to follow
+instructions with human feedback</em>. NeurIPS.</li>
+<li>Silver, D., et al. (2016). <em>Mastering the game of Go with deep
+neural networks and tree search</em>. Nature.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

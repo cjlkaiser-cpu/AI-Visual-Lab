@@ -1,0 +1,1132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gradient
+Descent Landscape — Explorador de Superficies de Pérdida</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #ef4444;
+    --primary-dark: #dc2626;
+    --primary-light: #fca5a5;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #ef4444;
+    --accent-light: #fca5a5;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #450a0a 0%, #0f0a0a 60%, #1a0505 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fca5a5; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fef2f2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #991b1b;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fef2f2;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fef2f2; }
+tr:hover { background: #fca5a522; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del descenso por gradiente sobre superficies
+de pérdida 2D. Coloca partículas en paisajes matemáticos — desde cuencos
+cuadrá...</p>
+        <div class="badge">Fundamentos</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#la-funcion-de-perdida">2.1 La función de pérdida</a></li>
+  <li class="sub-item"><a href="#el-gradiente">2.2 El gradiente</a></li>
+  <li class="sub-item"><a href="#la-regla-de-actualizacion">2.3 La regla de actualización</a></li>
+  <li class="sub-item"><a href="#minimos-locales-vs.-globales">2.4 Mínimos locales
+vs. globales</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#vista-contour-2d">3.2 Vista Contour 2D</a></li>
+  <li class="sub-item"><a href="#vista-surface-3d">3.3 Vista Surface 3D</a></li>
+  <li class="sub-item"><a href="#las-particulas">3.4 Las partículas</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#funcion-de-perdida">4.1 Función de pérdida</a></li>
+  <li class="sub-item"><a href="#optimizador">4.2 Optimizador</a></li>
+  <li class="sub-item"><a href="#parametros">4.3 Parámetros</a></li>
+  <li class="sub-item"><a href="#control-de-ejecucion">4.4 Control de ejecución</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#sgd-stochastic-gradient-descent">5.1 SGD (Stochastic Gradient
+Des...</a></li>
+  <li class="sub-item"><a href="#sgd-con-momentum">5.2 SGD con Momentum</a></li>
+  <li class="sub-item"><a href="#rmsprop">5.3 RMSProp</a></li>
+  <li class="sub-item"><a href="#adam-adaptive-moment-estimation">5.4 Adam (Adaptive Moment
+Estima...</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#sonido-del-descenso">6.1 Sonido del descenso</a></li>
+  <li class="sub-item"><a href="#acorde-de-convergencia">6.2 Acorde de convergencia</a></li>
+  <li class="sub-item"><a href="#formas-de-onda-disponibles">6.3 Formas de onda disponibles</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#learning-rate-scheduling">8.1 Learning rate scheduling</a></li>
+  <li class="sub-item"><a href="#gradient-clipping">8.2 Gradient clipping</a></li>
+  <li class="sub-item"><a href="#paisajes-de-perdida-reales">8.3 Paisajes de pérdida reales</a></li>
+  <li class="sub-item"><a href="#convergencia-y-tasa-de-convergencia">8.4 Convergencia y tasa de
+conve...</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>El <strong>descenso por gradiente</strong> es el motor que impulsa el
+aprendizaje de casi todas las redes neuronales modernas. La idea es
+elegantemente simple: dado un “paisaje” definido por una función de
+pérdida, queremos encontrar el punto más bajo — el mínimo. En cada paso,
+calculamos la dirección de máxima subida (el gradiente) y nos movemos en
+la dirección opuesta.</p>
+<p>Esta simulación te permite visualizar ese proceso en superficies 2D.
+Puedes colocar múltiples <strong>partículas</strong> (hasta 8) en
+diferentes posiciones del paisaje y observar cómo cada una desciende
+siguiendo el gradiente. Puedes alternar entre cuatro optimizadores
+distintos y cinco funciones de pérdida, viendo en tiempo real cómo las
+decisiones algorítmicas afectan la trayectoria de convergencia.</p>
+<p>El descenso por gradiente en 2D es conceptualmente idéntico al
+entrenamiento de una red neuronal con millones de parámetros — solo que
+en dimensiones que podemos ver.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="la-funcion-de-perdida">2.1 La función de pérdida</h3>
+<p>Una <strong>función de pérdida</strong> <span class="math inline">L(\boldsymbol{\theta})</span> mide qué tan lejos
+está un modelo de la solución ideal. Los parámetros del modelo <span class="math inline">\boldsymbol{\theta} = (\theta_1, \theta_2)</span>
+definen un punto en el “paisaje”. El objetivo del entrenamiento es
+encontrar los valores de <span class="math inline">\boldsymbol{\theta}</span> que minimizan <span class="math inline">L</span>.</p>
+<h3 id="el-gradiente">2.2 El gradiente</h3>
+<p>El <strong>gradiente</strong> <span class="math inline">\nabla
+L(\boldsymbol{\theta})</span> es un vector que apunta en la dirección de
+máximo crecimiento de <span class="math inline">L</span>:</p>
+<p><span class="math display">\nabla L(\boldsymbol{\theta}) =
+\left(\frac{\partial L}{\partial \theta_1}, \frac{\partial L}{\partial
+\theta_2}\right)</span></p>
+<p>Su magnitud <span class="math inline">\|\nabla L\|</span> indica cuán
+empinada es la superficie en ese punto. En un mínimo, el gradiente es
+cero (o muy cercano a cero).</p>
+<h3 id="la-regla-de-actualizacion">2.3 La regla de actualización</h3>
+<p>La regla fundamental del descenso por gradiente es:</p>
+<p><span class="math display">\boldsymbol{\theta}_{t+1} =
+\boldsymbol{\theta}_t - \eta \nabla L(\boldsymbol{\theta}_t)</span></p>
+<p>donde <span class="math inline">\eta</span> es el <strong>learning
+rate</strong>. El signo negativo invierte la dirección: nos movemos
+<em>cuesta abajo</em>.</p>
+<h3 id="minimos-locales-vs.-globales">2.4 Mínimos locales
+vs. globales</h3>
+<p>Un <strong>mínimo local</strong> es un punto donde <span class="math inline">L</span> es menor que en todos los puntos cercanos,
+pero no necesariamente el más bajo de toda la superficie. El
+<strong>mínimo global</strong> es el punto más bajo absoluto. Las
+superficies no convexas (como Rastrigin) tienen muchos mínimos locales
+que pueden “atrapar” al optimizador.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Mapa de contornos 2D o superficie 3D isométrica</td>
+</tr>
+<tr>
+<td><strong>Botones de vista</strong></td>
+<td>Esquina sup-izq del canvas</td>
+<td>Alternar entre Contour 2D y Surface 3D</td>
+</tr>
+<tr>
+<td><strong>Tooltip</strong></td>
+<td>Sigue al mouse</td>
+<td>Muestra coordenadas, loss y gradiente bajo el cursor</td>
+</tr>
+<tr>
+<td><strong>Badge de convergencia</strong></td>
+<td>Centro inferior del canvas</td>
+<td>Aparece cuando todas las partículas han convergido</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Ecuación, controles, estadísticas, explicaciones</td>
+</tr>
+</tbody>
+</table>
+<h3 id="vista-contour-2d">3.2 Vista Contour 2D</h3>
+<p>El mapa de contornos muestra la superficie de pérdida vista desde
+arriba. Los colores representan la altura (loss):</p>
+<ul>
+<li><strong>Azul oscuro/teal</strong>: regiones de loss bajo (valles,
+mínimos)</li>
+<li><strong>Ámbar/rojo</strong>: regiones de loss alto (cimas,
+mesetas)</li>
+<li><strong>Líneas blancas</strong>: iso-curvas de nivel constante (18
+niveles)</li>
+<li><strong>Cruceta verde</strong>: posición del mínimo global
+conocido</li>
+<li><strong>Flechas blancas</strong> (opcional): campo vectorial del
+gradiente negativo</li>
+</ul>
+<h3 id="vista-surface-3d">3.3 Vista Surface 3D</h3>
+<p>Proyección isométrica de la superficie con iluminación Phong. Las
+partículas se muestran sobre la superficie con sus trazas. Útil para
+apreciar la geometría de valles y puntos de silla.</p>
+<h3 id="las-particulas">3.4 Las partículas</h3>
+<p>Cada partícula es un “optimizador independiente” que desciende por la
+superficie:</p>
+<ul>
+<li><strong>Punto coloreado</strong>: posición actual (roja, azul,
+verde, ámbar, violeta, cyan, rosa, lima)</li>
+<li><strong>Estela</strong>: trayectoria recorrida (últimos 200 pasos),
+con transparencia progresiva</li>
+<li><strong>Flecha</strong>: dirección del gradiente negativo (dirección
+de descenso)</li>
+<li><strong>Anillo verde</strong>: indica convergencia (<span class="math inline">\|\nabla L\| < 0.005</span>)</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="funcion-de-perdida">4.1 Función de pérdida</h3>
+<p>Menú desplegable con cinco superficies:</p>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 25%" />
+<col style="width: 20%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Función</th>
+<th>Ecuación</th>
+<th>Mínimo</th>
+<th>Dificultad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Quadratic Bowl</strong></td>
+<td><span class="math inline">L = \theta_1^2 + \theta_2^2</span></td>
+<td><span class="math inline">(0, 0)</span></td>
+<td>Fácil — convexo</td>
+</tr>
+<tr>
+<td><strong>Rosenbrock</strong></td>
+<td><span class="math inline">L = (1-\theta_1)^2 +
+100(\theta_2-\theta_1^2)^2</span></td>
+<td><span class="math inline">(1, 1)</span></td>
+<td>Difícil — valle curvado</td>
+</tr>
+<tr>
+<td><strong>Rastrigin</strong></td>
+<td><span class="math inline">L = 20 + \sum(\theta_i^2 -
+10\cos(2\pi\theta_i))</span></td>
+<td><span class="math inline">(0, 0)</span></td>
+<td>Muy difícil — multi-modal</td>
+</tr>
+<tr>
+<td><strong>Saddle Point</strong></td>
+<td><span class="math inline">L = \theta_1^2 - \theta_2^2</span></td>
+<td>No hay</td>
+<td>Punto de silla en origen</td>
+</tr>
+<tr>
+<td><strong>Beale</strong></td>
+<td><span class="math inline">(1.5-\theta_1+\theta_1\theta_2)^2 +
+\ldots</span></td>
+<td><span class="math inline">(3, 0.5)</span></td>
+<td>Difícil — asimétrica</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Checkbox “Mostrar campo vectorial”</strong>: superpone
+flechas que muestran la dirección del gradiente negativo en una
+cuadrícula de <span class="math inline">20 \times 20</span> puntos.</p>
+<h3 id="optimizador">4.2 Optimizador</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 34%" />
+<col style="width: 31%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Optimizador</th>
+<th>Parámetros</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>SGD</strong></td>
+<td><span class="math inline">\eta</span></td>
+<td>Descenso puro por gradiente</td>
+</tr>
+<tr>
+<td><strong>SGD + Momentum</strong></td>
+<td><span class="math inline">\eta</span>, <span class="math inline">\beta</span></td>
+<td>Acumula velocidad como inercia física</td>
+</tr>
+<tr>
+<td><strong>RMSProp</strong></td>
+<td><span class="math inline">\eta</span></td>
+<td>Learning rate adaptativo por dimensión</td>
+</tr>
+<tr>
+<td><strong>Adam</strong></td>
+<td><span class="math inline">\eta</span>, <span class="math inline">\beta_1</span></td>
+<td>Combina momentum + learning rate adaptativo</td>
+</tr>
+</tbody>
+</table>
+<h3 id="parametros">4.3 Parámetros</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Escala</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Learning rate (<span class="math inline">\eta</span>)</td>
+<td><span class="math inline">10^{-4}</span> – <span class="math inline">10^{0}</span></td>
+<td>0.01</td>
+<td>Logarítmica</td>
+</tr>
+<tr>
+<td>Momentum (<span class="math inline">\beta</span>)</td>
+<td>0.00 – 0.99</td>
+<td>0.90</td>
+<td>Lineal</td>
+</tr>
+</tbody>
+</table>
+<p>El slider de learning rate usa escala logarítmica: cada posición del
+slider corresponde a una potencia de 10, cubriendo cuatro órdenes de
+magnitud.</p>
+<h3 id="control-de-ejecucion">4.4 Control de ejecución</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Iniciar/Pausar</strong></td>
+<td>Activa/pausa la optimización continua</td>
+</tr>
+<tr>
+<td><strong>1 Paso</strong></td>
+<td>Ejecuta una sola actualización para todas las partículas</td>
+</tr>
+<tr>
+<td><strong>10 Pasos</strong></td>
+<td>Ejecuta 10 actualizaciones</td>
+</tr>
+<tr>
+<td><strong>Reset</strong></td>
+<td>Elimina todas las partículas y reinicia el estado</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Velocidad</strong>: 1 a 100 steps por segundo.</p>
+<p><strong>Interacción con el canvas</strong>: click para colocar una
+nueva partícula en esa posición. En vista 3D, la partícula se coloca en
+una posición aleatoria.</p>
+<h3 id="panel-de-estadisticas">4.5 Panel de estadísticas</h3>
+<p>Muestra para la primera partícula (P1): número de partículas, step
+global, mejor loss alcanzado, loss actual, coordenadas <span class="math inline">(\theta_1, \theta_2)</span>, magnitud del gradiente
+<span class="math inline">|\nabla L|</span>, y gráfica del historial de
+loss (escala logarítmica).</p>
+<h3 id="panel-de-particulas">4.6 Panel de partículas</h3>
+<p>Lista de todas las partículas activas con su color, nombre, loss
+actual y número de pasos. Un checkmark indica convergencia.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="sgd-stochastic-gradient-descent">5.1 SGD (Stochastic Gradient
+Descent)</h3>
+<p>La actualización más simple:</p>
+<p><span class="math display">\boldsymbol{\theta}_{t+1} =
+\boldsymbol{\theta}_t - \eta \nabla L(\boldsymbol{\theta}_t)</span></p>
+<p>Es eficiente pero puede ser lento en valles estrechos (oscila de lado
+a lado) y no tiene mecanismo para escapar mínimos locales poco
+profundos.</p>
+<h3 id="sgd-con-momentum">5.2 SGD con Momentum</h3>
+<p>Introduce una “velocidad” <span class="math inline">\mathbf{v}</span>
+que acumula gradientes pasados:</p>
+<p><span class="math display">\mathbf{v}_t = \beta \mathbf{v}_{t-1} -
+\eta \nabla L(\boldsymbol{\theta}_t)</span> <span class="math display">\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t +
+\mathbf{v}_t</span></p>
+<p>El parámetro <span class="math inline">\beta \in [0, 1)</span>
+controla cuánta “inercia” acumula la partícula. Con <span class="math inline">\beta = 0.9</span>, la partícula mantiene el 90% de
+su velocidad anterior — como una bola rodando cuesta abajo que gana
+impulso.</p>
+<h3 id="rmsprop">5.3 RMSProp</h3>
+<p>Adapta el learning rate por cada dimensión dividiendo por la raíz
+cuadrada de la media exponencial de gradientes al cuadrado:</p>
+<p><span class="math display">s_t = \beta_2 s_{t-1} + (1 -
+\beta_2)(\nabla L)^2</span> <span class="math display">\boldsymbol{\theta}_{t+1} = \boldsymbol{\theta}_t -
+\frac{\eta}{\sqrt{s_t} + \epsilon} \nabla
+L(\boldsymbol{\theta}_t)</span></p>
+<p>En dimensiones donde el gradiente es consistentemente grande, <span class="math inline">s</span> crece y el paso efectivo se reduce. En
+dimensiones con gradiente pequeño, el paso se amplifica. Esto equilibra
+la velocidad de descenso en todas las direcciones.</p>
+<h3 id="adam-adaptive-moment-estimation">5.4 Adam (Adaptive Moment
+Estimation)</h3>
+<p>Combina las ideas de Momentum y RMSProp con <strong>corrección de
+sesgo</strong>:</p>
+<p><span class="math display">m_t = \beta_1 m_{t-1} + (1 -
+\beta_1)\nabla L</span> <span class="math display">v_t = \beta_2 v_{t-1}
++ (1 - \beta_2)(\nabla L)^2</span> <span class="math display">\hat{m}_t
+= \frac{m_t}{1 - \beta_1^t}, \quad \hat{v}_t = \frac{v_t}{1 -
+\beta_2^t}</span> <span class="math display">\boldsymbol{\theta}_{t+1} =
+\boldsymbol{\theta}_t - \frac{\eta \hat{m}_t}{\sqrt{\hat{v}_t} +
+\epsilon}</span></p>
+<p>Los términos <span class="math inline">\hat{m}_t</span> y <span class="math inline">\hat{v}_t</span> corrigen el sesgo hacia cero que
+tienen las medias exponenciales en los primeros pasos (cuando <span class="math inline">\beta^t</span> es grande).</p>
+<h3 id="propiedades-de-las-superficies">5.5 Propiedades de las
+superficies</h3>
+<p><strong>Convexidad</strong>: una función <span class="math inline">L</span> es convexa si <span class="math inline">L(\alpha \mathbf{x} + (1-\alpha)\mathbf{y}) \leq
+\alpha L(\mathbf{x}) + (1-\alpha)L(\mathbf{y})</span> para todo <span class="math inline">\alpha \in [0,1]</span>. Las funciones convexas
+tienen un único mínimo global. Solo Quadratic Bowl es convexa en esta
+simulación.</p>
+<p><strong>Número de condición</strong>: para la función cuadrática
+<span class="math inline">L = a\theta_1^2 + b\theta_2^2</span>, el
+número de condición es <span class="math inline">\kappa =
+\max(a,b)/\min(a,b)</span>. Cuanto mayor es <span class="math inline">\kappa</span>, más “alargados” son los contornos y
+más oscila SGD. La Rosenbrock tiene <span class="math inline">\kappa</span> efectivo muy alto en el valle.</p>
+<p><strong>Punto de silla</strong>: un punto donde <span class="math inline">\nabla L = 0</span> pero no es un mínimo ni un
+máximo. La matriz Hessiana tiene eigenvalores de signos opuestos. En
+dimensiones altas, los puntos de silla son mucho más comunes que los
+mínimos locales.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="sonido-del-descenso">6.1 Sonido del descenso</h3>
+<p>Durante la optimización, cada paso produce un sonido cuya frecuencia
+depende del valor de loss:</p>
+<p><span class="math display">f = 180 + \min(\log(L+1) \cdot 80, \, 600)
+\text{ Hz}</span></p>
+<ul>
+<li><strong>Loss alto</strong>: frecuencia alta (~780 Hz), más
+agudo</li>
+<li><strong>Loss bajo</strong>: frecuencia baja (~180 Hz), más
+grave</li>
+<li><strong>Volumen</strong>: proporcional a la magnitud del gradiente
+(más empinado = más fuerte)</li>
+</ul>
+<p>Los sonidos se throttlean a un máximo de 10 por segundo para evitar
+saturación.</p>
+<h3 id="acorde-de-convergencia">6.2 Acorde de convergencia</h3>
+<p>Cuando una partícula converge (<span class="math inline">\|\nabla L\|
+< 0.005</span>), se reproduce un acorde de Do mayor ascendente: <span class="math inline">C_4</span>–<span class="math inline">E_4</span>–<span class="math inline">G_4</span>–<span class="math inline">C_5</span>
+(261–330–392–523 Hz), cada nota separada por 60ms.</p>
+<h3 id="formas-de-onda-disponibles">6.3 Formas de onda disponibles</h3>
+<ul>
+<li><strong>Sine</strong>: suave, indica descenso estable</li>
+<li><strong>Triangle</strong>: ligeramente más brillante, útil para
+distinguir frecuencias</li>
+<li><strong>Sawtooth</strong>: timbre buzzy, hace más evidentes los
+cambios de frecuencia</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="experimento-1-el-cuenco-cuadratico">Experimento 1: El cuenco
+cuadrático</h3>
+<ol type="1">
+<li>Selecciona <strong>Quadratic Bowl</strong> y optimizador
+<strong>SGD</strong></li>
+<li>Haz click en una esquina del canvas para colocar una partícula lejos
+del centro</li>
+<li>Click en <strong>Iniciar</strong> — observa cómo desciende en línea
+recta hacia <span class="math inline">(0,0)</span></li>
+<li>Prueba con <span class="math inline">\eta = 0.5</span>: la partícula
+converge rápido</li>
+<li>Ahora <span class="math inline">\eta = 0.001</span>: convergencia
+mucho más lenta</li>
+<li>Coloca una segunda partícula en otra esquina. Ambas convergen al
+mismo punto</li>
+<li>Activa el campo vectorial para ver las flechas apuntando al
+centro</li>
+</ol>
+<h3 id="experimento-2-el-valle-de-rosenbrock">Experimento 2: El valle de
+Rosenbrock</h3>
+<ol type="1">
+<li>Cambia a <strong>Rosenbrock</strong> y coloca una partícula en <span class="math inline">(-1.5, -1.5)</span></li>
+<li>Con <strong>SGD</strong>, observa cómo baja rápidamente al valle
+pero luego avanza muy lentamente a lo largo de él</li>
+<li>Cambia a <strong>SGD + Momentum</strong> (<span class="math inline">\beta = 0.9</span>): la partícula gana impulso y
+recorre el valle más rápido</li>
+<li>Prueba <strong>Adam</strong>: convergencia más directa, menos
+oscilaciones</li>
+<li>Coloca varias partículas para comparar trayectorias desde diferentes
+puntos de inicio</li>
+</ol>
+<h3 id="experimento-3-minimos-locales-en-rastrigin">Experimento 3:
+Mínimos locales en Rastrigin</h3>
+<ol type="1">
+<li>Selecciona <strong>Rastrigin</strong> — nota los múltiples “pozos”
+en el mapa de contornos</li>
+<li>Coloca 5-6 partículas en diferentes posiciones con
+<strong>SGD</strong></li>
+<li>Observa cómo la mayoría quedan atrapadas en mínimos locales, no en
+el global <span class="math inline">(0,0)</span></li>
+<li>Repite con <strong>Momentum</strong> y <span class="math inline">\eta</span> más alto: algunas partículas logran
+saltar entre mínimos</li>
+<li>Esto demuestra por qué encontrar el mínimo global es un problema
+difícil</li>
+</ol>
+<h3 id="experimento-4-el-punto-de-silla">Experimento 4: El punto de
+silla</h3>
+<ol type="1">
+<li>Selecciona <strong>Saddle Point</strong> (<span class="math inline">L = \theta_1^2 - \theta_2^2</span>)</li>
+<li>Coloca una partícula exactamente en el centro — se queda atrapada
+(gradiente cercano a cero)</li>
+<li>Coloca una ligeramente desplazada: se aleja del punto de silla</li>
+<li>Con <strong>Momentum</strong>, las partículas cruzan más rápidamente
+la región de silla</li>
+<li>Observa la vista 3D para ver la geometría de “silla de montar”</li>
+</ol>
+<h3 id="experimento-5-comparacion-de-optimizadores">Experimento 5:
+Comparación de optimizadores</h3>
+<ol type="1">
+<li>Elige <strong>Rosenbrock</strong></li>
+<li>Coloca una partícula roja con <strong>SGD</strong>. Anota cuántos
+pasos hasta loss &lt; 0.01</li>
+<li>Reset. Coloca una con <strong>Momentum</strong>. Compara</li>
+<li>Reset. Prueba <strong>RMSProp</strong></li>
+<li>Reset. Prueba <strong>Adam</strong></li>
+<li>¿Cuál converge más rápido? ¿Cuál tiene la trayectoria más
+suave?</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="learning-rate-scheduling">8.1 Learning rate scheduling</h3>
+<p>En la práctica, el learning rate no se mantiene constante.
+Estrategias comunes:</p>
+<ul>
+<li><strong>Step decay</strong>: reducir <span class="math inline">\eta</span> por un factor cada N epochs</li>
+<li><strong>Cosine annealing</strong>: <span class="math inline">\eta_t
+= \eta_{\min} + \frac{1}{2}(\eta_{\max} - \eta_{\min})(1 + \cos(\pi
+t/T))</span></li>
+<li><strong>Warmup</strong>: empezar con <span class="math inline">\eta</span> muy bajo y aumentar linealmente durante
+los primeros pasos</li>
+</ul>
+<h3 id="gradient-clipping">8.2 Gradient clipping</h3>
+<p>La simulación implementa <strong>gradient clipping</strong>: si <span class="math inline">\|\nabla L\| > 100</span>, el gradiente se
+recorta a magnitud 100. Esto previene la “explosión de gradientes” que
+ocurre en superficies con pendientes extremas (como Beale lejos del
+mínimo). También limita el tamaño del paso a 1 unidad.</p>
+<h3 id="paisajes-de-perdida-reales">8.3 Paisajes de pérdida reales</h3>
+<p>Las superficies de esta simulación tienen 2 parámetros. Las redes
+neuronales reales tienen millones. En dimensiones altas:</p>
+<ul>
+<li>Los <strong>mínimos locales</strong> son raros; los <strong>puntos
+de silla</strong> son ubicuos</li>
+<li>La mayoría de los mínimos locales tienen loss muy similar al global
+(el paisaje es “benigno”)</li>
+<li>Las direcciones de alta curvatura son pocas; la mayoría son “planas”
+— el descenso ocurre en un subespacio de baja dimensión</li>
+</ul>
+<h3 id="convergencia-y-tasa-de-convergencia">8.4 Convergencia y tasa de
+convergencia</h3>
+<p>Para funciones convexas con constante de Lipschitz <span class="math inline">\ell</span> del gradiente, SGD con <span class="math inline">\eta \leq 1/\ell</span> garantiza:</p>
+<p><span class="math display">L(\boldsymbol{\theta}_T) -
+L(\boldsymbol{\theta}^*) \leq \frac{\|\boldsymbol{\theta}_0 -
+\boldsymbol{\theta}^*\|^2}{2\eta T}</span></p>
+<p>Es decir, convergencia <span class="math inline">O(1/T)</span>. Con
+funciones fuertemente convexas (como Quadratic Bowl), la tasa mejora a
+convergencia lineal <span class="math inline">O(\kappa^T)</span> donde
+<span class="math inline">\kappa < 1</span>.</p>
+<h3 id="visualizacion-logaritmica">8.5 Visualización logarítmica</h3>
+<p>La simulación aplica <span class="math inline">\log(L+1)</span> para
+la visualización de contornos y colores. Esto comprime el rango dinámico
+de funciones como Rosenbrock (donde <span class="math inline">L</span>
+varía de 0 a <span class="math inline">>10^4</span>) y hace visibles
+los detalles cerca del mínimo.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-learning-rate-optimo">Ejercicio 1: Learning rate
+óptimo</h3>
+<p>Para la función <strong>Quadratic Bowl</strong>, encuentra el
+learning rate más alto que permita convergencia estable con SGD. ¿Qué
+ocurre cuando <span class="math inline">\eta > 1</span>? ¿Y cuando
+<span class="math inline">\eta = 1</span> exactamente? Relaciona tu
+observación con el hecho de que el gradiente de <span class="math inline">L = \theta^2</span> es <span class="math inline">2\theta</span>.</p>
+<h3 id="ejercicio-2-momentum-y-oscilaciones">Ejercicio 2: Momentum y
+oscilaciones</h3>
+<p>Usa la función <strong>Quadratic Bowl</strong> con un learning rate
+deliberadamente alto (<span class="math inline">\eta = 0.3</span>).
+Primero, observa las oscilaciones con SGD puro. Luego activa Momentum
+con <span class="math inline">\beta = 0.9</span>. ¿Mejora o empeora la
+situación? Prueba <span class="math inline">\beta = 0.5</span>. ¿Por qué
+valores altos de momentum pueden amplificar las oscilaciones?</p>
+<h3 id="ejercicio-3-adam-vs.-sgd-en-rosenbrock">Ejercicio 3: Adam
+vs. SGD en Rosenbrock</h3>
+<p>Coloca una partícula en <span class="math inline">(-1.5, 1.5)</span>
+en la función <strong>Rosenbrock</strong>. Ejecuta 500 pasos con SGD
+(<span class="math inline">\eta = 0.001</span>) y anota el loss final.
+Repite con Adam (<span class="math inline">\eta = 0.001</span>). ¿Cuál
+está más cerca del mínimo <span class="math inline">(1,1)</span>? ¿Qué
+papel juega la adaptación del learning rate por dimensión?</p>
+<h3 id="ejercicio-4-escape-de-minimos-locales">Ejercicio 4: Escape de
+mínimos locales</h3>
+<p>En <strong>Rastrigin</strong>, ¿puedes encontrar una combinación de
+optimizador, learning rate y momentum que permita a una partícula
+escapar de un mínimo local y llegar al global? Experimenta con al menos
+3 configuraciones y documenta los resultados.</p>
+<h3 id="ejercicio-5-geometria-del-punto-de-silla">Ejercicio 5: Geometría
+del punto de silla</h3>
+<p>En la función <strong>Saddle Point</strong>, activa el campo
+vectorial. Observa las flechas alrededor del origen. ¿En qué direcciones
+apuntan las flechas <em>hacia</em> el origen? ¿En cuáles <em>se
+alejan</em>? Relaciona esto con los eigenvalores de la Hessiana <span class="math inline">H = \begin{pmatrix} 2 & 0 \\ 0 & -2
+\end{pmatrix}</span>.</p>
+<h3 id="ejercicio-6-trayectorias-de-beale">Ejercicio 6: Trayectorias de
+Beale</h3>
+<p>En la función <strong>Beale</strong>, coloca 4 partículas en las
+cuatro esquinas del espacio con <strong>Adam</strong> (<span class="math inline">\eta = 0.01</span>). ¿Cuántas llegan al mínimo en
+<span class="math inline">(3, 0.5)</span>? ¿Cuántas divergen o se quedan
+atrapadas? ¿Cambia el resultado con <span class="math inline">\eta =
+0.001</span>?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Función de pérdida</strong> (<span class="math inline">L</span>)</td>
+<td>Función que mide el error del modelo; el objetivo es
+minimizarla</td>
+</tr>
+<tr>
+<td><strong>Gradiente</strong> (<span class="math inline">\nabla
+L</span>)</td>
+<td>Vector de derivadas parciales que apunta en la dirección de máximo
+crecimiento</td>
+</tr>
+<tr>
+<td><strong>Learning rate</strong> (<span class="math inline">\eta</span>)</td>
+<td>Tamaño del paso en la dirección del gradiente negativo; controla
+velocidad vs. estabilidad</td>
+</tr>
+<tr>
+<td><strong>SGD</strong></td>
+<td>Stochastic Gradient Descent — actualización directa <span class="math inline">\theta \leftarrow \theta - \eta\nabla L</span></td>
+</tr>
+<tr>
+<td><strong>Momentum</strong> (<span class="math inline">\beta</span>)</td>
+<td>Acumulación de velocidad usando gradientes pasados; ayuda a cruzar
+valles</td>
+</tr>
+<tr>
+<td><strong>RMSProp</strong></td>
+<td>Optimizador que adapta <span class="math inline">\eta</span> por
+dimensión usando media de gradientes al cuadrado</td>
+</tr>
+<tr>
+<td><strong>Adam</strong></td>
+<td>Optimizador que combina momentum y learning rate adaptativo con
+corrección de sesgo</td>
+</tr>
+<tr>
+<td><strong>Mínimo local</strong></td>
+<td>Punto donde <span class="math inline">L</span> es menor que en su
+entorno, pero no necesariamente el más bajo globalmente</td>
+</tr>
+<tr>
+<td><strong>Mínimo global</strong></td>
+<td>Punto con el valor más bajo de <span class="math inline">L</span> en
+todo el dominio</td>
+</tr>
+<tr>
+<td><strong>Punto de silla</strong></td>
+<td>Punto con <span class="math inline">\nabla L = 0</span> donde la
+Hessiana tiene eigenvalores positivos y negativos</td>
+</tr>
+<tr>
+<td><strong>Convergencia</strong></td>
+<td>Estado donde <span class="math inline">\|\nabla L\|</span> es
+suficientemente pequeño (&lt; 0.005 en esta simulación)</td>
+</tr>
+<tr>
+<td><strong>Mapa de contornos</strong></td>
+<td>Visualización 2D de una superficie donde líneas conectan puntos de
+igual valor</td>
+</tr>
+<tr>
+<td><strong>Campo vectorial</strong></td>
+<td>Representación visual del gradiente negativo en cada punto del
+espacio</td>
+</tr>
+<tr>
+<td><strong>Gradient clipping</strong></td>
+<td>Técnica que recorta el gradiente si su magnitud supera un umbral,
+previniendo explosiones</td>
+</tr>
+<tr>
+<td><strong>Convexidad</strong></td>
+<td>Propiedad de una función que garantiza un único mínimo global</td>
+</tr>
+<tr>
+<td><strong>Número de condición</strong> (<span class="math inline">\kappa</span>)</td>
+<td>Ratio entre curvatura máxima y mínima; valores altos indican
+optimización difícil</td>
+</tr>
+<tr>
+<td><strong>Corrección de sesgo</strong></td>
+<td>Ajuste en Adam que compensa la inicialización en cero de las medias
+exponenciales</td>
+</tr>
+<tr>
+<td><strong>Hessiana</strong></td>
+<td>Matriz de segundas derivadas; sus eigenvalores indican la curvatura
+de la superficie</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li><p><strong>Cauchy, A.</strong> (1847). “Méthode générale pour la
+résolution des systèmes d’équations simultanées.” <em>Comptes Rendus de
+l’Académie des Sciences</em>, 25, 536–538.</p></li>
+<li><p><strong>Robbins, H. &amp; Monro, S.</strong> (1951). “A
+Stochastic Approximation Method.” <em>The Annals of Mathematical
+Statistics</em>, 22(3), 400–407.</p></li>
+<li><p><strong>Polyak, B. T.</strong> (1964). “Some methods of speeding
+up the convergence of iteration methods.” <em>USSR Computational
+Mathematics and Mathematical Physics</em>, 4(5), 1–17.</p></li>
+<li><p><strong>Hinton, G. E.</strong> (2012). “Neural Networks for
+Machine Learning — Lecture 6a: Overview of mini-batch gradient descent.”
+<em>Coursera</em>.</p></li>
+<li><p><strong>Kingma, D. P. &amp; Ba, J.</strong> (2015). “Adam: A
+Method for Stochastic Optimization.” <em>Proceedings of ICLR 2015</em>.
+arXiv:1412.6980.</p></li>
+<li><p><strong>Rosenbrock, H. H.</strong> (1960). “An Automatic Method
+for Finding the Greatest or Least Value of a Function.” <em>The Computer
+Journal</em>, 3(3), 175–184.</p></li>
+<li><p><strong>Goodfellow, I., Bengio, Y. &amp; Courville, A.</strong>
+(2016). <em>Deep Learning</em>, Chapter 8: Optimization for Training
+Deep Models. MIT Press.</p></li>
+<li><p><strong>Ruder, S.</strong> (2016). “An Overview of Gradient
+Descent Optimization Algorithms.” arXiv:1609.04747.</p></li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

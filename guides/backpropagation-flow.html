@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Backpropagation
+Flow — Visualización del Flujo de Gradientes</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #ef4444;
+    --primary-dark: #dc2626;
+    --primary-light: #fca5a5;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #ef4444;
+    --accent-light: #fca5a5;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #450a0a 0%, #0f0a0a 60%, #1a0505 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fca5a5; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fef2f2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #991b1b;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fef2f2;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fef2f2; }
+tr:hover { background: #fca5a522; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de la retropropagación en redes neuronales
+multicapa. Observa en tiempo real cómo la información fluye hacia
+adelante (forwa...</p>
+        <div class="badge">Fundamentos</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#forward-pass">2.1 Forward pass</a></li>
+  <li class="sub-item"><a href="#backward-pass">2.2 Backward pass</a></li>
+  <li class="sub-item"><a href="#la-regla-de-la-cadena">2.3 La regla de la cadena</a></li>
+  <li class="sub-item"><a href="#actualizacion-de-pesos">2.4 Actualización de pesos</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#el-diagrama-de-red">3.2 El diagrama de red</a></li>
+  <li class="sub-item"><a href="#preview-de-region-de-decision">3.3 Preview de región de
+decisión</a></li>
+  <li class="sub-item"><a href="#panel-de-metricas">3.4 Panel de métricas</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#problema">4.1 Problema</a></li>
+  <li class="sub-item"><a href="#arquitectura">4.2 Arquitectura</a></li>
+  <li class="sub-item"><a href="#hiperparametros">4.3 Hiperparámetros</a></li>
+  <li class="sub-item"><a href="#congelar-capas">4.4 Congelar capas</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#funciones-de-activacion">5.1 Funciones de activación</a></li>
+  <li class="sub-item"><a href="#funcion-de-perdida">5.2 Función de pérdida</a></li>
+  <li class="sub-item"><a href="#propagacion-de-deltas">5.3 Propagación de deltas</a></li>
+  <li class="sub-item"><a href="#inicializacion-xavierglorot">5.4 Inicialización
+Xavier/Glorot</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#forward-pass-1">6.1 Forward pass</a></li>
+  <li class="sub-item"><a href="#backward-pass-1">6.2 Backward pass</a></li>
+  <li class="sub-item"><a href="#throttling">6.3 Throttling</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#por-que-sigmoid-causa-vanishing-gradients">8.1 ¿Por qué sigmoid
+causa vanis...</a></li>
+  <li class="sub-item"><a href="#batch-vs.-online-training">8.2 Batch vs. online training</a></li>
+  <li class="sub-item"><a href="#transfer-learning-y-fine-tuning">8.3 Transfer learning y
+fine-tuning</a></li>
+  <li class="sub-item"><a href="#regla-de-la-cadena-computacional">8.4 Regla de la cadena
+computaci...</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>La <strong>retropropagación</strong> (backpropagation) es el
+algoritmo que permite que las redes neuronales aprendan. Publicado por
+Rumelhart, Hinton y Williams en 1986, resolvió el problema que había
+paralizado el campo desde 1969: ¿cómo ajustar los pesos de las capas
+ocultas, que no tienen una señal directa de error?</p>
+<p>La respuesta es la <strong>regla de la cadena</strong> del cálculo
+diferencial. El error en la salida se propaga hacia atrás capa por capa,
+asignando a cada peso una “responsabilidad” proporcional a su
+contribución al error. Esta simulación hace visible ese flujo invisible:
+partículas verdes fluyen hacia adelante (activaciones) y partículas
+naranjas fluyen hacia atrás (gradientes).</p>
+<p>Puedes construir redes de diferentes arquitecturas, entrenarlas en
+tres problemas de clasificación (XOR, círculo, espiral), y observar
+fenómenos como el desvanecimiento de gradientes en capas profundas con
+sigmoid.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="forward-pass">2.1 Forward pass</h3>
+<p>En el <strong>forward pass</strong>, la información fluye de la capa
+de entrada a la salida. Para cada neurona <span class="math inline">j</span> en la capa <span class="math inline">l</span>:</p>
+<ol type="1">
+<li>Se calcula la <strong>pre-activación</strong>: <span class="math inline">z_j^{(l)} = \sum_i w_{ij}^{(l)} a_i^{(l-1)} +
+b_j^{(l)}</span></li>
+<li>Se aplica la <strong>función de activación</strong>: <span class="math inline">a_j^{(l)} = \sigma(z_j^{(l)})</span></li>
+</ol>
+<h3 id="backward-pass">2.2 Backward pass</h3>
+<p>En el <strong>backward pass</strong>, los gradientes fluyen de la
+salida a la entrada. Para cada peso <span class="math inline">w_{ij}^{(l)}</span>, el gradiente se descompone en
+tres factores:</p>
+<p><span class="math display">\frac{\partial L}{\partial w_{ij}^{(l)}} =
+\frac{\partial L}{\partial a_j^{(l)}} \cdot \sigma'(z_j^{(l)}) \cdot
+a_i^{(l-1)}</span></p>
+<ul>
+<li><span class="math inline">\partial L / \partial a_j^{(l)}</span>:
+cómo la loss cambia con la activación (propagado desde capas
+posteriores)</li>
+<li><span class="math inline">\sigma'(z_j^{(l)})</span>: derivada de
+la activación (sensibilidad de la neurona)</li>
+<li><span class="math inline">a_i^{(l-1)}</span>: activación de la
+neurona de origen (señal entrante)</li>
+</ul>
+<h3 id="la-regla-de-la-cadena">2.3 La regla de la cadena</h3>
+<p>El gradiente se transmite entre capas multiplicando factores. Para
+una red de <span class="math inline">L</span> capas, el gradiente
+respecto a un peso en la capa 1 involucra un producto de <span class="math inline">L</span> derivadas — una por cada capa que el error
+debe atravesar. Este producto puede crecer o encogerse
+exponencialmente.</p>
+<h3 id="actualizacion-de-pesos">2.4 Actualización de pesos</h3>
+<p>Cada peso se actualiza proporcionalmente a su gradiente:</p>
+<p><span class="math display">w_{ij} \leftarrow w_{ij} - \eta
+\frac{\partial L}{\partial w_{ij}}</span></p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Diagrama de red con neuronas, conexiones y partículas de flujo</td>
+</tr>
+<tr>
+<td><strong>Tooltip</strong></td>
+<td>Sobre neurona hovereada</td>
+<td>Muestra activación, pre-activación, gradiente</td>
+</tr>
+<tr>
+<td><strong>Badge de fase</strong></td>
+<td>Esquina inf-izq del canvas</td>
+<td>Indica “Forward Pass” (verde) o “Backward Pass” (naranja)</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Ecuación, problema, arquitectura, controles, métricas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="el-diagrama-de-red">3.2 El diagrama de red</h3>
+<p>La visualización principal muestra la red neuronal como un grafo:</p>
+<ul>
+<li><strong>Neuronas</strong> (círculos): brillo proporcional a la
+activación. Un valor alto = neurona brillante</li>
+<li><strong>Conexiones</strong> (curvas Bézier): azul = peso positivo,
+rojo = peso negativo. Grosor proporcional a <span class="math inline">|w|</span></li>
+<li><strong>Barras de gradiente</strong>: debajo de cada neurona,
+muestran la magnitud del gradiente. Verde = saludable, amarillo =
+vanishing, rojo = exploding</li>
+<li><strong>Etiquetas de capa</strong>: Input, Hidden 1, Hidden 2,
+Output</li>
+<li><strong>Partículas de flujo</strong>: puntos verdes (forward) y
+naranjas (backward) que recorren las conexiones</li>
+</ul>
+<h3 id="preview-de-region-de-decision">3.3 Preview de región de
+decisión</h3>
+<p>Miniatura en el panel derecho que muestra la frontera de decisión
+actual de la red: azul = clase 0, rojo = clase 1, con los puntos del
+dataset superpuestos. Se actualiza en cada epoch.</p>
+<h3 id="panel-de-metricas">3.4 Panel de métricas</h3>
+<ul>
+<li><strong>Loss (MSE)</strong>: error cuadrático medio</li>
+<li><strong>Accuracy</strong>: porcentaje de clasificaciones
+correctas</li>
+<li><strong>Max/Min gradiente</strong>: rango de gradientes en toda la
+red</li>
+<li><strong>Diagnóstico</strong>: HEALTHY (verde), VANISHING (amarillo)
+o EXPLODING (rojo)</li>
+<li><strong>Gráfica de loss</strong>: historial de las últimas 300
+epochs</li>
+<li><strong>Barras de gradiente por capa</strong>: visualización rápida
+de la distribución de gradientes</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="problema">4.1 Problema</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 23%" />
+<col style="width: 43%" />
+</colgroup>
+<thead>
+<tr>
+<th>Problema</th>
+<th>Datos</th>
+<th>Complejidad</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>XOR</strong></td>
+<td>4 puntos: (0,0)→0, (0,1)→1, (1,0)→1, (1,1)→0</td>
+<td>Mínima pero no lineal</td>
+</tr>
+<tr>
+<td><strong>Círculo</strong></td>
+<td>50 puntos: clase 1 si <span class="math inline">x^2+y^2 <
+0.5</span></td>
+<td>Frontera circular</td>
+</tr>
+<tr>
+<td><strong>Espiral</strong></td>
+<td>120 puntos: dos espirales entrelazadas</td>
+<td>Muy compleja</td>
+</tr>
+</tbody>
+</table>
+<h3 id="arquitectura">4.2 Arquitectura</h3>
+<p>Menú desplegable con cuatro opciones:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Arquitectura</th>
+<th>Capas</th>
+<th>Parámetros aprox.</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2→4→4→1</td>
+<td>2 ocultas</td>
+<td>~37</td>
+</tr>
+<tr>
+<td>2→8→8→1</td>
+<td>2 ocultas</td>
+<td>~97</td>
+</tr>
+<tr>
+<td>2→4→4→4→1</td>
+<td>3 ocultas</td>
+<td>~53</td>
+</tr>
+<tr>
+<td>2→3→3→1 (minimal)</td>
+<td>2 ocultas</td>
+<td>~22</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hiperparametros">4.3 Hiperparámetros</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 18%" />
+<col style="width: 23%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Learning rate (<span class="math inline">\eta</span>)</td>
+<td>0.01 – 2.0</td>
+<td>0.50</td>
+<td>Tamaño del paso de actualización</td>
+</tr>
+<tr>
+<td>Activación</td>
+<td>sigmoid, ReLU, tanh</td>
+<td>sigmoid</td>
+<td>Función de activación para capas ocultas</td>
+</tr>
+</tbody>
+</table>
+<p>La capa de salida siempre usa sigmoid (para producir valores en <span class="math inline">[0,1]</span>).</p>
+<h3 id="congelar-capas">4.4 Congelar capas</h3>
+<p>Botones L1, L2, L3… permiten <strong>congelar</strong> capas
+individuales. Una capa congelada: - No actualiza sus pesos durante el
+backward pass - Se muestra con borde azul en las neuronas - Tiene un
+indicador ❄ en el canvas</p>
+<p>Esto permite simular <strong>transfer learning</strong> y observar el
+efecto de entrenar solo subconjuntos de la red.</p>
+<h3 id="control-de-entrenamiento">4.5 Control de entrenamiento</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entrenar/Detener</strong></td>
+<td>Inicia o pausa el entrenamiento continuo</td>
+</tr>
+<tr>
+<td><strong>Paso animado</strong></td>
+<td>Ejecuta un forward+backward con partículas de flujo visibles
+(~3.5s)</td>
+</tr>
+<tr>
+<td><strong>10 Epochs</strong></td>
+<td>Ejecuta 10 epochs rápidamente</td>
+</tr>
+<tr>
+<td><strong>Reset</strong></td>
+<td>Reinicializa los pesos con Xavier/Glorot: <span class="math inline">w \sim \mathcal{N}(0,
+\sqrt{2/(n_{in}+n_{out})})</span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>Velocidad</strong>: 1 a 100 epochs por segundo.</p>
+<h3 id="interaccion-con-el-canvas">4.6 Interacción con el canvas</h3>
+<ul>
+<li><strong>Hover</strong> sobre una neurona: tooltip con activación,
+pre-activación y gradiente</li>
+<li><strong>Click</strong> en una neurona: selecciona y muestra panel
+detallado persistente con valores numéricos</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="funciones-de-activacion">5.1 Funciones de activación</h3>
+<p>La simulación ofrece tres funciones de activación para las capas
+ocultas:</p>
+<p><strong>Sigmoid:</strong> <span class="math display">\sigma(z) =
+\frac{1}{1 + e^{-z}}, \quad \sigma'(z) = \sigma(z)(1 -
+\sigma(z))</span></p>
+<p>Rango: <span class="math inline">(0, 1)</span>. Derivada máxima:
+<span class="math inline">0.25</span> (en <span class="math inline">z =
+0</span>). Causa vanishing gradients porque <span class="math inline">\sigma' < 0.25</span> siempre.</p>
+<p><strong>ReLU:</strong> <span class="math display">\text{ReLU}(z) =
+\max(0, z), \quad \text{ReLU}'(z) = \begin{cases} 1 & z > 0
+\\ 0 & z \leq 0 \end{cases}</span></p>
+<p>Rango: <span class="math inline">[0, \infty)</span>. Derivada: 0 o 1.
+No causa vanishing gradients en neuronas activas, pero las “neuronas
+muertas” (salida siempre 0) no reciben gradiente.</p>
+<p><strong>Tanh:</strong> <span class="math display">\tanh(z) =
+\frac{e^z - e^{-z}}{e^z + e^{-z}}, \quad \tanh'(z) = 1 -
+\tanh^2(z)</span></p>
+<p>Rango: <span class="math inline">(-1, 1)</span>. Derivada máxima:
+<span class="math inline">1</span> (en <span class="math inline">z =
+0</span>). Mejor que sigmoid para vanishing gradients, pero aún puede
+ocurrir para <span class="math inline">|z|</span> grande.</p>
+<h3 id="funcion-de-perdida">5.2 Función de pérdida</h3>
+<p>La simulación usa <strong>MSE</strong> (Mean Squared Error):</p>
+<p><span class="math display">L =
+\frac{1}{N}\sum_{n=1}^{N}(\hat{y}^{(n)} - y^{(n)})^2</span></p>
+<p>Para la neurona de salida (sigmoid), la derivada del error es:</p>
+<p><span class="math display">\frac{\partial L}{\partial a_j^{(L)}} =
+2(a_j^{(L)} - y_j) \cdot \sigma'(z_j^{(L)})</span></p>
+<h3 id="propagacion-de-deltas">5.3 Propagación de deltas</h3>
+<p>El algoritmo define un “delta” <span class="math inline">\delta_j^{(l)}</span> para cada neurona:</p>
+<p><span class="math display">\delta_j^{(L)} = (a_j^{(L)} - y_j) \cdot
+\sigma'(z_j^{(L)}) \quad \text{(capa de salida)}</span></p>
+<p><span class="math display">\delta_j^{(l)} = \left(\sum_k
+w_{jk}^{(l+1)} \delta_k^{(l+1)}\right) \cdot \sigma'(z_j^{(l)})
+\quad \text{(capas ocultas)}</span></p>
+<p>Los gradientes de los pesos se obtienen directamente:</p>
+<p><span class="math display">\frac{\partial L}{\partial w_{ij}^{(l)}} =
+\delta_j^{(l)} \cdot a_i^{(l-1)}</span></p>
+<h3 id="inicializacion-xavierglorot">5.4 Inicialización
+Xavier/Glorot</h3>
+<p>La red se inicializa con pesos muestreados de:</p>
+<p><span class="math display">w \sim \mathcal{N}\left(0,
+\sqrt{\frac{2}{n_{in} + n_{out}}}\right)</span></p>
+<p>Esta escala mantiene las varianzas de activaciones y gradientes
+aproximadamente constantes a lo largo de las capas, previniendo
+saturación temprana.</p>
+<h3 id="diagnostico-de-gradientes">5.5 Diagnóstico de gradientes</h3>
+<p>La simulación clasifica el estado de los gradientes:</p>
+<ul>
+<li><strong>HEALTHY</strong>: todos los gradientes en rango
+razonable</li>
+<li><strong>VANISHING</strong>: gradiente mínimo <span class="math inline">< 10^{-6}</span> después de 20 epochs</li>
+<li><strong>EXPLODING</strong>: gradiente máximo <span class="math inline">> 10</span></li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="forward-pass-1">6.1 Forward pass</h3>
+<p>Cada capa produce una nota ascendente durante el forward pass
+animado:</p>
+<p><span class="math display">f_l = 440 \cdot 2^{(48 + 5l - 69)/12}
+\text{ Hz}</span></p>
+<p>Las capas tempranas suenan más graves, las tardías más agudas —
+representando el flujo de información de entrada a salida.</p>
+<h3 id="backward-pass-1">6.2 Backward pass</h3>
+<p>Las notas descienden durante el backward pass:</p>
+<p><span class="math display">f_l = 440 \cdot 2^{(72 - 5l - 69)/12}
+\text{ Hz}</span></p>
+<p>El volumen es proporcional a la magnitud media del gradiente de la
+capa. Las capas con gradientes desvanecidos suenan más débiles — puedes
+<em>escuchar</em> el vanishing gradient como un silencio progresivo en
+las capas profundas.</p>
+<h3 id="throttling">6.3 Throttling</h3>
+<p>Los sonidos se limitan a un mínimo de 50ms entre notas para evitar
+saturación.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="experimento-1-forward-y-backward-animados">Experimento 1:
+Forward y backward animados</h3>
+<ol type="1">
+<li>Mantén la configuración por defecto: XOR, 2→4→4→1, sigmoid</li>
+<li>Haz click en <strong>“Paso animado”</strong></li>
+<li>Observa las partículas verdes fluyendo de izquierda a derecha
+(forward pass)</li>
+<li>Tras ~1.5s, las partículas naranjas fluyen de derecha a izquierda
+(backward pass)</li>
+<li>Nota cómo las conexiones más gruesas tienen más partículas</li>
+<li>Repite varias veces y observa los valores de activación cambiar en
+cada neurona</li>
+</ol>
+<h3 id="experimento-2-entrenamiento-del-xor">Experimento 2:
+Entrenamiento del XOR</h3>
+<ol type="1">
+<li>Con la configuración por defecto, haz click en
+<strong>“Entrenar”</strong></li>
+<li>Observa la gráfica de loss descender</li>
+<li>La preview de decisión mostrará gradualmente las cuatro regiones del
+XOR</li>
+<li>El loss debería bajar de ~0.25 a &lt;0.01 en ~200-500 epochs</li>
+<li>Nota cómo las barras de gradiente se hacen más pequeñas a medida que
+el loss decrece</li>
+</ol>
+<h3 id="experimento-3-vanishing-gradients-con-sigmoid">Experimento 3:
+Vanishing gradients con sigmoid</h3>
+<ol type="1">
+<li>Selecciona arquitectura <strong>2→4→4→4→1</strong> (3 capas
+ocultas)</li>
+<li>Mantén activación <strong>sigmoid</strong></li>
+<li>Entrena durante 50+ epochs</li>
+<li>Observa las barras de gradiente: L1 (primera capa) será mucho más
+pequeña que L3</li>
+<li>El diagnóstico debería mostrar <strong>VANISHING</strong> en
+amarillo</li>
+<li>Las neuronas de las primeras capas apenas cambian — los gradientes
+se multiplican por <span class="math inline">\sigma'(z) <
+0.25</span> en cada capa</li>
+</ol>
+<h3 id="experimento-4-relu-al-rescate">Experimento 4: ReLU al
+rescate</h3>
+<ol type="1">
+<li>Desde el estado anterior, cambia la activación a
+<strong>ReLU</strong></li>
+<li>Entrena de nuevo</li>
+<li>Las barras de gradiente ahora deberían ser más uniformes entre
+capas</li>
+<li>El diagnóstico debería mostrar <strong>HEALTHY</strong> en
+verde</li>
+<li>El loss desciende más rápido — ReLU permite que los gradientes
+fluyan sin atenuarse</li>
+</ol>
+<h3 id="experimento-5-congelar-y-descongelar-capas">Experimento 5:
+Congelar y descongelar capas</h3>
+<ol type="1">
+<li>Problema: Círculo, arquitectura 2→4→4→1</li>
+<li>Entrena hasta que el loss baje significativamente (~100 epochs)</li>
+<li><strong>Congela L1</strong> (primera capa oculta) haciendo click en
+el botón</li>
+<li>Continúa entrenando — solo L2 se actualiza</li>
+<li>¿El loss sigue bajando? ¿Más lento?</li>
+<li>Descongela L1 y congela L2. Entrena. ¿Cuál capa es más
+importante?</li>
+</ol>
+<h3 id="experimento-6-la-espiral">Experimento 6: La espiral</h3>
+<ol type="1">
+<li>Selecciona problema <strong>Espiral</strong> y arquitectura
+<strong>2→8→8→1</strong></li>
+<li>Usa activación <strong>ReLU</strong> y learning rate
+<strong>0.5</strong></li>
+<li>Entrena por 500+ epochs</li>
+<li>Observa la preview de decisión: ¿logra separar las dos
+espirales?</li>
+<li>Prueba con <strong>tanh</strong> — ¿es mejor o peor que ReLU para
+este problema?</li>
+<li>Prueba la arquitectura <strong>2→4→4→4→1</strong> — ¿la profundidad
+ayuda con las espirales?</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="por-que-sigmoid-causa-vanishing-gradients">8.1 ¿Por qué sigmoid
+causa vanishing gradients?</h3>
+<p>La derivada de sigmoid es <span class="math inline">\sigma'(z) =
+\sigma(z)(1-\sigma(z))</span>, con máximo <span class="math inline">0.25</span> en <span class="math inline">z=0</span>.
+En una red de <span class="math inline">L</span> capas, el gradiente
+respecto a la primera capa incluye un producto:</p>
+<p><span class="math display">\prod_{l=1}^{L} \sigma'(z^{(l)}) \leq
+0.25^L</span></p>
+<p>Para <span class="math inline">L = 4</span>: <span class="math inline">0.25^4 = 0.0039</span>. El gradiente de la primera
+capa es ~256 veces menor que el de la última.</p>
+<h3 id="batch-vs.-online-training">8.2 Batch vs. online training</h3>
+<p>La simulación usa <strong>online training</strong> (actualiza pesos
+después de cada muestra, en orden aleatorio). En la práctica, se usa
+<strong>mini-batch training</strong>:</p>
+<ul>
+<li><strong>Online</strong> (batch=1): ruidoso, actualizaciones
+frecuentes</li>
+<li><strong>Mini-batch</strong> (batch=32-256): balance entre ruido y
+eficiencia</li>
+<li><strong>Full batch</strong> (batch=N): gradiente exacto, pero lento
+por epoch</li>
+</ul>
+<h3 id="transfer-learning-y-fine-tuning">8.3 Transfer learning y
+fine-tuning</h3>
+<p>Congelar capas simula el concepto de <strong>transfer
+learning</strong>: las primeras capas aprenden features genéricos
+(bordes, texturas) que se reutilizan, y solo las últimas capas se
+reentrenan para la tarea específica. En esta simulación, puedes
+experimentar con qué capas son más importantes para cada problema.</p>
+<h3 id="regla-de-la-cadena-computacional">8.4 Regla de la cadena
+computacional</h3>
+<p>Backpropagation es una aplicación eficiente de la regla de la cadena
+que evita recalcular derivadas parciales redundantes. Recorre el grafo
+computacional una sola vez de salida a entrada, almacenando los
+resultados intermedios. La complejidad es <span class="math inline">O(W)</span> donde <span class="math inline">W</span>
+es el número de pesos — el mismo orden que el forward pass.</p>
+<h3 id="modos-de-fallo">8.5 Modos de fallo</h3>
+<ul>
+<li><strong>Gradientes desvanecidos</strong>: capas profundas + sigmoid.
+Síntoma: primeras capas no aprenden</li>
+<li><strong>Gradientes explosivos</strong>: learning rate alto + pesos
+grandes. Síntoma: loss explota a NaN</li>
+<li><strong>Neuronas muertas</strong>: ReLU con gradientes negativos
+persistentes. Síntoma: neurona siempre outputs 0</li>
+<li><strong>Pérdida estancada</strong>: red demasiado pequeña para el
+problema. Síntoma: loss no baja de cierto umbral</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-contando-multiplicaciones">Ejercicio 1: Contando
+multiplicaciones</h3>
+<p>Para la arquitectura 2→4→4→1, calcula manualmente cuántas
+multiplicaciones se necesitan en un forward pass y en un backward pass
+para una muestra. ¿Son iguales? Verifica contando las conexiones en el
+diagrama.</p>
+<h3 id="ejercicio-2-sigmoid-vs.-relu-en-profundidad">Ejercicio 2:
+Sigmoid vs. ReLU en profundidad</h3>
+<p>Entrena la red 2→4→4→4→1 en el problema Círculo durante exactamente
+200 epochs con sigmoid, y luego repite con ReLU (mismo learning rate,
+reset entre ambos). Compara: - Loss final - Barras de gradiente de L1 -
+¿Cuántas epochs tardó cada una en bajar de loss = 0.1?</p>
+<h3 id="ejercicio-3-la-arquitectura-minima-para-xor">Ejercicio 3: La
+arquitectura mínima para XOR</h3>
+<p>El XOR requiere mínimo 2 neuronas ocultas para resolverse. Usa la
+arquitectura <strong>2→3→3→1</strong> y entrena. ¿Converge siempre? ¿Qué
+ocurre si reduces a 2→2→1? Intenta múltiples resets.</p>
+<h3 id="ejercicio-4-congelacion-selectiva">Ejercicio 4: Congelación
+selectiva</h3>
+<p>Con el problema Espiral y arquitectura 2→8→8→1: 1. Entrena 100 epochs
+completo 2. Congela L1, entrena 100 más 3. Reset, entrena 100 epochs con
+L2 congelada desde el inicio ¿En qué caso el rendimiento final es peor?
+¿Qué capa es más crítica para las features de bajo nivel?</p>
+<h3 id="ejercicio-5-diagnosticando-la-explosion">Ejercicio 5:
+Diagnosticando la explosión</h3>
+<p>Fija learning rate <span class="math inline">\eta = 2.0</span> y usa
+sigmoid en 2→4→4→1 con XOR. Entrena y observa. ¿Cuántos epochs hasta que
+aparezca el diagnóstico EXPLODING? ¿Qué le ocurre al loss? Baja <span class="math inline">\eta</span> a 1.0 y repite. ¿Hay un umbral de <span class="math inline">\eta</span> donde el entrenamiento pasa de estable a
+inestable?</p>
+<h3 id="ejercicio-6-visualizando-la-regla-de-la-cadena">Ejercicio 6:
+Visualizando la regla de la cadena</h3>
+<p>Usa “Paso animado” en la red 2→4→4→1 con XOR. Después de un paso, haz
+click en cada neurona de la capa oculta 1 y anota su gradiente. Haz lo
+mismo para la capa oculta 2. ¿Los gradientes de la capa 1 son
+consistentemente menores que los de la capa 2? Calcula el ratio medio.
+¿Es cercano a 0.25 (la derivada máxima de sigmoid)?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Backpropagation</strong></td>
+<td>Algoritmo que calcula gradientes de la loss respecto a cada peso
+usando la regla de la cadena</td>
+</tr>
+<tr>
+<td><strong>Forward pass</strong></td>
+<td>Fase donde la entrada se transforma capa por capa hasta producir la
+salida</td>
+</tr>
+<tr>
+<td><strong>Backward pass</strong></td>
+<td>Fase donde los gradientes se propagan de la salida hacia la
+entrada</td>
+</tr>
+<tr>
+<td><strong>Gradiente</strong> (<span class="math inline">\partial
+L/\partial w</span>)</td>
+<td>Derivada parcial de la loss respecto a un peso; indica dirección y
+magnitud de ajuste</td>
+</tr>
+<tr>
+<td><strong>Regla de la cadena</strong></td>
+<td><span class="math inline">\frac{\partial f}{\partial x} =
+\frac{\partial f}{\partial g} \cdot \frac{\partial g}{\partial x}</span>
+— permite componer derivadas</td>
+</tr>
+<tr>
+<td><strong>Delta</strong> (<span class="math inline">\delta_j</span>)</td>
+<td>Señal de error local de una neurona; producto del error propagado y
+la derivada de activación</td>
+</tr>
+<tr>
+<td><strong>Pre-activación</strong> (<span class="math inline">z</span>)</td>
+<td>Suma ponderada antes de aplicar la función de activación: <span class="math inline">z = \sum w_i a_i + b</span></td>
+</tr>
+<tr>
+<td><strong>Activación</strong> (<span class="math inline">a</span>)</td>
+<td>Salida de la neurona después de aplicar la función de activación:
+<span class="math inline">a = \sigma(z)</span></td>
+</tr>
+<tr>
+<td><strong>Vanishing gradients</strong></td>
+<td>Problema donde los gradientes se encogen exponencialmente en capas
+profundas</td>
+</tr>
+<tr>
+<td><strong>Exploding gradients</strong></td>
+<td>Problema donde los gradientes crecen sin control, desestabilizando
+el entrenamiento</td>
+</tr>
+<tr>
+<td><strong>Neurona muerta</strong></td>
+<td>Neurona con ReLU que siempre produce 0 y no recibe gradiente</td>
+</tr>
+<tr>
+<td><strong>Xavier/Glorot</strong></td>
+<td>Esquema de inicialización de pesos que mantiene varianzas constantes
+entre capas</td>
+</tr>
+<tr>
+<td><strong>MSE</strong></td>
+<td>Mean Squared Error: <span class="math inline">\frac{1}{N}\sum(y -
+\hat{y})^2</span></td>
+</tr>
+<tr>
+<td><strong>Congelar capa</strong></td>
+<td>Impedir la actualización de pesos de una capa durante el
+entrenamiento</td>
+</tr>
+<tr>
+<td><strong>Transfer learning</strong></td>
+<td>Técnica que reutiliza pesos pre-entrenados, congelando las primeras
+capas</td>
+</tr>
+<tr>
+<td><strong>Derivada de activación</strong> (<span class="math inline">\sigma'</span>)</td>
+<td>Factor multiplicativo en la regla de la cadena; controla cuánto
+gradiente pasa por la neurona</td>
+</tr>
+<tr>
+<td><strong>Región de decisión</strong></td>
+<td>Partición del espacio de entrada en regiones según la clase predicha
+por la red</td>
+</tr>
+<tr>
+<td><strong>Grafo computacional</strong></td>
+<td>Representación de las operaciones como un grafo dirigido; backprop
+lo recorre en reversa</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li><p><strong>Rumelhart, D. E., Hinton, G. E. &amp; Williams, R.
+J.</strong> (1986). “Learning Representations by Back-propagating
+Errors.” <em>Nature</em>, 323(6088), 533–536.</p></li>
+<li><p><strong>Linnainmaa, S.</strong> (1970). “The Representation of
+the Cumulative Rounding Error of an Algorithm as a Taylor Expansion of
+the Local Rounding Errors.” <em>Master’s Thesis</em>, University of
+Helsinki.</p></li>
+<li><p><strong>Werbos, P. J.</strong> (1974). “Beyond Regression: New
+Tools for Prediction and Analysis in the Behavioral Sciences.” <em>PhD
+Thesis</em>, Harvard University.</p></li>
+<li><p><strong>Glorot, X. &amp; Bengio, Y.</strong> (2010).
+“Understanding the Difficulty of Training Deep Feedforward Neural
+Networks.” <em>Proceedings of AISTATS 2010</em>.</p></li>
+<li><p><strong>Hochreiter, S.</strong> (1991). “Untersuchungen zu
+dynamischen neuronalen Netzen.” <em>Diploma Thesis</em>, TU München.
+(Primera descripción formal del vanishing gradient problem.)</p></li>
+<li><p><strong>Goodfellow, I., Bengio, Y. &amp; Courville, A.</strong>
+(2016). <em>Deep Learning</em>, Chapter 6: Deep Feedforward Networks.
+MIT Press.</p></li>
+<li><p><strong>Nielsen, M.</strong> (2015). <em>Neural Networks and Deep
+Learning</em>, Chapter 2: How the backpropagation algorithm works. <a
+href="http://neuralnetworksanddeeplearning.com/chap2.html">neuralnetworksanddeeplearning.com</a>.</p></li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

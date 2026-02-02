@@ -1,0 +1,1234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Activation
+Function Orchestra — 8 Funciones en Paralelo</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #ef4444;
+    --primary-dark: #dc2626;
+    --primary-light: #fca5a5;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #ef4444;
+    --accent-light: #fca5a5;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #450a0a 0%, #0f0a0a 60%, #1a0505 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fca5a5; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fef2f2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #991b1b;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fef2f2;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fef2f2; }
+tr:hover { background: #fca5a522; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva que muestra 8 funciones de activación
+procesando la misma señal de entrada en tiempo real. Observa cómo
+Sigmoid satura, ReLU...</p>
+        <div class="badge">Fundamentos</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#por-que-necesitamos-no-linealidad">2.1 ¿Por qué necesitamos
+no-line...</a></li>
+  <li class="sub-item"><a href="#propiedades-deseables">2.2 Propiedades deseables</a></li>
+  <li class="sub-item"><a href="#la-derivada-importa">2.3 La derivada importa</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#la-banda-de-entrada">3.2 La banda de entrada</a></li>
+  <li class="sub-item"><a href="#las-8-celdas">3.3 Las 8 celdas</a></li>
+  <li class="sub-item"><a href="#codigo-de-colores">3.4 Código de colores</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#senal-de-entrada">4.1 Señal de entrada</a></li>
+  <li class="sub-item"><a href="#parametros">4.2 Parámetros</a></li>
+  <li class="sub-item"><a href="#opciones-de-visualizacion">4.3 Opciones de visualización</a></li>
+  <li class="sub-item"><a href="#hover-sobre-celdas">4.4 Hover sobre celdas</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#sigmoid">5.1 Sigmoid</a></li>
+  <li class="sub-item"><a href="#tanh">5.2 Tanh</a></li>
+  <li class="sub-item"><a href="#relu-rectified-linear-unit">5.3 ReLU (Rectified Linear
+Unit)</a></li>
+  <li class="sub-item"><a href="#leaky-relu">5.4 Leaky ReLU</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#la-orquesta">6.1 La orquesta</a></li>
+  <li class="sub-item"><a href="#modulacion-por-salida">6.2 Modulación por salida</a></li>
+  <li class="sub-item"><a href="#detuning-por-saturacion">6.3 Detuning por saturación</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#la-muerte-de-neuronas-relu">8.1 La muerte de neuronas ReLU</a></li>
+  <li class="sub-item"><a href="#la-no-monotonicidad-de-swish-gelu-y-mish">8.2 La
+“no-monotonicidad” de Swi...</a></li>
+  <li class="sub-item"><a href="#la-aproximacion-de-gelu">8.3 La aproximación de GELU</a></li>
+  <li class="sub-item"><a href="#funciones-de-activacion-en-diferentes-arquitecturas">8.4
+Funciones de activación en d...</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Las <strong>funciones de activación</strong> son la fuente de
+no-linealidad en las redes neuronales. Sin ellas, una red de cualquier
+profundidad sería equivalente a una sola transformación lineal — incapaz
+de aprender patrones complejos como bordes en imágenes, sentimiento en
+texto, o estructura en datos.</p>
+<p>Esta simulación muestra <strong>8 funciones de activación</strong>
+procesando simultáneamente la misma señal de entrada. Cada función tiene
+su propia celda tipo osciloscopio, donde puedes observar en tiempo real
+cómo transforma la señal, dónde satura, dónde corta, y cómo se comporta
+su derivada. Cambiando la amplitud de la entrada, puedes provocar
+saturación masiva en Sigmoid y Tanh mientras ReLU y GELU continúan
+operando.</p>
+<p>La metáfora de la “orquesta” es literal: cada función produce un
+sonido diferente, y el conjunto forma un paisaje sonoro que cambia con
+la señal de entrada.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="por-que-necesitamos-no-linealidad">2.1 ¿Por qué necesitamos
+no-linealidad?</h3>
+<p>Sin funciones de activación, una red de <span class="math inline">L</span> capas computa:</p>
+<p><span class="math display">f(\mathbf{x}) = W_L \cdot W_{L-1} \cdots
+W_1 \cdot \mathbf{x} = W_{\text{total}} \cdot \mathbf{x}</span></p>
+<p>El producto de matrices lineales es otra matriz lineal. No importa
+cuántas capas apiles: la red solo puede representar transformaciones
+lineales. Las funciones de activación <span class="math inline">\sigma</span> rompen esta limitación:</p>
+<p><span class="math display">f(\mathbf{x}) = \sigma(W_L \cdot
+\sigma(W_{L-1} \cdots \sigma(W_1 \cdot \mathbf{x})))</span></p>
+<h3 id="propiedades-deseables">2.2 Propiedades deseables</h3>
+<p>Una buena función de activación debería:</p>
+<ul>
+<li>Ser <strong>no lineal</strong> (de lo contrario no aporta nada)</li>
+<li>Tener <strong>derivada no nula</strong> en un rango amplio (para que
+los gradientes fluyan)</li>
+<li>Ser <strong>computacionalmente eficiente</strong> (se evalúa
+millones de veces)</li>
+<li>Producir <strong>salidas centradas en cero</strong> o cercanas
+(facilita la optimización)</li>
+</ul>
+<h3 id="la-derivada-importa">2.3 La derivada importa</h3>
+<p>En backpropagation, el gradiente que fluye a través de una neurona se
+multiplica por <span class="math inline">\sigma'(z)</span>. Si la
+derivada es:</p>
+<ul>
+<li><strong>Siempre <span class="math inline">< 1</span></strong>:
+los gradientes se desvanecen exponencialmente (vanishing)</li>
+<li><strong>Exactamente 0</strong>: la neurona no recibe señal de error
+(zona muerta)</li>
+<li><strong>Siempre 1</strong>: los gradientes fluyen perfectamente
+(ideal)</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Banda de entrada</strong></td>
+<td>Parte superior del canvas</td>
+<td>Señal de entrada como osciloscopio horizontal</td>
+</tr>
+<tr>
+<td><strong>Cuadrícula 4×2</strong></td>
+<td>Área principal del canvas</td>
+<td>8 celdas, una por función de activación</td>
+</tr>
+<tr>
+<td><strong>Tooltip</strong></td>
+<td>Sobre celda hovereada</td>
+<td>Salida, derivada, estado de saturación</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Señal, visualización, audio, leyenda</td>
+</tr>
+</tbody>
+</table>
+<h3 id="la-banda-de-entrada">3.2 La banda de entrada</h3>
+<p>Una tira horizontal dorada muestra la señal de entrada actual (seno,
+cuadrada, etc.) en formato osciloscopio: el tiempo fluye de izquierda a
+derecha, con un marcador en el valor actual.</p>
+<h3 id="las-8-celdas">3.3 Las 8 celdas</h3>
+<p>Cada celda muestra:</p>
+<ul>
+<li><strong>Línea sólida</strong> (color de la función): salida <span class="math inline">\sigma(x(t))</span> a lo largo del tiempo</li>
+<li><strong>Línea punteada</strong> (si está activada): derivada <span class="math inline">\sigma'(x(t))</span></li>
+<li><strong>Relleno bajo curva</strong> (si está activado): área
+sombreada entre la curva y el eje</li>
+<li><strong>Nombre de la función</strong>: esquina superior
+izquierda</li>
+<li><strong>Resaltado al hover</strong>: borde iluminado en la celda
+activa</li>
+</ul>
+<h3 id="codigo-de-colores">3.4 Código de colores</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Función</th>
+<th>Color</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sigmoid</td>
+<td>Rojo (#ef4444)</td>
+</tr>
+<tr>
+<td>Tanh</td>
+<td>Azul (#3b82f6)</td>
+</tr>
+<tr>
+<td>ReLU</td>
+<td>Verde (#22c55e)</td>
+</tr>
+<tr>
+<td>Leaky ReLU</td>
+<td>Ámbar (#f59e0b)</td>
+</tr>
+<tr>
+<td>ELU</td>
+<td>Violeta (#a855f7)</td>
+</tr>
+<tr>
+<td>Swish</td>
+<td>Cyan (#06b6d4)</td>
+</tr>
+<tr>
+<td>GELU</td>
+<td>Rosa (#ec4899)</td>
+</tr>
+<tr>
+<td>Mish</td>
+<td>Lima (#84cc16)</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="senal-de-entrada">4.1 Señal de entrada</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 25%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Forma</th>
+<th>Uso didáctico</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Seno</strong></td>
+<td>Onda sinusoidal suave</td>
+<td>Caso base: transición gradual entre regiones</td>
+</tr>
+<tr>
+<td><strong>Cuadrada</strong></td>
+<td>Saltos entre <span class="math inline">+A</span> y <span class="math inline">-A</span></td>
+<td>Testea respuesta a transiciones abruptas</td>
+</tr>
+<tr>
+<td><strong>Triángulo</strong></td>
+<td>Rampa lineal simétrica</td>
+<td>Entrada linealmente creciente y decreciente</td>
+</tr>
+<tr>
+<td><strong>Rampa</strong> (sawtooth)</td>
+<td>Rampa ascendente con reset</td>
+<td>Muestra comportamiento asimétrico</td>
+</tr>
+<tr>
+<td><strong>Ruido</strong></td>
+<td>Valores aleatorios</td>
+<td>Simula entradas ruidosas realistas</td>
+</tr>
+<tr>
+<td><strong>Chirp</strong></td>
+<td>Seno con frecuencia creciente</td>
+<td>Muestra comportamiento a diferentes velocidades</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Presets de amplitud</strong>: - <strong>Explosión</strong>
+(<span class="math inline">A = 10</span>): satura las funciones acotadas
+- <strong>Suave</strong> (<span class="math inline">A = 0.5</span>):
+todas las funciones se comportan casi linealmente -
+<strong>Normal</strong> (<span class="math inline">A = 2</span>): rango
+típico de pre-activaciones</p>
+<h3 id="parametros">4.2 Parámetros</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 21%" />
+<col style="width: 27%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Frecuencia</td>
+<td>0.1 – 5.0 Hz</td>
+<td>1.0</td>
+<td>Velocidad de oscilación de la entrada</td>
+</tr>
+<tr>
+<td>Amplitud</td>
+<td>0.1 – 10.0</td>
+<td>2.0</td>
+<td>Rango de la señal; amplitudes altas causan saturación</td>
+</tr>
+<tr>
+<td>Velocidad</td>
+<td>0.1 – 5.0x</td>
+<td>1.0</td>
+<td>Escala temporal de la simulación</td>
+</tr>
+</tbody>
+</table>
+<h3 id="opciones-de-visualizacion">4.3 Opciones de visualización</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 38%" />
+<col style="width: 61%" />
+</colgroup>
+<thead>
+<tr>
+<th>Opción</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Mostrar derivadas</strong></td>
+<td>Superpone la derivada <span class="math inline">\sigma'(x)</span> como línea punteada</td>
+</tr>
+<tr>
+<td><strong>Mostrar curva estática</strong></td>
+<td>Muestra <span class="math inline">\sigma(x)</span> como función
+estática (no temporal)</td>
+</tr>
+<tr>
+<td><strong>Relleno bajo curva</strong></td>
+<td>Sombrea el área entre la curva y el eje horizontal</td>
+</tr>
+</tbody>
+</table>
+<h3 id="hover-sobre-celdas">4.4 Hover sobre celdas</h3>
+<p>Al pasar el mouse sobre una celda, el tooltip muestra: - Valor de
+salida actual - Valor de la derivada actual - Estado: “Activo” o
+“Saturado” (derivada &lt; 0.05 cuando <span class="math inline">|x| >
+1</span>) - Descripción breve de la función</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="sigmoid">5.1 Sigmoid</h3>
+<p><span class="math display">\sigma(x) = \frac{1}{1 + e^{-x}}, \quad
+\sigma'(x) = \sigma(x)(1 - \sigma(x))</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">(0, 1)</span></li>
+<li><strong>Derivada máxima</strong>: <span class="math inline">0.25</span> en <span class="math inline">x =
+0</span></li>
+<li><strong>Problema</strong>: satura para <span class="math inline">|x|
+> 4</span>, causando vanishing gradients</li>
+<li><strong>Uso</strong>: capa de salida en clasificación binaria, gates
+en LSTM</li>
+</ul>
+<h3 id="tanh">5.2 Tanh</h3>
+<p><span class="math display">\tanh(x) = \frac{e^x - e^{-x}}{e^x +
+e^{-x}}, \quad \tanh'(x) = 1 - \tanh^2(x)</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">(-1,
+1)</span></li>
+<li><strong>Derivada máxima</strong>: <span class="math inline">1</span>
+en <span class="math inline">x = 0</span></li>
+<li><strong>Ventaja sobre sigmoid</strong>: centrada en cero, derivada
+más alta</li>
+<li><strong>Problema</strong>: aún satura para <span class="math inline">|x| > 3</span></li>
+<li><strong>Uso</strong>: celdas LSTM, redes recurrentes clásicas</li>
+</ul>
+<h3 id="relu-rectified-linear-unit">5.3 ReLU (Rectified Linear
+Unit)</h3>
+<p><span class="math display">\text{ReLU}(x) = \max(0, x), \quad
+\text{ReLU}'(x) = \begin{cases} 1 & x > 0 \\ 0 & x \leq 0
+\end{cases}</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">[0,
+\infty)</span></li>
+<li><strong>Derivada</strong>: constante 1 o 0</li>
+<li><strong>Ventaja</strong>: no satura para <span class="math inline">x
+> 0</span>, computacionalmente trivial</li>
+<li><strong>Problema</strong>: “neuronas muertas” — si una neurona entra
+en <span class="math inline">x < 0</span> permanentemente, deja de
+aprender</li>
+<li><strong>Uso</strong>: estándar en redes convolucionales y
+feed-forward</li>
+</ul>
+<h3 id="leaky-relu">5.4 Leaky ReLU</h3>
+<p><span class="math display">\text{LeakyReLU}(x) = \begin{cases} x
+& x > 0 \\ 0.01x & x \leq 0 \end{cases}</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">(-\infty,
+\infty)</span></li>
+<li><strong>Derivada</strong>: <span class="math inline">1</span> o
+<span class="math inline">0.01</span> (nunca exactamente 0)</li>
+<li><strong>Ventaja</strong>: elimina el problema de neuronas
+muertas</li>
+<li><strong>Uso</strong>: alternativa robusta a ReLU</li>
+</ul>
+<h3 id="elu-exponential-linear-unit">5.5 ELU (Exponential Linear
+Unit)</h3>
+<p><span class="math display">\text{ELU}(x) = \begin{cases} x & x
+> 0 \\ \alpha(e^x - 1) & x \leq 0 \end{cases}, \quad \alpha =
+1</span></p>
+<p><span class="math display">\text{ELU}'(x) = \begin{cases} 1 &
+x > 0 \\ \alpha e^x & x \leq 0 \end{cases}</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">(-\alpha,
+\infty)</span></li>
+<li><strong>Ventaja</strong>: suave en <span class="math inline">x =
+0</span>, salidas con media cercana a cero</li>
+<li><strong>Uso</strong>: redes donde se busca convergencia más
+rápida</li>
+</ul>
+<h3 id="swish">5.6 Swish</h3>
+<p><span class="math display">\text{Swish}(x) = x \cdot
+\sigma(x)</span></p>
+<p><span class="math display">\text{Swish}'(x) = \sigma(x) + x \cdot
+\sigma(x)(1 - \sigma(x))</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">\approx (-0.28,
+\infty)</span></li>
+<li><strong>Propiedad</strong>: suave, no monótona (tiene un mínimo
+negativo cerca de <span class="math inline">x \approx -1.28</span>)</li>
+<li><strong>Ventaja</strong>: auto-gated — la sigmoid actúa como
+compuerta que deja pasar más o menos señal</li>
+<li><strong>Uso</strong>: redes de búsqueda de arquitectura (NAS),
+EfficientNet</li>
+</ul>
+<h3 id="gelu-gaussian-error-linear-unit">5.7 GELU (Gaussian Error Linear
+Unit)</h3>
+<p><span class="math display">\text{GELU}(x) = x \cdot \Phi(x) \approx
+0.5x\left(1 + \tanh\left(\sqrt{\frac{2}{\pi}}(x +
+0.044715x^3)\right)\right)</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">\approx (-0.17,
+\infty)</span></li>
+<li><strong>Propiedad</strong>: suave, no monótona, basada en la función
+de distribución gaussiana <span class="math inline">\Phi</span></li>
+<li><strong>Interpretación</strong>: la probabilidad de que una variable
+gaussiana sea menor que <span class="math inline">x</span> pondera la
+entrada</li>
+<li><strong>Uso</strong>: <strong>estándar en Transformers</strong>
+(BERT, GPT, ViT)</li>
+</ul>
+<h3 id="mish">5.8 Mish</h3>
+<p><span class="math display">\text{Mish}(x) = x \cdot
+\tanh(\text{softplus}(x)) = x \cdot \tanh(\ln(1 + e^x))</span></p>
+<ul>
+<li><strong>Rango</strong>: <span class="math inline">\approx (-0.31,
+\infty)</span></li>
+<li><strong>Propiedad</strong>: suave, no monótona,
+auto-regularizante</li>
+<li><strong>Ventaja</strong>: gradientes que fluyen mejor que Swish en
+redes muy profundas</li>
+<li><strong>Uso</strong>: YOLOv4, redes de detección de objetos</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="la-orquesta">6.1 La orquesta</h3>
+<p>Cada función de activación tiene asignado un <strong>oscilador
+continuo</strong> con frecuencia y timbre distintos:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Función</th>
+<th>Frecuencia base</th>
+<th>Forma de onda</th>
+<th>Posición estéreo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Sigmoid</td>
+<td>110 Hz</td>
+<td>Sine</td>
+<td>Izquierda</td>
+</tr>
+<tr>
+<td>Tanh</td>
+<td>220 Hz</td>
+<td>Sine</td>
+<td>Centro-izq</td>
+</tr>
+<tr>
+<td>ReLU</td>
+<td>330 Hz</td>
+<td>Sawtooth</td>
+<td>Centro-izq</td>
+</tr>
+<tr>
+<td>Leaky ReLU</td>
+<td>440 Hz</td>
+<td>Sawtooth</td>
+<td>Centro</td>
+</tr>
+<tr>
+<td>ELU</td>
+<td>550 Hz</td>
+<td>Triangle</td>
+<td>Centro</td>
+</tr>
+<tr>
+<td>Swish</td>
+<td>660 Hz</td>
+<td>Triangle</td>
+<td>Centro-der</td>
+</tr>
+<tr>
+<td>GELU</td>
+<td>770 Hz</td>
+<td>Triangle</td>
+<td>Centro-der</td>
+</tr>
+<tr>
+<td>Mish</td>
+<td>880 Hz</td>
+<td>Triangle</td>
+<td>Derecha</td>
+</tr>
+</tbody>
+</table>
+<h3 id="modulacion-por-salida">6.2 Modulación por salida</h3>
+<p>El <strong>volumen</strong> de cada oscilador es proporcional a <span class="math inline">|\sigma(x)|</span>: funciones con salida alta suenan
+más fuerte, las que están en zona muerta se silencian.</p>
+<h3 id="detuning-por-saturacion">6.3 Detuning por saturación</h3>
+<p>Cuando la derivada es baja (<span class="math inline">\sigma'(x)
+< 0.1</span>), el oscilador se <strong>desafina</strong> hasta 25
+centésimas. Esto crea una sensación de “disonancia” audible que
+representa la saturación — puedes <em>escuchar</em> cuándo una función
+deja de ser útil para el gradiente.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="experimento-1-comparacion-visual-basica">Experimento 1:
+Comparación visual básica</h3>
+<ol type="1">
+<li>Mantén la configuración por defecto (seno, amplitud 2.0)</li>
+<li>Observa las 8 celdas simultáneamente</li>
+<li><strong>Sigmoid</strong> y <strong>Tanh</strong> producen curvas
+suaves y acotadas</li>
+<li><strong>ReLU</strong> corta la mitad negativa — la onda se
+“rectifica”</li>
+<li><strong>Swish</strong>, <strong>GELU</strong> y
+<strong>Mish</strong> son intermedias: suaves pero no acotadas</li>
+<li>Activa “Mostrar derivadas” para ver dónde <span class="math inline">\sigma'</span> es alta y dónde cae a cero</li>
+</ol>
+<h3 id="experimento-2-saturacion-con-amplitud-alta">Experimento 2:
+Saturación con amplitud alta</h3>
+<ol type="1">
+<li>Click en <strong>“Explosión”</strong> (<span class="math inline">A =
+10</span>)</li>
+<li>Observa Sigmoid: se convierte en una onda cuadrada (saturación total
+en 0 y 1)</li>
+<li>Tanh hace lo mismo: satura en -1 y 1</li>
+<li>ReLU y Leaky ReLU <strong>no saturan</strong> — la salida crece
+linealmente</li>
+<li>Mira las derivadas punteadas: en Sigmoid y Tanh, <span class="math inline">\sigma'</span> es prácticamente 0 excepto en
+transiciones</li>
+<li><strong>Conclusión</strong>: con señales grandes, Sigmoid y Tanh no
+transmiten gradientes</li>
+</ol>
+<h3 id="experimento-3-regimen-lineal">Experimento 3: Régimen lineal</h3>
+<ol type="1">
+<li>Click en <strong>“Suave”</strong> (<span class="math inline">A =
+0.5</span>)</li>
+<li>Todas las funciones producen salidas muy similares — casi
+lineales</li>
+<li>Las derivadas son altas y estables</li>
+<li><strong>Conclusión</strong>: cerca del origen, todas las
+activaciones se comportan de forma parecida. Las diferencias aparecen
+con señales fuertes.</li>
+</ol>
+<h3 id="experimento-4-senales-abruptas">Experimento 4: Señales
+abruptas</h3>
+<ol type="1">
+<li>Selecciona señal <strong>“Cuadrada”</strong> con amplitud
+normal</li>
+<li>La señal de entrada salta entre <span class="math inline">+2</span>
+y <span class="math inline">-2</span></li>
+<li>Sigmoid y Tanh suavizan los saltos (tienen inercia)</li>
+<li>ReLU produce una onda cuadrada rectificada (solo la parte
+positiva)</li>
+<li>Observa la derivada de ReLU: salta entre 0 y 1 instantáneamente</li>
+</ol>
+<h3 id="experimento-5-gelu-vs.-relu">Experimento 5: GELU vs. ReLU</h3>
+<ol type="1">
+<li>Señal seno, amplitud 2.0</li>
+<li>Compara la celda de ReLU (verde) con GELU (rosa)</li>
+<li>ReLU corta abruptamente en <span class="math inline">x = 0</span> —
+la derivada es discontinua</li>
+<li>GELU tiene una transición suave — permite un pequeño rango
+negativo</li>
+<li>Activa las derivadas: la de ReLU salta de 0 a 1; la de GELU es una
+curva suave</li>
+<li><strong>Esto explica por qué GELU funciona mejor en
+Transformers</strong>: gradientes más suaves</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="la-muerte-de-neuronas-relu">8.1 La muerte de neuronas ReLU</h3>
+<p>Cuando una neurona con ReLU recibe consistentemente entradas
+negativas (porque <span class="math inline">w \cdot x + b < 0</span>
+para todos los datos del batch), su salida es 0 y su gradiente es 0. No
+recibe señal de error y nunca se recupera. Esto se llama el problema de
+<strong>“dying ReLU”</strong>.</p>
+<p>Soluciones: Leaky ReLU, ELU, o inicialización cuidadosa de pesos.</p>
+<h3 id="la-no-monotonicidad-de-swish-gelu-y-mish">8.2 La
+“no-monotonicidad” de Swish, GELU y Mish</h3>
+<p>Estas tres funciones tienen un comportamiento peculiar: para <span class="math inline">x</span> ligeramente negativo, la salida es negativa
+y <em>menor</em> que la entrada. Esto crea un “valle” que actúa como
+regularización implícita — penaliza ligeramente las activaciones
+pequeñas pero negativas.</p>
+<p>El mínimo de Swish está en <span class="math inline">x \approx
+-1.28</span> con valor <span class="math inline">\approx
+-0.28</span>.</p>
+<h3 id="la-aproximacion-de-gelu">8.3 La aproximación de GELU</h3>
+<p>GELU se define como <span class="math inline">x \cdot \Phi(x)</span>
+donde <span class="math inline">\Phi</span> es la CDF de la distribución
+normal estándar. La implementación usa la aproximación:</p>
+<p><span class="math display">\text{GELU}(x) \approx 0.5x\left(1 +
+\tanh\left(\sqrt{\frac{2}{\pi}}(x +
+0.044715x^3)\right)\right)</span></p>
+<p>Esta aproximación es extremadamente precisa (error &lt; <span class="math inline">10^{-4}</span>) y más rápida que evaluar la función
+de error.</p>
+<h3 id="funciones-de-activacion-en-diferentes-arquitecturas">8.4
+Funciones de activación en diferentes arquitecturas</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 33%" />
+<col style="width: 48%" />
+<col style="width: 17%" />
+</colgroup>
+<thead>
+<tr>
+<th>Arquitectura</th>
+<th>Activación típica</th>
+<th>Razón</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CNN (ResNet, VGG)</td>
+<td>ReLU</td>
+<td>Simple, rápida, no satura</td>
+</tr>
+<tr>
+<td>Transformers (GPT, BERT)</td>
+<td>GELU</td>
+<td>Suave, mejor rendimiento empírico</td>
+</tr>
+<tr>
+<td>LSTM / GRU</td>
+<td>Sigmoid (gates) + Tanh (estado)</td>
+<td>Gates necesitan <span class="math inline">[0,1]</span>; estado
+centrado en cero</td>
+</tr>
+<tr>
+<td>GANs</td>
+<td>Leaky ReLU</td>
+<td>Evita neuronas muertas en el discriminador</td>
+</tr>
+<tr>
+<td>Detection (YOLO)</td>
+<td>Mish / SiLU</td>
+<td>Mejor gradiente en redes muy profundas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="softplus-como-precursor">8.5 Softplus como precursor</h3>
+<p><span class="math display">\text{Softplus}(x) = \ln(1 +
+e^x)</span></p>
+<p>Softplus es una versión suave de ReLU. Es la base de Mish (<span class="math inline">x \cdot \tanh(\text{softplus}(x))</span>). Aunque
+teóricamente elegante, en la práctica ReLU suele funcionar mejor por su
+simplicidad y derivada exacta.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-clasificando-saturacion">Ejercicio 1: Clasificando
+saturación</h3>
+<p>Con señal seno y amplitud 5.0, clasifica las 8 funciones en tres
+categorías: “satura completamente”, “satura parcialmente” y “no satura”.
+Verifica tu clasificación observando las derivadas.</p>
+<h3 id="ejercicio-2-reconstruccion-de-la-entrada">Ejercicio 2:
+Reconstrucción de la entrada</h3>
+<p>¿Desde qué función podrías reconstruir la señal de entrada original?
+Con amplitud normal, compara las salidas de ReLU y Leaky ReLU. ¿Cuál
+preserva más información? ¿Es posible reconstruir <span class="math inline">x</span> a partir de <span class="math inline">\text{ReLU}(x)</span>? ¿Y a partir de <span class="math inline">\text{LeakyReLU}(x)</span>?</p>
+<h3 id="ejercicio-3-sensibilidad-a-la-amplitud">Ejercicio 3:
+Sensibilidad a la amplitud</h3>
+<p>Varía la amplitud de 0.1 a 10 en incrementos de 0.5. Para cada valor,
+anota si Sigmoid está: (a) en régimen lineal, (b) parcialmente saturada,
+(c) totalmente saturada. ¿En qué rango de amplitud cambia el
+comportamiento?</p>
+<h3 id="ejercicio-4-gelu-manual">Ejercicio 4: GELU manual</h3>
+<p>La fórmula de GELU usa <span class="math inline">\Phi(x) \approx
+0.5(1 + \tanh(\sqrt{2/\pi}(x + 0.044715x^3)))</span>. Calcula <span class="math inline">\text{GELU}(-1)</span>, <span class="math inline">\text{GELU}(0)</span> y <span class="math inline">\text{GELU}(2)</span> a mano. Verifica tus
+resultados observando los valores en el tooltip.</p>
+<h3 id="ejercicio-5-escuchando-la-saturacion">Ejercicio 5: Escuchando la
+saturación</h3>
+<p>Activa el audio y usa señal seno con amplitud normal. Gradualmente
+sube la amplitud a 10. ¿En qué punto empiezas a notar la desafinación
+(detuning) en los osciladores? ¿Cuáles funciones se desafinan primero?
+¿Cuáles mantienen el tono?</p>
+<h3 id="ejercicio-6-derivada-maxima">Ejercicio 6: Derivada máxima</h3>
+<p>Para cada una de las 8 funciones, observa la derivada con señal seno
+y amplitud 2.0. ¿Cuál tiene la derivada máxima más alta? ¿Cuál tiene la
+derivada más estable (menos variación)? Ordena las 8 funciones de “mejor
+para gradientes” a “peor para gradientes”.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Función de activación</strong></td>
+<td>Función no lineal <span class="math inline">\sigma(z)</span>
+aplicada a la pre-activación de cada neurona</td>
+</tr>
+<tr>
+<td><strong>No-linealidad</strong></td>
+<td>Propiedad que permite a las redes neuronales representar funciones
+complejas</td>
+</tr>
+<tr>
+<td><strong>Saturación</strong></td>
+<td>Estado donde <span class="math inline">\|\sigma'(z)\| \approx
+0</span>; los gradientes no fluyen a través de la neurona</td>
+</tr>
+<tr>
+<td><strong>Zona muerta</strong></td>
+<td>Región de la entrada donde la salida y la derivada son cero (ej.
+<span class="math inline">x < 0</span> en ReLU)</td>
+</tr>
+<tr>
+<td><strong>Neurona muerta</strong></td>
+<td>Neurona que siempre produce 0 y no se recupera; problema de
+ReLU</td>
+</tr>
+<tr>
+<td><strong>Sigmoid</strong></td>
+<td><span class="math inline">\sigma(x) = 1/(1+e^{-x})</span>; acota a
+<span class="math inline">(0,1)</span>, satura</td>
+</tr>
+<tr>
+<td><strong>Tanh</strong></td>
+<td><span class="math inline">\tanh(x)</span>; centrada en cero, acota a
+<span class="math inline">(-1,1)</span>, satura</td>
+</tr>
+<tr>
+<td><strong>ReLU</strong></td>
+<td><span class="math inline">\max(0,x)</span>; simple, no satura para
+<span class="math inline">x > 0</span>, tiene zona muerta</td>
+</tr>
+<tr>
+<td><strong>Leaky ReLU</strong></td>
+<td><span class="math inline">\max(0.01x, x)</span>; ReLU con pendiente
+pequeña en <span class="math inline">x < 0</span></td>
+</tr>
+<tr>
+<td><strong>ELU</strong></td>
+<td>Exponential Linear Unit; suave en <span class="math inline">x =
+0</span>, media cercana a cero</td>
+</tr>
+<tr>
+<td><strong>Swish</strong></td>
+<td><span class="math inline">x \cdot \sigma(x)</span>; auto-gated, no
+monótona, suave</td>
+</tr>
+<tr>
+<td><strong>GELU</strong></td>
+<td><span class="math inline">x \cdot \Phi(x)</span>; estándar en
+Transformers, suave probabilística</td>
+</tr>
+<tr>
+<td><strong>Mish</strong></td>
+<td><span class="math inline">x \cdot \tanh(\text{softplus}(x))</span>;
+auto-regularizante, no monótona</td>
+</tr>
+<tr>
+<td><strong>Derivada de activación</strong> (<span class="math inline">\sigma'</span>)</td>
+<td>Factor por el que se multiplica el gradiente al atravesar la
+neurona</td>
+</tr>
+<tr>
+<td><strong>Detuning</strong></td>
+<td>Desafinación del oscilador proporcional a la saturación</td>
+</tr>
+<tr>
+<td><strong>Softplus</strong></td>
+<td><span class="math inline">\ln(1 + e^x)</span>; versión suave de
+ReLU, base de Mish</td>
+</tr>
+<tr>
+<td><strong>Auto-gating</strong></td>
+<td>Propiedad de Swish/GELU donde la función controla su propia
+magnitud</td>
+</tr>
+<tr>
+<td><strong>CDF gaussiana</strong> (<span class="math inline">\Phi</span>)</td>
+<td>Función de distribución acumulada de la normal estándar; base de
+GELU</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li><p><strong>Nair, V. &amp; Hinton, G. E.</strong> (2010). “Rectified
+Linear Units Improve Restricted Boltzmann Machines.” <em>Proceedings of
+ICML 2010</em>.</p></li>
+<li><p><strong>Clevert, D.-A., Unterthiner, T. &amp; Hochreiter,
+S.</strong> (2016). “Fast and Accurate Deep Network Learning by
+Exponential Linear Units (ELUs).” <em>Proceedings of ICLR 2016</em>.
+arXiv:1511.07289.</p></li>
+<li><p><strong>Ramachandran, P., Zoph, B. &amp; Le, Q. V.</strong>
+(2018). “Searching for Activation Functions.” <em>ICLR 2018
+Workshop</em>. arXiv:1710.05941.</p></li>
+<li><p><strong>Hendrycks, D. &amp; Gimpel, K.</strong> (2016). “Gaussian
+Error Linear Units (GELUs).” arXiv:1606.08415.</p></li>
+<li><p><strong>Misra, D.</strong> (2019). “Mish: A Self Regularized
+Non-Monotonic Activation Function.” arXiv:1908.08681.</p></li>
+<li><p><strong>Glorot, X., Bordes, A. &amp; Bengio, Y.</strong> (2011).
+“Deep Sparse Rectifier Neural Networks.” <em>Proceedings of AISTATS
+2011</em>.</p></li>
+<li><p><strong>Goodfellow, I., Bengio, Y. &amp; Courville, A.</strong>
+(2016). <em>Deep Learning</em>, Section 6.3: Hidden Units. MIT
+Press.</p></li>
+<li><p><strong>Maas, A. L., Hannun, A. Y. &amp; Ng, A. Y.</strong>
+(2013). “Rectifier Nonlinearities Improve Neural Network Acoustic
+Models.” <em>ICML Workshop on Deep Learning for Audio</em>.</p></li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Autoencoder
+Cathedral — Compresión y Reconstrucción de Dígitos</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
+    --primary-light: #fcd34d;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #f59e0b;
+    --accent-light: #fcd34d;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #451a03 0%, #0f0a0a 60%, #1a0f05 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fcd34d; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fffbeb;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #92400e;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fffbeb;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fffbeb; }
+tr:hover { background: #fcd34d22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de un autoencoder que aprende a comprimir
+dígitos escritos a mano en un espacio latente de pocas dimensiones y
+reconstruirlo...</p>
+        <div class="badge">Arquitecturas Clasicas</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#la-arquitectura-encoder-decoder">2.1 La arquitectura
+encoder-decoder</a></li>
+  <li class="sub-item"><a href="#la-funcion-de-perdida">2.2 La función de pérdida</a></li>
+  <li class="sub-item"><a href="#el-espacio-latente">2.3 El espacio latente</a></li>
+  <li class="sub-item"><a href="#ratio-de-compresion">2.4 Ratio de compresión</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#visualizacion-de-la-red">3.2 Visualización de la red</a></li>
+  <li class="sub-item"><a href="#espacio-latente-2d">3.3 Espacio latente 2D</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#arquitectura">4.1 Arquitectura</a></li>
+  <li class="sub-item"><a href="#entrenamiento">4.2 Entrenamiento</a></li>
+  <li class="sub-item"><a href="#input-digitos">4.3 Input: dígitos</a></li>
+  <li class="sub-item"><a href="#espacio-latente">4.4 Espacio latente</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#forward-pass-del-encoder">5.1 Forward pass del encoder</a></li>
+  <li class="sub-item"><a href="#forward-pass-del-decoder">5.2 Forward pass del decoder</a></li>
+  <li class="sub-item"><a href="#entrenamiento-1">5.3 Entrenamiento</a></li>
+  <li class="sub-item"><a href="#interpolacion-lineal">5.4 Interpolación lineal</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#sonido-del-entrenamiento">6.1 Sonido del entrenamiento</a></li>
+  <li class="sub-item"><a href="#sonido-del-espacio-latente">6.2 Sonido del espacio latente</a></li>
+  <li class="sub-item"><a href="#error-de-reconstruccion">6.3 Error de reconstrucción</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#autoencoder-variacional-vae">8.1 Autoencoder variacional
+(VAE)</a></li>
+  <li class="sub-item"><a href="#autoencoders-para-reduccion-de-dimensionalidad">8.2 Autoencoders
+para reducción ...</a></li>
+  <li class="sub-item"><a href="#denoising-autoencoders">8.3 Denoising autoencoders</a></li>
+  <li class="sub-item"><a href="#autoencoders-en-la-practica">8.4 Autoencoders en la
+práctica</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Un <strong>autoencoder</strong> es una red neuronal que aprende a
+comprimir datos. Tiene forma de reloj de arena: un
+<strong>encoder</strong> reduce la dimensionalidad de la entrada, un
+<strong>cuello de botella</strong> (bottleneck) fuerza una
+representación comprimida, y un <strong>decoder</strong> intenta
+reconstruir la entrada original a partir de esa representación.</p>
+<p>Esta simulación trabaja con dígitos escritos a mano de <span class="math inline">8 \times 8</span> píxeles (64 dimensiones). La red
+los comprime a un <strong>espacio latente</strong> de tan solo 2
+dimensiones — una compresión de 32:1 — y luego intenta reconstruirlos.
+Puedes ver la reconstrucción en tiempo real, explorar el espacio latente
+2D donde cada dígito se convierte en un punto, interpolar entre dígitos,
+y generar dígitos “imaginarios” que la red nunca ha visto.</p>
+<p>La metáfora de la “catedral” evoca las bóvedas que comprimen fuerzas
+en estructuras esbeltas: información amplia que se canaliza a través de
+un punto estrecho.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="la-arquitectura-encoder-decoder">2.1 La arquitectura
+encoder-decoder</h3>
+<p>El autoencoder consiste en dos redes simétricas:</p>
+<p><strong>Encoder</strong>: <span class="math inline">64 \to 32 \to
+n_\text{bottleneck}</span></p>
+<p><span class="math display">\mathbf{z} =
+f_\text{enc}(\mathbf{x})</span></p>
+<p><strong>Decoder</strong>: <span class="math inline">n_\text{bottleneck} \to 32 \to 64</span></p>
+<p><span class="math display">\hat{\mathbf{x}} =
+f_\text{dec}(\mathbf{z})</span></p>
+<h3 id="la-funcion-de-perdida">2.2 La función de pérdida</h3>
+<p>El objetivo es minimizar la <strong>error de
+reconstrucción</strong>:</p>
+<p><span class="math display">L = \|\mathbf{x} - \hat{\mathbf{x}}\|^2 =
+\sum_{i=1}^{64}(x_i - \hat{x}_i)^2</span></p>
+<p>La red aprende a preservar la información más importante en el
+bottleneck, descartando el ruido y los detalles irrelevantes.</p>
+<h3 id="el-espacio-latente">2.3 El espacio latente</h3>
+<p>El <strong>espacio latente</strong> es el espacio de baja
+dimensionalidad donde vive la representación comprimida <span class="math inline">\mathbf{z}</span>. Cuando el bottleneck tiene 2
+dimensiones, cada dígito se convierte en un punto <span class="math inline">(z_1, z_2)</span> que podemos visualizar en un
+plano.</p>
+<p>Los dígitos similares tienden a agruparse en regiones cercanas del
+espacio latente. La interpolación entre dos puntos produce transiciones
+suaves entre dígitos.</p>
+<h3 id="ratio-de-compresion">2.4 Ratio de compresión</h3>
+<p><span class="math display">\text{ratio} = \frac{\text{dim
+entrada}}{\text{dim bottleneck}} =
+\frac{64}{n_\text{bottleneck}}</span></p>
+<p>Con bottleneck = 2: ratio 32:1. Con bottleneck = 16: ratio 4:1.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Diagrama de red con flujo de datos, entrada/salida visualizadas</td>
+</tr>
+<tr>
+<td><strong>Espacio latente 2D</strong></td>
+<td>Overlay en canvas</td>
+<td>Mapa de los dígitos en el plano latente (si bottleneck = 2)</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Arquitectura, entrenamiento, dibujo, interpolación, métricas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="visualizacion-de-la-red">3.2 Visualización de la red</h3>
+<p>El canvas muestra:</p>
+<ul>
+<li><strong>Entrada</strong>: cuadrícula <span class="math inline">8
+\times 8</span> del dígito original</li>
+<li><strong>Encoder</strong>: capas que reducen dimensionalidad (64 → 32
+→ bottleneck)</li>
+<li><strong>Bottleneck</strong>: representación comprimida como vector
+de <span class="math inline">n</span> números</li>
+<li><strong>Decoder</strong>: capas que expanden (bottleneck → 32 →
+64)</li>
+<li><strong>Salida</strong>: cuadrícula <span class="math inline">8
+\times 8</span> de la reconstrucción <span class="math inline">\hat{x}</span></li>
+</ul>
+<h3 id="espacio-latente-2d">3.3 Espacio latente 2D</h3>
+<p>Cuando el bottleneck es 2D, se muestra un mapa donde: - Cada punto
+coloreado representa un dígito del dataset - Los colores corresponden a
+la clase (0-9) - Clusters bien definidos indican buena separación - Se
+puede hacer click para “navegar” el espacio y generar dígitos</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="arquitectura">4.1 Arquitectura</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bottleneck</td>
+<td>2 – 16 dims</td>
+<td>2</td>
+<td>Dimensionalidad del espacio latente</td>
+</tr>
+<tr>
+<td>Learning rate</td>
+<td><span class="math inline">10^{-4}</span> – <span class="math inline">10^{-1}</span></td>
+<td>0.01</td>
+<td>Escala logarítmica</td>
+</tr>
+</tbody>
+</table>
+<p>La arquitectura completa se muestra como: <span class="math inline">64 \to 32 \to n \to 32 \to 64</span>.</p>
+<h3 id="entrenamiento">4.2 Entrenamiento</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entrenar</strong></td>
+<td>Inicia/detiene el entrenamiento continuo</td>
+</tr>
+<tr>
+<td><strong>+50 Epochs</strong></td>
+<td>Ejecuta 50 epochs rápidamente</td>
+</tr>
+<tr>
+<td><strong>Reset</strong></td>
+<td>Reinicializa todos los pesos</td>
+</tr>
+</tbody>
+</table>
+<h3 id="input-digitos">4.3 Input: dígitos</h3>
+<p><strong>Botones 0-9</strong>: carga un dígito pre-definido del
+dataset (estilo sklearn digits, <span class="math inline">8 \times
+8</span>, valores 0-16).</p>
+<p><strong>Cuadrícula de dibujo</strong>: permite dibujar un dígito
+manualmente: - <strong>Click</strong>: pintar píxel - <strong>Shift +
+click</strong>: borrar píxel</p>
+<h3 id="espacio-latente">4.4 Espacio latente</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 59%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Interpolación</strong></td>
+<td>Slider 0.0 – 1.0: mezcla entre punto A y punto B</td>
+</tr>
+<tr>
+<td><strong>Set A / Set B</strong></td>
+<td>Fija el dígito actual como extremo de interpolación</td>
+</tr>
+<tr>
+<td><strong>Fantasía</strong></td>
+<td>Genera un dígito aleatorio desde el espacio latente</td>
+</tr>
+<tr>
+<td><strong>Mostrar espacio latente 2D</strong></td>
+<td>Toggle para la visualización del mapa latente</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metricas">4.5 Métricas</h3>
+<ul>
+<li><strong>Epoch</strong>: número de pasadas por el dataset</li>
+<li><strong>Loss (MSE)</strong>: error cuadrático medio de
+reconstrucción</li>
+<li><strong>Bottleneck dim</strong>: dimensionalidad actual</li>
+<li><strong>Parámetros</strong>: número total de pesos en la red</li>
+<li><strong>Ratio compresión</strong>: dim entrada / dim bottleneck</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="forward-pass-del-encoder">5.1 Forward pass del encoder</h3>
+<p>Para una entrada <span class="math inline">\mathbf{x} \in
+\mathbb{R}^{64}</span>:</p>
+<p><span class="math display">\mathbf{h}_1 = \sigma(W_1 \mathbf{x} +
+\mathbf{b}_1) \in \mathbb{R}^{32}</span> <span class="math display">\mathbf{z} = \sigma(W_2 \mathbf{h}_1 +
+\mathbf{b}_2) \in \mathbb{R}^{n}</span></p>
+<h3 id="forward-pass-del-decoder">5.2 Forward pass del decoder</h3>
+<p><span class="math display">\mathbf{h}_3 = \sigma(W_3 \mathbf{z} +
+\mathbf{b}_3) \in \mathbb{R}^{32}</span> <span class="math display">\hat{\mathbf{x}} = \sigma(W_4 \mathbf{h}_3 +
+\mathbf{b}_4) \in \mathbb{R}^{64}</span></p>
+<h3 id="entrenamiento-1">5.3 Entrenamiento</h3>
+<p>La función de pérdida MSE se minimiza por backpropagation:</p>
+<p><span class="math display">L =
+\frac{1}{N}\sum_{n=1}^{N}\|\mathbf{x}^{(n)} -
+\hat{\mathbf{x}}^{(n)}\|^2</span></p>
+<p>Los gradientes fluyen desde la salida, a través del decoder, por el
+bottleneck, y hasta el encoder.</p>
+<h3 id="interpolacion-lineal">5.4 Interpolación lineal</h3>
+<p>Dados dos dígitos con representaciones latentes <span class="math inline">\mathbf{z}_A</span> y <span class="math inline">\mathbf{z}_B</span>, la interpolación es:</p>
+<p><span class="math display">\mathbf{z}_t = (1 - t)\mathbf{z}_A +
+t\mathbf{z}_B, \quad t \in [0, 1]</span></p>
+<p>El dígito reconstruido <span class="math inline">\hat{\mathbf{x}}_t =
+f_\text{dec}(\mathbf{z}_t)</span> muestra una transición suave entre A y
+B.</p>
+<h3 id="generacion-fantasia">5.5 Generación (fantasía)</h3>
+<p>Un punto aleatorio <span class="math inline">\mathbf{z}_\text{random}</span> en el espacio
+latente se decodifica:</p>
+<p><span class="math display">\hat{\mathbf{x}} =
+f_\text{dec}(\mathbf{z}_\text{random})</span></p>
+<p>Si <span class="math inline">\mathbf{z}_\text{random}</span> cae en
+una región donde el autoencoder ha visto datos de entrenamiento, la
+reconstrucción será un dígito reconocible. Si cae fuera, será ruido o un
+“artefacto”.</p>
+<h3 id="relacion-con-pca">5.6 Relación con PCA</h3>
+<p>Un autoencoder lineal (sin funciones de activación) con bottleneck de
+dimensión <span class="math inline">k</span> aprende exactamente las
+<strong><span class="math inline">k</span> componentes
+principales</strong> del dataset. El autoencoder no lineal es una
+generalización de PCA que puede capturar estructuras más complejas.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="sonido-del-entrenamiento">6.1 Sonido del entrenamiento</h3>
+<ul>
+<li><strong>Cada epoch</strong>: nota cuya frecuencia es inversamente
+proporcional al loss. Loss alto = grave; loss bajo = agudo.</li>
+<li><strong>Convergencia</strong>: acorde consonante cuando el loss cae
+por debajo de un umbral.</li>
+</ul>
+<h3 id="sonido-del-espacio-latente">6.2 Sonido del espacio latente</h3>
+<ul>
+<li><strong>Interpolación</strong>: las coordenadas <span class="math inline">z_1</span> y <span class="math inline">z_2</span>
+modulan la frecuencia y el volumen de dos osciladores, creando un sonido
+que cambia mientras deslizas.</li>
+<li><strong>Fantasía</strong>: acorde breve aleatorio al generar un
+nuevo punto.</li>
+</ul>
+<h3 id="error-de-reconstruccion">6.3 Error de reconstrucción</h3>
+<p>El sonido refleja la calidad de la reconstrucción: cuando el MSE es
+bajo, el sonido es limpio y consonante; cuando es alto, es
+disonante.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="experimento-1-entrenamiento-basico">Experimento 1: Entrenamiento
+básico</h3>
+<ol type="1">
+<li>Mantén la configuración por defecto (bottleneck = 2)</li>
+<li>Click en <strong>Entrenar</strong> y observa el loss descender en la
+gráfica</li>
+<li>Selecciona diferentes dígitos (0-9) y observa la reconstrucción
+mejorar</li>
+<li>Tras ~100 epochs, los dígitos deberían ser reconocibles en la
+salida</li>
+<li>Compara la entrada original con la reconstrucción: ¿qué detalles se
+pierden?</li>
+</ol>
+<h3 id="experimento-2-explorar-el-espacio-latente">Experimento 2:
+Explorar el espacio latente</h3>
+<ol type="1">
+<li>Tras entrenar ~200 epochs con bottleneck = 2</li>
+<li>Activa “Mostrar espacio latente 2D”</li>
+<li>Observa cómo los dígitos se agrupan en clusters por clase</li>
+<li>Carga el dígito “3” y luego el “8” — nota que están cerca (ambos son
+redondeados)</li>
+<li>“1” y “7” también deberían estar cerca (ambos son angulares)</li>
+</ol>
+<h3 id="experimento-3-interpolacion-entre-digitos">Experimento 3:
+Interpolación entre dígitos</h3>
+<ol type="1">
+<li>Carga el dígito “0”, click en <strong>Set A</strong></li>
+<li>Carga el dígito “8”, click en <strong>Set B</strong></li>
+<li>Desliza <strong>Interpolación</strong> de 0.0 a 1.0</li>
+<li>Observa la transición gradual: el “0” se transforma suavemente en
+“8”</li>
+<li>Prueba interpolaciones más extremas: “1” ↔︎ “0”, “3” ↔︎ “5”</li>
+</ol>
+<h3 id="experimento-4-fantasias-del-decoder">Experimento 4: Fantasías
+del decoder</h3>
+<ol type="1">
+<li>Con la red entrenada, click en <strong>Fantasía</strong> varias
+veces</li>
+<li>Observa los dígitos generados: algunos serán reconocibles, otros
+serán híbridos</li>
+<li>Los mejores resultados ocurren cuando el punto aleatorio cae dentro
+de un cluster</li>
+</ol>
+<h3 id="experimento-5-efecto-del-bottleneck">Experimento 5: Efecto del
+bottleneck</h3>
+<ol type="1">
+<li>Entrena con bottleneck = 2 durante 200 epochs. Anota el loss
+final</li>
+<li>Reset, cambia bottleneck = 8 y entrena 200 epochs. Compara el
+loss</li>
+<li>Reset, bottleneck = 16 y 200 epochs</li>
+<li>¿Cómo mejora la reconstrucción con más dimensiones?</li>
+<li>¿A partir de qué dimensión la mejora es marginal?</li>
+</ol>
+<h3 id="experimento-6-dibujar-tu-propio-digito">Experimento 6: Dibujar
+tu propio dígito</h3>
+<ol type="1">
+<li>Usa la cuadrícula de dibujo para crear un dígito a mano</li>
+<li>Observa la reconstrucción: ¿la red reconoce tu estilo?</li>
+<li>Dibuja un dígito “ambiguo” (entre 3 y 8, por ejemplo)</li>
+<li>Observa dónde cae en el espacio latente: ¿entre los clusters de 3 y
+8?</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="autoencoder-variacional-vae">8.1 Autoencoder variacional
+(VAE)</h3>
+<p>El VAE añade una restricción: el espacio latente debe seguir una
+distribución gaussiana <span class="math inline">\mathcal{N}(0,
+I)</span>. En lugar de un punto <span class="math inline">\mathbf{z}</span>, el encoder produce <span class="math inline">\boldsymbol{\mu}</span> y <span class="math inline">\boldsymbol{\sigma}^2</span>:</p>
+<p><span class="math display">L_\text{VAE} = \|\mathbf{x} -
+\hat{\mathbf{x}}\|^2 + \text{KL}(q(\mathbf{z}|\mathbf{x}) \|
+p(\mathbf{z}))</span></p>
+<p>Esto produce un espacio latente continuo y suave, ideal para
+generación.</p>
+<h3 id="autoencoders-para-reduccion-de-dimensionalidad">8.2 Autoencoders
+para reducción de dimensionalidad</h3>
+<p>Los autoencoders son una alternativa no lineal a PCA y t-SNE. Son
+especialmente útiles cuando la estructura de los datos es
+intrínsecamente no lineal (como dígitos manuscritos que viven en una
+variedad de baja dimensión).</p>
+<h3 id="denoising-autoencoders">8.3 Denoising autoencoders</h3>
+<p>Un <strong>denoising autoencoder</strong> recibe una entrada corrupta
+(con ruido añadido) y debe reconstruir la entrada limpia original. Esto
+fuerza a la red a aprender representaciones más robustas y menos
+propensas al overfitting.</p>
+<h3 id="autoencoders-en-la-practica">8.4 Autoencoders en la
+práctica</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 36%" />
+<col style="width: 63%" />
+</colgroup>
+<thead>
+<tr>
+<th>Aplicación</th>
+<th>Tipo de autoencoder</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Compresión de imágenes</td>
+<td>Convolucional profundo</td>
+</tr>
+<tr>
+<td>Detección de anomalías</td>
+<td>Reconstrucción con alto MSE = anomalía</td>
+</tr>
+<tr>
+<td>Generación de imágenes</td>
+<td>VAE, VQ-VAE</td>
+</tr>
+<tr>
+<td>Aprendizaje de representaciones</td>
+<td>Pre-entrenamiento para downstream tasks</td>
+</tr>
+<tr>
+<td>Eliminación de ruido</td>
+<td>Denoising autoencoder</td>
+</tr>
+</tbody>
+</table>
+<h3 id="el-manifold-hypothesis">8.5 El manifold hypothesis</h3>
+<p>Los datos reales de alta dimensión (imágenes, texto) tienden a vivir
+cerca de <strong>variedades</strong> (manifolds) de baja dimensión. Los
+dígitos <span class="math inline">8 \times 8</span> tienen 64
+dimensiones pero su variedad intrínseca es mucho menor. El autoencoder
+aprende una parametrización de esta variedad.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-compresion-minima">Ejercicio 1: Compresión
+mínima</h3>
+<p>¿Cuál es el bottleneck mínimo que permite reconstruir los 10 dígitos
+de forma reconocible? Prueba bottleneck = 2, 3, 4, 8 y anota el loss
+final tras 300 epochs en cada caso. ¿Hay un “codo” claro en la curva
+loss vs. dimensiones?</p>
+<h3 id="ejercicio-2-mapa-del-espacio-latente">Ejercicio 2: Mapa del
+espacio latente</h3>
+<p>Con bottleneck = 2 y red entrenada, carga cada dígito (0-9) y anota
+sus coordenadas <span class="math inline">(z_1, z_2)</span> del espacio
+latente. Dibuja un mapa en papel. ¿Qué dígitos son vecinos? ¿La
+organización tiene sentido visual (dígitos similares juntos)?</p>
+<h3 id="ejercicio-3-interpolacion-imposible">Ejercicio 3: Interpolación
+imposible</h3>
+<p>Interpola entre el dígito “1” y el “0”. ¿Hay un punto intermedio que
+parezca un “7”? ¿O la transición pasa por formas que no son dígitos
+reconocibles? ¿Qué dice esto sobre la geometría del espacio latente?</p>
+<h3 id="ejercicio-4-robustez-ante-ruido">Ejercicio 4: Robustez ante
+ruido</h3>
+<p>Dibuja un dígito limpio (ej. “5”) y observa la reconstrucción. Luego
+añade píxeles aleatorios de ruido. ¿La reconstrucción sigue siendo un
+“5” limpio? Si sí, el autoencoder ha aprendido a filtrar ruido.</p>
+<h3 id="ejercicio-5-fantasias-con-sentido">Ejercicio 5: Fantasías con
+sentido</h3>
+<p>Con la red entrenada, genera 20 fantasías. ¿Cuántas son dígitos
+reconocibles? ¿Cuántas son híbridos o ruido? ¿Aumenta la proporción de
+dígitos reconocibles con más epochs de entrenamiento?</p>
+<h3 id="ejercicio-6-contando-parametros">Ejercicio 6: Contando
+parámetros</h3>
+<p>Para la arquitectura 64→32→2→32→64, calcula el número total de
+parámetros (pesos + biases). Verifica con el valor mostrado en métricas.
+¿Cuántos parámetros tiene la versión con bottleneck = 16?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Autoencoder</strong></td>
+<td>Red neuronal que aprende a comprimir y reconstruir datos, con forma
+de reloj de arena</td>
+</tr>
+<tr>
+<td><strong>Encoder</strong></td>
+<td>Parte de la red que comprime la entrada al espacio latente</td>
+</tr>
+<tr>
+<td><strong>Decoder</strong></td>
+<td>Parte de la red que reconstruye la entrada desde el espacio
+latente</td>
+</tr>
+<tr>
+<td><strong>Bottleneck</strong></td>
+<td>Capa intermedia de dimensionalidad reducida que fuerza la
+compresión</td>
+</tr>
+<tr>
+<td><strong>Espacio latente</strong></td>
+<td>Espacio de baja dimensión donde viven las representaciones
+comprimidas</td>
+</tr>
+<tr>
+<td><strong>Código latente</strong> (<span class="math inline">\mathbf{z}</span>)</td>
+<td>Vector comprimido de un dato en el espacio latente</td>
+</tr>
+<tr>
+<td><strong>Error de reconstrucción</strong></td>
+<td><span class="math inline">\|\mathbf{x} -
+\hat{\mathbf{x}}\|^2</span>; mide la calidad de la reconstrucción</td>
+</tr>
+<tr>
+<td><strong>Interpolación</strong></td>
+<td>Mezcla lineal entre dos códigos latentes: <span class="math inline">\mathbf{z}_t = (1-t)\mathbf{z}_A +
+t\mathbf{z}_B</span></td>
+</tr>
+<tr>
+<td><strong>Fantasía</strong></td>
+<td>Dígito generado decodificando un punto aleatorio del espacio
+latente</td>
+</tr>
+<tr>
+<td><strong>Ratio de compresión</strong></td>
+<td><span class="math inline">\text{dim entrada} / \text{dim
+bottleneck}</span></td>
+</tr>
+<tr>
+<td><strong>VAE</strong></td>
+<td>Variational Autoencoder; impone distribución gaussiana en el espacio
+latente</td>
+</tr>
+<tr>
+<td><strong>Manifold</strong></td>
+<td>Variedad de baja dimensión donde viven los datos reales</td>
+</tr>
+<tr>
+<td><strong>Denoising autoencoder</strong></td>
+<td>Variante que recibe entrada con ruido y debe reconstruir la
+limpia</td>
+</tr>
+<tr>
+<td><strong>PCA</strong></td>
+<td>Principal Component Analysis; caso lineal especial del
+autoencoder</td>
+</tr>
+<tr>
+<td><strong>Cluster</strong></td>
+<td>Grupo de puntos cercanos en el espacio latente que corresponden a la
+misma clase</td>
+</tr>
+<tr>
+<td><strong>Reconstrucción</strong> (<span class="math inline">\hat{\mathbf{x}}</span>)</td>
+<td>Salida del decoder; intento de replicar la entrada original</td>
+</tr>
+<tr>
+<td><strong>Representación</strong></td>
+<td>Transformación aprendida de los datos que captura sus
+características esenciales</td>
+</tr>
+<tr>
+<td><strong>Compresión con pérdida</strong></td>
+<td>Reducción de dimensionalidad donde parte de la información se
+descarta</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li><p><strong>Rumelhart, D. E., Hinton, G. E. &amp; Williams, R.
+J.</strong> (1986). “Learning Internal Representations by Error
+Propagation.” <em>Parallel Distributed Processing</em>, Vol. 1, MIT
+Press.</p></li>
+<li><p><strong>Hinton, G. E. &amp; Salakhutdinov, R. R.</strong> (2006).
+“Reducing the Dimensionality of Data with Neural Networks.”
+<em>Science</em>, 313(5786), 504–507.</p></li>
+<li><p><strong>Kingma, D. P. &amp; Welling, M.</strong> (2014).
+“Auto-Encoding Variational Bayes.” <em>Proceedings of ICLR 2014</em>.
+arXiv:1312.6114.</p></li>
+<li><p><strong>Vincent, P., Larochelle, H., Bengio, Y. &amp; Manzagol,
+P.-A.</strong> (2008). “Extracting and Composing Robust Features with
+Denoising Autoencoders.” <em>Proceedings of ICML 2008</em>.</p></li>
+<li><p><strong>Bengio, Y., Courville, A. &amp; Vincent, P.</strong>
+(2013). “Representation Learning: A Review and New Perspectives.”
+<em>IEEE Transactions on PAMI</em>, 35(8), 1798–1828.</p></li>
+<li><p><strong>Goodfellow, I., Bengio, Y. &amp; Courville, A.</strong>
+(2016). <em>Deep Learning</em>, Chapter 14: Autoencoders. MIT
+Press.</p></li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

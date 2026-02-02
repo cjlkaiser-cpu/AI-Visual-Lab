@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Self-Attention
+Mechanism — El Mecanismo que Revolucionó la IA</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #8b5cf6;
+    --primary-dark: #7c3aed;
+    --primary-light: #c4b5fd;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #8b5cf6;
+    --accent-light: #c4b5fd;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #2e1065 0%, #0a0a1a 60%, #0f051a 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #c4b5fd; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #ede9fe;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #5b21b6;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #f5f3ff;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #f5f3ff; }
+tr:hover { background: #c4b5fd22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del mecanismo de self-attention paso a paso.
+Observa cómo cada token de una secuencia genera sus vectores Query, Key
+y Value...</p>
+        <div class="badge">Transformers y LLMs</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#de-secuencias-a-matrices">2.1 De secuencias a matrices</a></li>
+  <li class="sub-item"><a href="#las-tres-proyecciones-q-k-v">2.2 Las tres proyecciones: Q, K,
+V</a></li>
+  <li class="sub-item"><a href="#la-intuicion">2.3 La intuición</a></li>
+  <li class="sub-item"><a href="#la-formula-completa">2.4 La fórmula completa</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#canvas-principal">3.1 Canvas principal</a></li>
+  <li class="sub-item"><a href="#panel-lateral">3.2 Panel lateral</a></li>
+  <li class="sub-item"><a href="#barra-de-estado">3.3 Barra de estado</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#secuencia-de-entrada">4.1 Secuencia de entrada</a></li>
+  <li class="sub-item"><a href="#navegacion-por-pasos">4.2 Navegación por pasos</a></li>
+  <li class="sub-item"><a href="#configuracion">4.3 Configuración</a></li>
+  <li class="sub-item"><a href="#audio">4.4 Audio</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#producto-punto-escalado">5.1 Producto punto escalado</a></li>
+  <li class="sub-item"><a href="#por-que-sqrtd_k">5.2 ¿Por qué \sqrt{d_k}?</a></li>
+  <li class="sub-item"><a href="#softmax-con-temperatura">5.3 Softmax con temperatura</a></li>
+  <li class="sub-item"><a href="#mascara-causal">5.4 Máscara causal</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#diseno-de-audio">6.1 Diseño de audio</a></li>
+  <li class="sub-item"><a href="#mapeo">6.2 Mapeo</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#multi-head-attention">8.1 Multi-Head Attention</a></li>
+  <li class="sub-item"><a href="#complejidad-computacional">8.2 Complejidad computacional</a></li>
+  <li class="sub-item"><a href="#cross-attention">8.3 Cross-Attention</a></li>
+  <li class="sub-item"><a href="#encodings-posicionales">8.4 Encodings posicionales</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>En 2017, el paper <em>“Attention Is All You Need”</em> de Vaswani et
+al. introdujo el <strong>Transformer</strong>, una arquitectura que
+reemplazó las redes recurrentes con un mecanismo aparentemente simple:
+cada token en una secuencia puede “mirar” directamente a todos los demás
+tokens y decidir cuánta atención prestarle a cada uno.</p>
+<p>Este mecanismo — el <strong>self-attention</strong> — es la piedra
+angular de GPT, BERT, y prácticamente todos los modelos de lenguaje
+modernos. Su poder radica en que captura dependencias de largo alcance
+sin las limitaciones secuenciales de las RNNs.</p>
+<p>Esta simulación descompone el self-attention en <strong>7
+pasos</strong> visuales, desde los embeddings de entrada hasta la salida
+ponderada, mostrando exactamente cómo cada token decide a quién
+atender.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="de-secuencias-a-matrices">2.1 De secuencias a matrices</h3>
+<p>Cada token (palabra) se representa como un <strong>vector de
+embedding</strong> <span class="math inline">x_i \in
+\mathbb{R}^{d}</span>. Para una secuencia de <span class="math inline">n</span> tokens, apilamos los vectores en una
+matriz:</p>
+<p><span class="math display">X = [x_1, x_2, \ldots, x_n]^T \in
+\mathbb{R}^{n \times d}</span></p>
+<h3 id="las-tres-proyecciones-q-k-v">2.2 Las tres proyecciones: Q, K,
+V</h3>
+<p>El self-attention proyecta cada embedding en tres espacios diferentes
+mediante matrices de pesos aprendidas:</p>
+<p><strong>Query</strong> (pregunta) — lo que el token busca:</p>
+<p><span class="math display">Q = X W_Q, \quad W_Q \in \mathbb{R}^{d
+\times d_k}</span></p>
+<p><strong>Key</strong> (clave) — lo que el token ofrece como
+identificador:</p>
+<p><span class="math display">K = X W_K, \quad W_K \in \mathbb{R}^{d
+\times d_k}</span></p>
+<p><strong>Value</strong> (valor) — la información que el token
+aporta:</p>
+<p><span class="math display">V = X W_V, \quad W_V \in \mathbb{R}^{d
+\times d_v}</span></p>
+<h3 id="la-intuicion">2.3 La intuición</h3>
+<p>Piensa en una biblioteca: el <strong>Query</strong> es tu pregunta,
+los <strong>Keys</strong> son las etiquetas de los libros, y los
+<strong>Values</strong> son los contenidos. Buscas los libros cuyas
+etiquetas más coincidan con tu pregunta, y lees proporcionalmente más de
+esos libros.</p>
+<h3 id="la-formula-completa">2.4 La fórmula completa</h3>
+<p><span class="math display">\text{Attention}(Q, K, V) =
+\text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right) V</span></p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="canvas-principal">3.1 Canvas principal</h3>
+<p>El canvas muestra los <strong>7 pasos del self-attention</strong> de
+forma secuencial:</p>
+<ol type="1">
+<li><strong>Input Embeddings</strong> — vectores de entrada como barras
+coloreadas</li>
+<li><strong>Proyección Q</strong> — transformación a queries</li>
+<li><strong>Proyección K</strong> — transformación a keys</li>
+<li><strong><span class="math inline">QK^T</span></strong> — matriz de
+compatibilidad</li>
+<li><strong><span class="math inline">/\sqrt{d_k}</span></strong> —
+escalado</li>
+<li><strong>Softmax</strong> — normalización a probabilidades</li>
+<li><strong><span class="math inline">\times V</span></strong> — output
+ponderado</li>
+</ol>
+<p>Cada paso se ilumina al activarse. Los tokens aparecen como columnas,
+y las conexiones de atención se muestran como líneas cuyo grosor refleja
+el peso.</p>
+<h3 id="panel-lateral">3.2 Panel lateral</h3>
+<ul>
+<li><strong>Ecuación</strong> destacada: <span class="math inline">\text{Attention}(Q,K,V) = \text{softmax}(QK^T /
+\sqrt{d_k})V</span></li>
+<li><strong>Indicador de paso</strong>: 7 puntos navegables
+(inactivo/activo/completado)</li>
+<li><strong>Métricas</strong>: dimensión <span class="math inline">d_k</span>, entropía de atención, máximo peso, token
+query actual</li>
+<li><strong>Controles</strong>: siguiente paso, animar, reset, selector
+de oración</li>
+</ul>
+<h3 id="barra-de-estado">3.3 Barra de estado</h3>
+<p>Muestra el paso actual (e.g., “Paso: 3/7”) y el token query
+seleccionado.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="secuencia-de-entrada">4.1 Secuencia de entrada</h3>
+<p>Selector con tres oraciones predefinidas: - <em>“el gato se sienta en
+la mesa”</em> — 7 tokens, relaciones sintácticas claras - <em>“la red
+neuronal aprende rapido”</em> — 5 tokens, vocabulario técnico -
+<em>“atencion es todo lo que necesitas”</em> — 7 tokens, referencia al
+paper original</p>
+<h3 id="navegacion-por-pasos">4.2 Navegación por pasos</h3>
+<ul>
+<li><strong>Siguiente Paso</strong> — avanza al siguiente de los 7
+pasos</li>
+<li><strong>Animar</strong> — reproduce todos los pasos automáticamente
+con transiciones</li>
+<li><strong>Reset</strong> — vuelve al paso 1 con la secuencia
+actual</li>
+<li><strong>Step dots</strong> — click en cualquier punto para saltar a
+ese paso</li>
+</ul>
+<h3 id="configuracion">4.3 Configuración</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 29%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperatura</td>
+<td>0.1 – 5.0</td>
+<td>Controla la “nitidez” del softmax. <span class="math inline">T <
+1</span> concentra atención; <span class="math inline">T > 1</span>
+la distribuye</td>
+</tr>
+<tr>
+<td>Causal Mask (GPT)</td>
+<td>On/Off</td>
+<td>Aplica máscara triangular: token <span class="math inline">i</span>
+solo atiende a posiciones <span class="math inline">\leq i</span></td>
+</tr>
+<tr>
+<td>Mostrar Valores</td>
+<td>On/Off</td>
+<td>Muestra/oculta los valores numéricos en las matrices</td>
+</tr>
+</tbody>
+</table>
+<h3 id="audio">4.4 Audio</h3>
+<ul>
+<li><strong>Volumen</strong> (0–100%) — controla la intensidad de la
+sonificación</li>
+<li><strong>Silenciar</strong> — desactiva todo el audio</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="producto-punto-escalado">5.1 Producto punto escalado</h3>
+<p>El score de compatibilidad entre los tokens <span class="math inline">i</span> y <span class="math inline">j</span>
+es:</p>
+<p><span class="math display">e_{ij} = \frac{q_i \cdot
+k_j}{\sqrt{d_k}}</span></p>
+<p>donde <span class="math inline">q_i</span> es la query del token
+<span class="math inline">i</span> y <span class="math inline">k_j</span> es la key del token <span class="math inline">j</span>. La división por <span class="math inline">\sqrt{d_k}</span> (en la simulación, <span class="math inline">d_k = 8</span>) evita que los productos punto
+crezcan demasiado con la dimensionalidad, lo que saturaría el
+softmax.</p>
+<h3 id="por-que-sqrtd_k">5.2 ¿Por qué <span class="math inline">\sqrt{d_k}</span>?</h3>
+<p>Si <span class="math inline">q</span> y <span class="math inline">k</span> tienen componentes con media 0 y varianza
+1, entonces:</p>
+<p><span class="math display">\text{Var}(q \cdot k) = \sum_{i=1}^{d_k}
+\text{Var}(q_i k_i) = d_k</span></p>
+<p>La desviación estándar es <span class="math inline">\sqrt{d_k}</span>. Dividir por ella normaliza la
+varianza a 1, manteniendo los gradientes del softmax en un rango
+útil.</p>
+<h3 id="softmax-con-temperatura">5.3 Softmax con temperatura</h3>
+<p><span class="math display">\alpha_{ij} = \frac{\exp(e_{ij} /
+T)}{\sum_{l=1}^{n} \exp(e_{il} / T)}</span></p>
+<p>Con <span class="math inline">T = 1</span> (estándar), los pesos
+reflejan directamente las compatibilidades. Con <span class="math inline">T \to 0</span>, la distribución se vuelve one-hot
+(atención concentrada). Con <span class="math inline">T \to
+\infty</span>, la distribución se vuelve uniforme.</p>
+<h3 id="mascara-causal">5.4 Máscara causal</h3>
+<p>Para modelos autoregresivos (GPT), el token en posición <span class="math inline">i</span> no debe “ver” posiciones futuras. Se
+aplica:</p>
+<p><span class="math display">e_{ij} = \begin{cases} \frac{q_i \cdot
+k_j}{\sqrt{d_k}} & \text{si } j \leq i \\ -\infty & \text{si } j
+> i \end{cases}</span></p>
+<p>El <span class="math inline">-\infty</span> se convierte en 0 después
+del softmax, bloqueando efectivamente la atención al futuro.</p>
+<h3 id="entropia-de-atencion">5.5 Entropía de atención</h3>
+<p>La simulación calcula la entropía de la distribución de atención para
+cada token:</p>
+<p><span class="math display">H(\alpha_i) = -\sum_{j=1}^{n} \alpha_{ij}
+\log \alpha_{ij}</span></p>
+<p>Entropía baja indica atención concentrada (el token “sabe” a quién
+mirar). Entropía alta indica atención dispersa.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="diseno-de-audio">6.1 Diseño de audio</h3>
+<p>La simulación usa un sintetizador con filtro lowpass para representar
+eventos:</p>
+<ul>
+<li><strong>Cambio de paso</strong>: tono ascendente proporcional al
+número de paso</li>
+<li><strong>Pesos de atención</strong>: cada conexión genera una nota
+cuya frecuencia y volumen reflejan el peso <span class="math inline">\alpha_{ij}</span></li>
+<li><strong>Temperatura</strong>: temperaturas bajas producen sonidos
+más agudos y definidos; temperaturas altas generan texturas más
+difusas</li>
+</ul>
+<h3 id="mapeo">6.2 Mapeo</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 19%" />
+<col style="width: 26%" />
+<col style="width: 23%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Frecuencia</th>
+<th>Duración</th>
+<th>Tipo de onda</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Avance de paso</td>
+<td>300 + paso × 80 Hz</td>
+<td>0.15s</td>
+<td>sine</td>
+</tr>
+<tr>
+<td>Peso de atención</td>
+<td>200 + <span class="math inline">\alpha_{ij}</span> × 600 Hz</td>
+<td>0.3s</td>
+<td>sine + lowpass</td>
+</tr>
+<tr>
+<td>Reset</td>
+<td>200 Hz descendente</td>
+<td>0.2s</td>
+<td>triangle</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="paso-1-observa-los-embeddings">Paso 1: Observa los
+embeddings</h3>
+<ol type="1">
+<li>Selecciona <em>“el gato se sienta en la mesa”</em></li>
+<li>El paso 1 muestra los vectores de embedding como columnas
+coloreadas</li>
+<li>Cada token tiene un vector de <span class="math inline">d</span>
+dimensiones (representado visualmente)</li>
+</ol>
+<h3 id="paso-2-proyecciones-q">Paso 2: Proyecciones Q</h3>
+<ol type="1">
+<li>Avanza al paso 2</li>
+<li>Los embeddings se transforman en <strong>queries</strong> mediante
+<span class="math inline">W_Q</span></li>
+<li>Observa cómo los vectores cambian de forma: ahora representan
+“preguntas”</li>
+</ol>
+<h3 id="paso-3-proyecciones-k">Paso 3: Proyecciones K</h3>
+<ol type="1">
+<li>Avanza al paso 3</li>
+<li>Simultáneamente se generan los <strong>keys</strong> mediante <span class="math inline">W_K</span></li>
+<li>Cada token ahora tiene un identificador de lo que “ofrece”</li>
+</ol>
+<h3 id="paso-4-matriz-qkt">Paso 4: Matriz <span class="math inline">QK^T</span></h3>
+<ol type="1">
+<li>Avanza al paso 4 — este es el paso clave</li>
+<li>Se calcula el producto punto entre cada par (query, key)</li>
+<li>La matriz resultante muestra compatibilidades: valores altos = alta
+afinidad</li>
+</ol>
+<h3 id="paso-5-escalado">Paso 5: Escalado</h3>
+<ol type="1">
+<li>Avanza al paso 5</li>
+<li>Todos los scores se dividen por <span class="math inline">\sqrt{d_k}
+= \sqrt{8} \approx 2.83</span></li>
+<li>Los valores se comprimen, preparándolos para el softmax</li>
+</ol>
+<h3 id="paso-6-softmax">Paso 6: Softmax</h3>
+<ol type="1">
+<li>Avanza al paso 6</li>
+<li>Cada fila se normaliza a probabilidades que suman 1</li>
+<li>Activa la <strong>Causal Mask</strong> para ver cómo se enmascara el
+futuro</li>
+</ol>
+<h3 id="paso-7-output-ponderado">Paso 7: Output ponderado</h3>
+<ol type="1">
+<li>Avanza al paso 7</li>
+<li>Los pesos de atención ponderan los <strong>values</strong> de cada
+token</li>
+<li>El resultado es un nuevo vector por token que incorpora información
+contextual</li>
+</ol>
+<h3 id="paso-8-experimenta-con-temperatura">Paso 8: Experimenta con
+temperatura</h3>
+<ol type="1">
+<li>Baja la temperatura a 0.2: la atención se concentra en 1-2
+tokens</li>
+<li>Sube la temperatura a 3.0: la atención se distribuye casi
+uniformemente</li>
+<li>Observa cómo la entropía cambia con la temperatura</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="multi-head-attention">8.1 Multi-Head Attention</h3>
+<p>En la práctica, el Transformer no usa una sola cabeza de atención
+sino <span class="math inline">h</span> cabezas en paralelo:</p>
+<p><span class="math display">\text{MultiHead}(Q, K, V) =
+\text{Concat}(\text{head}_1, \ldots, \text{head}_h) W_O</span></p>
+<p>donde <span class="math inline">\text{head}_i = \text{Attention}(Q
+W_Q^i, K W_K^i, V W_V^i)</span>. Cada cabeza puede especializarse en
+diferentes tipos de relaciones (sintácticas, semánticas,
+posicionales).</p>
+<h3 id="complejidad-computacional">8.2 Complejidad computacional</h3>
+<p>El self-attention tiene complejidad <span class="math inline">O(n^2
+d)</span> donde <span class="math inline">n</span> es la longitud de la
+secuencia. Esto limita la longitud máxima de contexto y ha motivado
+variantes como:</p>
+<ul>
+<li><strong>Sparse Attention</strong> (reducir conexiones)</li>
+<li><strong>Linear Attention</strong> (aproximar softmax)</li>
+<li><strong>Flash Attention</strong> (optimizar memoria GPU)</li>
+</ul>
+<h3 id="cross-attention">8.3 Cross-Attention</h3>
+<p>En modelos encoder-decoder (traducción), las queries vienen del
+decoder y las keys/values del encoder:</p>
+<p><span class="math display">\text{CrossAttn} =
+\text{softmax}\!\left(\frac{Q_{\text{dec}}
+K_{\text{enc}}^T}{\sqrt{d_k}}\right) V_{\text{enc}}</span></p>
+<p>Esto permite que el decoder “mire” selectivamente la entrada mientras
+genera la salida.</p>
+<h3 id="encodings-posicionales">8.4 Encodings posicionales</h3>
+<p>El self-attention es invariante al orden (la operación es la misma
+sin importar la posición). Los <strong>positional encodings</strong>
+inyectan información de posición:</p>
+<p><span class="math display">PE_{(pos, 2i)} = \sin(pos / 10000^{2i/d}),
+\quad PE_{(pos, 2i+1)} = \cos(pos / 10000^{2i/d})</span></p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-atencion-e-identidad">Ejercicio 1: Atención e
+identidad</h3>
+<p>Selecciona cada oración y avanza al paso 6. ¿El token “el”/“la”
+atiende más al sustantivo que le sigue? ¿Por qué tiene sentido
+lingüísticamente?</p>
+<h3 id="ejercicio-2-efecto-de-la-temperatura">Ejercicio 2: Efecto de la
+temperatura</h3>
+<p>Para la oración <em>“el gato se sienta en la mesa”</em>, registra el
+peso máximo de atención del token “gato” con <span class="math inline">T
+= 0.5</span>, <span class="math inline">T = 1.0</span> y <span class="math inline">T = 3.0</span>. Grafica los tres valores y describe
+la tendencia.</p>
+<h3 id="ejercicio-3-mascara-causal">Ejercicio 3: Máscara causal</h3>
+<p>Activa la causal mask y observa el paso 6. ¿Cuántos pesos de atención
+se anulan para el último token vs. el primer token? Explica la
+asimetría.</p>
+<h3 id="ejercicio-4-entropia-como-indicador">Ejercicio 4: Entropía como
+indicador</h3>
+<p>Compara la entropía de atención del primer token vs. el cuarto token
+en cada oración. ¿Cuál tiene mayor entropía y por qué? Relaciona con la
+cantidad de contexto disponible (con mask causal activada).</p>
+<h3 id="ejercicio-5-dimensionalidad">Ejercicio 5: Dimensionalidad</h3>
+<p>La simulación usa <span class="math inline">d_k = 8</span>. Si se
+usara <span class="math inline">d_k = 64</span> (como en GPT-2), ¿por
+cuánto cambiaría el factor de escalado <span class="math inline">\sqrt{d_k}</span>? ¿Qué efecto tendría en la
+“nitidez” de la atención?</p>
+<h3 id="ejercicio-6-diseno-de-cabezas">Ejercicio 6: Diseño de
+cabezas</h3>
+<p>Si un Transformer tiene <span class="math inline">d = 512</span> y
+usa <span class="math inline">h = 8</span> cabezas, ¿cuál es <span class="math inline">d_k</span> por cabeza? Si duplicamos <span class="math inline">h</span> a 16, ¿qué trade-off se introduce entre
+especialización y expresividad por cabeza?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Self-Attention</td>
+<td>Mecanismo donde cada token atiende a todos los tokens de la misma
+secuencia</td>
+</tr>
+<tr>
+<td>Query (Q)</td>
+<td>Vector que representa “lo que busca” un token</td>
+</tr>
+<tr>
+<td>Key (K)</td>
+<td>Vector que representa “lo que ofrece” un token como
+identificador</td>
+</tr>
+<tr>
+<td>Value (V)</td>
+<td>Vector con la información que un token contribuye al output</td>
+</tr>
+<tr>
+<td>Score</td>
+<td>Producto punto entre query y key antes de normalizar</td>
+</tr>
+<tr>
+<td>Escalado</td>
+<td>División por <span class="math inline">\sqrt{d_k}</span> para
+estabilizar gradientes del softmax</td>
+</tr>
+<tr>
+<td>Softmax</td>
+<td>Función que convierte scores en probabilidades (suman 1)</td>
+</tr>
+<tr>
+<td>Peso de atención (<span class="math inline">\alpha_{ij}</span>)</td>
+<td>Probabilidad de que token <span class="math inline">i</span> atienda
+a token <span class="math inline">j</span></td>
+</tr>
+<tr>
+<td>Temperatura</td>
+<td>Parámetro que controla la nitidez de la distribución de
+atención</td>
+</tr>
+<tr>
+<td>Máscara causal</td>
+<td>Restricción que impide atender a posiciones futuras (modelos
+autoregresivos)</td>
+</tr>
+<tr>
+<td>Multi-Head Attention</td>
+<td>Múltiples cabezas de atención en paralelo, cada una con sus propias
+<span class="math inline">W_Q, W_K, W_V</span></td>
+</tr>
+<tr>
+<td>Cross-Attention</td>
+<td>Atención donde Q viene de una secuencia y K, V de otra</td>
+</tr>
+<tr>
+<td>Positional Encoding</td>
+<td>Vector sumado al embedding para codificar la posición del token</td>
+</tr>
+<tr>
+<td>Entropía</td>
+<td>Medida de dispersión de la distribución de atención</td>
+</tr>
+<tr>
+<td><span class="math inline">d_k</span></td>
+<td>Dimensionalidad de los vectores query y key</td>
+</tr>
+<tr>
+<td><span class="math inline">d_v</span></td>
+<td>Dimensionalidad de los vectores value</td>
+</tr>
+<tr>
+<td>Transformer</td>
+<td>Arquitectura basada enteramente en mecanismos de atención</td>
+</tr>
+<tr>
+<td>Autoregresivo</td>
+<td>Modelo que genera tokens uno a uno, condicionado en los
+anteriores</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Vaswani, A., et al. (2017). <em>Attention Is All You Need</em>.
+NeurIPS.</li>
+<li>Phuong, M. &amp; Hutter, M. (2022). <em>Formal Algorithms for
+Transformers</em>. arXiv:2207.09238.</li>
+<li>Dao, T., et al. (2022). <em>FlashAttention: Fast and
+Memory-Efficient Exact Attention</em>. NeurIPS.</li>
+<li>Jay Alammar (2018). <em>The Illustrated Transformer</em>.
+jalammar.github.io.</li>
+<li>Lilian Weng (2023). <em>Attention? Attention!</em>.
+lilianweng.github.io.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

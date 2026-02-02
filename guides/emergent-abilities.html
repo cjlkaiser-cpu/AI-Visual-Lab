@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergent
+Abilities — Cuando la Escala lo Cambia Todo</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #8b5cf6;
+    --primary-dark: #7c3aed;
+    --primary-light: #c4b5fd;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #8b5cf6;
+    --accent-light: #c4b5fd;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #2e1065 0%, #0a0a1a 60%, #0f051a 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #c4b5fd; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #ede9fe;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #5b21b6;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #f5f3ff;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #f5f3ff; }
+tr:hover { background: #c4b5fd22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de las habilidades emergentes en modelos de
+lenguaje. Desliza la escala de parámetros de 10M a 1T y observa cómo
+tareas que ...</p>
+        <div class="badge">Transformers y LLMs</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#leyes-de-escala-scaling-laws">2.1 Leyes de escala (Scaling
+Laws)</a></li>
+  <li class="sub-item"><a href="#de-perdida-a-habilidad">2.2 De pérdida a habilidad</a></li>
+  <li class="sub-item"><a href="#las-5-tareas">2.3 Las 5 tareas</a></li>
+  <li class="sub-item"><a href="#modelos-de-referencia">2.4 Modelos de referencia</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#canvas-principal">3.1 Canvas principal</a></li>
+  <li class="sub-item"><a href="#panel-lateral">3.2 Panel lateral</a></li>
+  <li class="sub-item"><a href="#barra-de-estado">3.3 Barra de estado</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#escala-del-modelo">4.1 Escala del modelo</a></li>
+  <li class="sub-item"><a href="#selector-de-tarea">4.2 Selector de tarea</a></li>
+  <li class="sub-item"><a href="#animacion">4.3 Animación</a></li>
+  <li class="sub-item"><a href="#audio">4.4 Audio</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#ley-de-escala-de-kaplan">5.1 Ley de escala de Kaplan</a></li>
+  <li class="sub-item"><a href="#chinchilla-scaling">5.2 Chinchilla scaling</a></li>
+  <li class="sub-item"><a href="#funcion-de-transicion-sigmoide">5.3 Función de transición
+(sigmo...</a></li>
+  <li class="sub-item"><a href="#rendimiento-aleatorio-vs.-perfecto">5.4 Rendimiento aleatorio
+vs. pe...</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#diseno-de-audio">6.1 Diseño de audio</a></li>
+  <li class="sub-item"><a href="#mapeo">6.2 Mapeo</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#son-reales-las-emergencias">8.1 ¿Son reales las
+emergencias?</a></li>
+  <li class="sub-item"><a href="#compute-optimal-scaling">8.2 Compute-optimal scaling</a></li>
+  <li class="sub-item"><a href="#emergencia-como-transicion-de-fase">8.3 Emergencia como
+transición d...</a></li>
+  <li class="sub-item"><a href="#implicaciones-para-la-seguridad-de-ia">8.4 Implicaciones para la
+seguri...</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>En 2022, investigadores de Google descubrieron algo sorprendente:
+ciertas habilidades en modelos de lenguaje no mejoran gradualmente al
+escalar el modelo, sino que <strong>aparecen abruptamente</strong> al
+cruzar un umbral de tamaño. Un modelo de 1B de parámetros no puede hacer
+aritmética de 3 dígitos en absoluto, pero un modelo de 100B la resuelve
+con facilidad.</p>
+<p>Este fenómeno — llamado <strong>habilidades emergentes</strong> — se
+asemeja a las <strong>transiciones de fase</strong> en física: el agua
+no se congela gradualmente, hay un punto crítico (0°C) donde el cambio
+es abrupto.</p>
+<p>Esta simulación permite explorar cómo el rendimiento en 5 tareas
+diferentes cambia con la escala del modelo, visualizando las curvas
+sigmoidales de transición y las leyes de escala que gobiernan la pérdida
+del modelo.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="leyes-de-escala-scaling-laws">2.1 Leyes de escala (Scaling
+Laws)</h3>
+<p>Kaplan et al. (2020) descubrieron que la pérdida de un LLM sigue una
+ley de potencia:</p>
+<p><span class="math display">L(N) =
+\left(\frac{N_c}{N}\right)^\alpha</span></p>
+<p>donde <span class="math inline">N</span> son los parámetros del
+modelo, <span class="math inline">N_c</span> es una constante crítica, y
+<span class="math inline">\alpha</span> es el exponente de escala. Más
+parámetros = menos pérdida, de forma predecible.</p>
+<h3 id="de-perdida-a-habilidad">2.2 De pérdida a habilidad</h3>
+<p>Pero el <strong>rendimiento en tareas</strong> no es una función
+suave de la pérdida. Una tarea puede requerir un “umbral de capacidad” —
+un nivel mínimo de entendimiento antes de que el modelo pueda resolver
+esa tarea en absoluto.</p>
+<p><span class="math display">\text{Rendimiento}(N) = \frac{1}{1 +
+\exp(-k \cdot (\log N - \log N_{\text{threshold}}))}</span></p>
+<p>Esta sigmoide en escala logarítmica produce la transición de fase
+observada.</p>
+<h3 id="las-5-tareas">2.3 Las 5 tareas</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Tarea</th>
+<th>Umbral aprox.</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aritmética (3 dígitos)</td>
+<td>~10B</td>
+<td>Multiplicar números de 3 dígitos</td>
+</tr>
+<tr>
+<td>Traducción</td>
+<td>~1B</td>
+<td>Traducir entre idiomas</td>
+</tr>
+<tr>
+<td>Razonamiento lógico</td>
+<td>~50B</td>
+<td>Resolver silogismos y puzzles</td>
+</tr>
+<tr>
+<td>Código (HumanEval)</td>
+<td>~100B</td>
+<td>Generar código funcional</td>
+</tr>
+<tr>
+<td>Razonamiento matemático</td>
+<td>~200B</td>
+<td>Resolver problemas de matemáticas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="modelos-de-referencia">2.4 Modelos de referencia</h3>
+<p>La simulación muestra curvas para múltiples “familias” de modelos,
+reflejando que diferentes arquitecturas alcanzan las transiciones en
+puntos ligeramente diferentes.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="canvas-principal">3.1 Canvas principal</h3>
+<p>El canvas muestra un gráfico con:</p>
+<ul>
+<li><strong>Eje X</strong>: parámetros del modelo (escala logarítmica,
+de 10M a 1T)</li>
+<li><strong>Eje Y</strong>: rendimiento en la tarea (0% a 100%)</li>
+<li><strong>Curvas sigmoidales</strong>: una por tarea, cada una con su
+color y umbral</li>
+<li><strong>Línea vertical</strong>: posición actual del slider de
+escala</li>
+<li><strong>Puntos de modelo</strong>: marcadores para modelos
+específicos (GPT-2, GPT-3, etc.)</li>
+<li><strong>Zona de transición</strong>: sombreado alrededor del
+umbral</li>
+</ul>
+<h3 id="panel-lateral">3.2 Panel lateral</h3>
+<ul>
+<li><strong>Ecuación</strong>: <span class="math inline">L(N) =
+(N_c/N)^\alpha</span> (Chinchilla scaling law)</li>
+<li><strong>Slider de escala</strong>: parámetros de 10M a 1T
+(logarítmico)</li>
+<li><strong>Selector de tarea</strong>: individual o todas
+simultáneamente</li>
+<li><strong>Leyenda de modelos</strong>: tags coloreados para cada
+familia</li>
+<li><strong>Métricas</strong>: parámetros actuales, tarea, rendimiento,
+punto de transición</li>
+</ul>
+<h3 id="barra-de-estado">3.3 Barra de estado</h3>
+<p>Muestra la escala actual y el rendimiento en la tarea
+seleccionada.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="escala-del-modelo">4.1 Escala del modelo</h3>
+<p>El slider principal controla los parámetros en escala
+logarítmica:</p>
+<p><span class="math display">N = 10^{7 + 5 \cdot p / 100}</span></p>
+<p>donde <span class="math inline">p \in [0, 100]</span> es la posición
+del slider. Esto cubre desde 10M (<span class="math inline">10^7</span>)
+hasta ~1T (<span class="math inline">10^{12}</span>).</p>
+<h3 id="selector-de-tarea">4.2 Selector de tarea</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Opción</th>
+<th>Qué muestra</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Todas las tareas</td>
+<td>Las 5 curvas simultáneamente</td>
+</tr>
+<tr>
+<td>Aritmética</td>
+<td>Solo la curva de aritmética de 3 dígitos</td>
+</tr>
+<tr>
+<td>Traducción</td>
+<td>Solo la curva de traducción</td>
+</tr>
+<tr>
+<td>Razonamiento Lógico</td>
+<td>Solo razonamiento lógico</td>
+</tr>
+<tr>
+<td>Código (HumanEval)</td>
+<td>Solo generación de código</td>
+</tr>
+<tr>
+<td>Razonamiento Matemático</td>
+<td>Solo razonamiento matemático</td>
+</tr>
+</tbody>
+</table>
+<h3 id="animacion">4.3 Animación</h3>
+<ul>
+<li><strong>Animar Escala</strong> — recorre el slider de izquierda a
+derecha automáticamente</li>
+<li><strong>Reset</strong> — vuelve al inicio</li>
+</ul>
+<h3 id="audio">4.4 Audio</h3>
+<ul>
+<li><strong>Volumen</strong> (0–100%) y botón de silenciar</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="ley-de-escala-de-kaplan">5.1 Ley de escala de Kaplan</h3>
+<p>La pérdida del modelo (cross-entropy en el conjunto de test)
+sigue:</p>
+<p><span class="math display">L(N) = \left(\frac{N_c}{N}\right)^\alpha +
+L_\infty</span></p>
+<p>donde <span class="math inline">L_\infty</span> es la pérdida
+irreducible (entropía del lenguaje). Empíricamente, <span class="math inline">\alpha \approx 0.076</span> para modelos de
+lenguaje.</p>
+<h3 id="chinchilla-scaling">5.2 Chinchilla scaling</h3>
+<p>Hoffmann et al. (2022) demostraron que el entrenamiento óptimo
+requiere escalar datos y modelo proporcionalmente:</p>
+<p><span class="math display">N_{\text{opt}} \propto C^{0.5}, \quad
+D_{\text{opt}} \propto C^{0.5}</span></p>
+<p>donde <span class="math inline">C</span> es el presupuesto de cómputo
+y <span class="math inline">D</span> es el número de tokens de
+entrenamiento. Esto implica que muchos modelos previos estaban
+<em>sub-entrenados</em>.</p>
+<h3 id="funcion-de-transicion-sigmoide">5.3 Función de transición
+(sigmoide)</h3>
+<p>Para cada tarea <span class="math inline">i</span>, el rendimiento
+sigue una sigmoide en log-escala:</p>
+<p><span class="math display">\text{Perf}_i(N) = \frac{1}{1 +
+\exp\left(-k_i \cdot (\log_{10} N - \log_{10} N_i^*)\right)}</span></p>
+<p>donde <span class="math inline">N_i^*</span> es el umbral de
+transición y <span class="math inline">k_i</span> controla la pendiente
+(cuán abrupta es la transición).</p>
+<h3 id="rendimiento-aleatorio-vs.-perfecto">5.4 Rendimiento aleatorio
+vs. perfecto</h3>
+<p>Para <span class="math inline">N \ll N_i^*</span>: <span class="math inline">\text{Perf}_i \approx 0</span> (rendimiento
+aleatorio) Para <span class="math inline">N \gg N_i^*</span>: <span class="math inline">\text{Perf}_i \approx 1</span> (rendimiento cercano
+a perfecto)</p>
+<p>La transición ocurre en un rango relativamente estrecho de escala —
+típicamente un orden de magnitud.</p>
+<h3 id="relacion-entre-perdida-y-emergencia">5.5 Relación entre pérdida
+y emergencia</h3>
+<p>La pérdida baja suavemente, pero el rendimiento en tareas salta:</p>
+<p><span class="math display">\text{Perf}_i = f_i(L(N))</span></p>
+<p>donde <span class="math inline">f_i</span> es una función escalón
+suavizada. Pequeñas reducciones en <span class="math inline">L</span>
+pueden desbloquear habilidades enteras cuando se cruza un umbral
+interno.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="diseno-de-audio">6.1 Diseño de audio</h3>
+<p>La simulación usa sonido para representar la escala y las
+transiciones:</p>
+<ul>
+<li><strong>Slider de escala</strong>: nota continua cuya frecuencia
+sube con los parámetros</li>
+<li><strong>Cruce de umbral</strong>: acorde mayor que se dispara cuando
+una tarea pasa del 50% de rendimiento</li>
+<li><strong>Animación</strong>: barrido de frecuencia ascendente durante
+la animación</li>
+</ul>
+<h3 id="mapeo">6.2 Mapeo</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Evento</th>
+<th>Frecuencia</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Escala baja (&lt;1B)</td>
+<td>200 Hz</td>
+<td>sine (grave)</td>
+</tr>
+<tr>
+<td>Escala media (1-100B)</td>
+<td>400 Hz</td>
+<td>sine</td>
+</tr>
+<tr>
+<td>Escala alta (&gt;100B)</td>
+<td>800 Hz</td>
+<td>sine (agudo)</td>
+</tr>
+<tr>
+<td>Transición de fase</td>
+<td>Acorde C-E-G-C</td>
+<td>sine × 4</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="paso-1-explorar-la-escala-completa">Paso 1: Explorar la escala
+completa</h3>
+<ol type="1">
+<li>Selecciona “Todas las tareas”</li>
+<li>Mueve el slider lentamente de izquierda a derecha</li>
+<li>Observa cómo las curvas permanecen en 0 y luego saltan a ~100%</li>
+<li>Nota que cada tarea tiene un umbral diferente</li>
+</ol>
+<h3 id="paso-2-identificar-los-umbrales">Paso 2: Identificar los
+umbrales</h3>
+<ol type="1">
+<li>Selecciona “Aritmética”</li>
+<li>Encuentra el punto exacto donde el rendimiento cruza 50%</li>
+<li>Anota los parámetros en ese punto</li>
+<li>Repite para cada tarea individual</li>
+</ol>
+<h3 id="paso-3-orden-de-emergencia">Paso 3: Orden de emergencia</h3>
+<ol type="1">
+<li>Vuelve a “Todas las tareas”</li>
+<li>Usa la animación automática</li>
+<li>Registra el orden en que las tareas se “desbloquean”</li>
+<li>¿Traducción emerge antes que aritmética? ¿Código antes que
+matemáticas?</li>
+</ol>
+<h3 id="paso-4-comparar-modelos">Paso 4: Comparar modelos</h3>
+<ol type="1">
+<li>Observa las etiquetas de modelo en la leyenda</li>
+<li>Cada familia tiene curvas ligeramente desplazadas</li>
+<li>Identifica qué familia alcanza la aritmética con menos
+parámetros</li>
+</ol>
+<h3 id="paso-5-la-ley-de-escala-de-la-perdida">Paso 5: La ley de escala
+de la pérdida</h3>
+<ol type="1">
+<li>Observa la curva de pérdida (si se muestra como referencia)</li>
+<li>Note que es una línea recta en escala log-log</li>
+<li>Pero el rendimiento en tareas no lo es — la emergencia es no
+lineal</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="son-reales-las-emergencias">8.1 ¿Son reales las
+emergencias?</h3>
+<p>Schaeffer et al. (2023) argumentaron que las habilidades “emergentes”
+podrían ser un artefacto de las métricas utilizadas. Si se usan métricas
+continuas en lugar de binarias (correcto/incorrecto), las transiciones
+pueden parecer más graduales.</p>
+<h3 id="compute-optimal-scaling">8.2 Compute-optimal scaling</h3>
+<p>La visión Chinchilla dice que no basta escalar parámetros — también
+hay que escalar datos:</p>
+<p><span class="math display">L(N, D) = \frac{A}{N^\alpha} +
+\frac{B}{D^\beta} + L_\infty</span></p>
+<p>donde <span class="math inline">D</span> es el número de tokens y
+<span class="math inline">\alpha \approx \beta \approx 0.34</span>.</p>
+<h3 id="emergencia-como-transicion-de-fase">8.3 Emergencia como
+transición de fase</h3>
+<p>En física estadística, las transiciones de fase ocurren cuando un
+parámetro de orden cruza un punto crítico. La analogía:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Física</th>
+<th>LLMs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Temperatura</td>
+<td><span class="math inline">1/\log N</span> (inverso de escala)</td>
+</tr>
+<tr>
+<td>Magnetización</td>
+<td>Rendimiento en tarea</td>
+</tr>
+<tr>
+<td>Punto crítico</td>
+<td><span class="math inline">N^*</span> (umbral de emergencia)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="implicaciones-para-la-seguridad-de-ia">8.4 Implicaciones para la
+seguridad de IA</h3>
+<p>Si las habilidades emergen impredeciblemente al escalar, podríamos
+encontrar habilidades peligrosas que aparecen sin advertencia previa en
+modelos más grandes. Esto motiva la investigación en <strong>evaluación
+proactiva</strong> de modelos.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-tabla-de-umbrales">Ejercicio 1: Tabla de
+umbrales</h3>
+<p>Para cada una de las 5 tareas, usa el slider para encontrar el punto
+de transición (rendimiento = 50%). Construye una tabla con: tarea,
+umbral <span class="math inline">N^*</span>, y <span class="math inline">\log_{10}(N^*)</span>.</p>
+<h3 id="ejercicio-2-ancho-de-transicion">Ejercicio 2: Ancho de
+transición</h3>
+<p>Para la tarea de aritmética, encuentra los puntos donde el
+rendimiento es 10% y 90%. ¿Cuántos órdenes de magnitud separan estos
+puntos? Esto mide cuán “abrupta” es la transición.</p>
+<h3 id="ejercicio-3-ley-de-escala">Ejercicio 3: Ley de escala</h3>
+<p>Usando la fórmula <span class="math inline">L(N) =
+(N_c/N)^{0.076}</span> con <span class="math inline">N_c =
+10^{13}</span>, calcula <span class="math inline">L</span> para <span class="math inline">N = 10^9</span>, <span class="math inline">10^{10}</span> y <span class="math inline">10^{11}</span>. ¿Cuánto disminuye <span class="math inline">L</span> por cada orden de magnitud?</p>
+<h3 id="ejercicio-4-chinchilla">Ejercicio 4: Chinchilla</h3>
+<p>Si tienes un presupuesto de cómputo fijo <span class="math inline">C</span>, y <span class="math inline">N_{\text{opt}}
+\propto C^{0.5}</span>, ¿cuánto más cómputo necesitas para duplicar el
+número de parámetros óptimos? Si el cómputo cuesta $1M para 10B, ¿cuánto
+costaría entrenar un modelo de 40B óptimamente?</p>
+<h3 id="ejercicio-5-orden-predecible">Ejercicio 5: Orden predecible</h3>
+<p>¿El orden de emergencia de tareas (traducción → aritmética → lógica →
+código → matemáticas) tiene sentido intuitivamente? Argumenta por qué
+ciertas tareas requieren más escala que otras.</p>
+<h3 id="ejercicio-6-debate-sobre-emergencia">Ejercicio 6: Debate sobre
+emergencia</h3>
+<p>Lee el resumen del paper de Schaeffer et al. Si las emergencias
+fueran artefactos de métricas, ¿cómo cambiaría la interpretación de esta
+simulación? ¿Las transiciones se suavizarían o desaparecerían?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Habilidad emergente</td>
+<td>Capacidad que aparece abruptamente al escalar un modelo, ausente en
+modelos pequeños</td>
+</tr>
+<tr>
+<td>Transición de fase</td>
+<td>Cambio abrupto en una propiedad al cruzar un umbral crítico</td>
+</tr>
+<tr>
+<td>Scaling law</td>
+<td>Relación matemática entre tamaño del modelo y su rendimiento</td>
+</tr>
+<tr>
+<td>Parámetros (N)</td>
+<td>Número de pesos entrenables en el modelo</td>
+</tr>
+<tr>
+<td>Pérdida (Loss)</td>
+<td>Cross-entropy del modelo en datos de test; mide calidad general</td>
+</tr>
+<tr>
+<td>Chinchilla</td>
+<td>Estudio de DeepMind sobre entrenamiento óptimo: datos ∝
+parámetros</td>
+</tr>
+<tr>
+<td>Compute-optimal</td>
+<td>Modelo entrenado con la proporción óptima de datos para su
+tamaño</td>
+</tr>
+<tr>
+<td>Sigmoide</td>
+<td>Función en forma de S que modela la transición del rendimiento</td>
+</tr>
+<tr>
+<td>Umbral (<span class="math inline">N^*</span>)</td>
+<td>Número de parámetros donde el rendimiento en una tarea cruza
+50%</td>
+</tr>
+<tr>
+<td>Pendiente (<span class="math inline">k</span>)</td>
+<td>Cuán abrupta es la transición de fase</td>
+</tr>
+<tr>
+<td>Log-escala</td>
+<td>Escala logarítmica donde cada marca representa un orden de
+magnitud</td>
+</tr>
+<tr>
+<td>Benchmark</td>
+<td>Conjunto de tareas estandarizado para evaluar modelos</td>
+</tr>
+<tr>
+<td>HumanEval</td>
+<td>Benchmark de generación de código de OpenAI</td>
+</tr>
+<tr>
+<td>Cross-entropy</td>
+<td>Función de pérdida estándar para modelos de lenguaje</td>
+</tr>
+<tr>
+<td>Familia de modelos</td>
+<td>Serie de modelos con la misma arquitectura pero diferente
+tamaño</td>
+</tr>
+<tr>
+<td>Exponente de escala (<span class="math inline">\alpha</span>)</td>
+<td>Pendiente en log-log de la ley de escala</td>
+</tr>
+<tr>
+<td>Entrenamiento sub-óptimo</td>
+<td>Modelo con menos datos de los que necesita para su tamaño</td>
+</tr>
+<tr>
+<td>Evaluación proactiva</td>
+<td>Testear modelos por habilidades peligrosas antes de
+desplegarlos</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Wei, J., et al. (2022). <em>Emergent Abilities of Large Language
+Models</em>. TMLR.</li>
+<li>Kaplan, J., et al. (2020). <em>Scaling Laws for Neural Language
+Models</em>. arXiv:2001.08361.</li>
+<li>Hoffmann, J., et al. (2022). <em>Training Compute-Optimal Large
+Language Models (Chinchilla)</em>. arXiv:2203.15556.</li>
+<li>Schaeffer, R., et al. (2023). <em>Are Emergent Abilities of Large
+Language Models a Mirage?</em>. NeurIPS.</li>
+<li>Ganguli, D., et al. (2022). <em>Predictability and Surprise in Large
+Generative Models</em>. FAccT.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

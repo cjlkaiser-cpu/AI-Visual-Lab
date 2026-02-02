@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Superposition — Dentro de
+la Caja Negra</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #06b6d4;
+    --primary-dark: #0891b2;
+    --primary-light: #67e8f9;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #06b6d4;
+    --accent-light: #67e8f9;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #083344 0%, #0a0f1a 60%, #051a1a 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #67e8f9; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #ecfeff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #155e75;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #ecfeff;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #ecfeff; }
+tr:hover { background: #67e8f922; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del fenómeno de superposición en redes
+neuronales: cómo un modelo con N
+dimensiones puede codificar M > N
+features usando re...</p>
+        <div class="badge">Fronteras de IA</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#features-y-dimensiones">2.1 Features y dimensiones</a></li>
+  <li class="sub-item"><a href="#el-toy-model">2.2 El toy model</a></li>
+  <li class="sub-item"><a href="#sparsity">2.3 Sparsity</a></li>
+  <li class="sub-item"><a href="#el-trade-off">2.4 El trade-off</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#vista-geometrica">3.1 Vista Geométrica</a></li>
+  <li class="sub-item"><a href="#vista-diagrama-de-fase">3.2 Vista Diagrama de Fase</a></li>
+  <li class="sub-item"><a href="#panel-lateral">3.3 Panel lateral</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#parametros-del-modelo">4.1 Parámetros del modelo</a></li>
+  <li class="sub-item"><a href="#vistas">4.2 Vistas</a></li>
+  <li class="sub-item"><a href="#acciones">4.3 Acciones</a></li>
+  <li class="sub-item"><a href="#feature-toggles">4.4 Feature Toggles</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#funcion-de-perdida">5.1 Función de pérdida</a></li>
+  <li class="sub-item"><a href="#reconstruccion-expandida">5.2 Reconstrucción expandida</a></li>
+  <li class="sub-item"><a href="#interferencia">5.3 Interferencia</a></li>
+  <li class="sub-item"><a href="#superposicion-y-angulos">5.4 Superposición y ángulos</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#diseno-de-audio">6.1 Diseño de audio</a></li>
+  <li class="sub-item"><a href="#mapeo">6.2 Mapeo</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#polisemantismo">8.1 Polisemantismo</a></li>
+  <li class="sub-item"><a href="#sparse-autoencoders-saes">8.2 Sparse Autoencoders (SAEs)</a></li>
+  <li class="sub-item"><a href="#transicion-de-fase-geometrica">8.3 Transición de fase
+geométrica</a></li>
+  <li class="sub-item"><a href="#implicaciones-para-la-seguridad">8.4 Implicaciones para la
+seguridad</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>¿Cómo puede una red neuronal con 512 neuronas en una capa representar
+miles de conceptos? La respuesta es <strong>superposición</strong>: las
+features se codifican en direcciones del espacio que no son ortogonales,
+compartiendo las mismas dimensiones.</p>
+<p>Este fenómeno, estudiado intensamente por Anthropic en su programa de
+interpretabilidad mecanicista, es clave para entender <em>qué sabe</em>
+una red neuronal y <em>cómo lo organiza internamente</em>. Si <span class="math inline">M > N</span> (más features que dimensiones), el
+modelo debe comprimir, y la interferencia resultante es el precio de la
+superposición.</p>
+<p>Esta simulación implementa el <strong>toy model</strong> de
+superposición: un autoencoder lineal <span class="math inline">\hat{x} =
+W^T W x</span> que intenta reconstruir <span class="math inline">M</span> features usando <span class="math inline">N</span> dimensiones. Con la sparsity y la
+importancia relativa de las features, emerge un diagrama de fase que
+muestra cuándo la superposición es ventajosa.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="features-y-dimensiones">2.1 Features y dimensiones</h3>
+<p>En una red neuronal, cada capa tiene <span class="math inline">N</span> neuronas (dimensiones). Las
+<strong>features</strong> son los conceptos que el modelo necesita
+representar: “es un gato”, “es azul”, “sentimiento positivo”, etc. Si
+hay <span class="math inline">M</span> features y <span class="math inline">M \leq N</span>, cada feature puede tener su propia
+neurona dedicada. Pero típicamente <span class="math inline">M \gg
+N</span>.</p>
+<h3 id="el-toy-model">2.2 El toy model</h3>
+<p>El modelo más simple de superposición es un autoencoder lineal:</p>
+<p><span class="math display">\hat{x} = W^T W x</span></p>
+<p>donde <span class="math inline">x \in \mathbb{R}^M</span> es el
+vector de features (sparse), <span class="math inline">W \in
+\mathbb{R}^{N \times M}</span> es la matriz de encoding (<span class="math inline">M</span> features → <span class="math inline">N</span> dimensiones), y <span class="math inline">W^T</span> es la matriz de decoding.</p>
+<h3 id="sparsity">2.3 Sparsity</h3>
+<p>La superposición solo funciona si las features son
+<strong>sparse</strong>: la mayoría están inactivas (cero) en cualquier
+momento. Si todas las features estuvieran activas simultáneamente, la
+interferencia sería destructiva.</p>
+<p><span class="math display">P(\text{feature}_i \neq 0) = 1 -
+S</span></p>
+<p>donde <span class="math inline">S</span> es la sparsity (0 = todas
+activas, 1 = ninguna activa).</p>
+<h3 id="el-trade-off">2.4 El trade-off</h3>
+<p>El modelo enfrenta una tensión: - <strong>Representación
+dedicada</strong>: una dimensión por feature, sin interferencia pero
+limitado a <span class="math inline">N</span> features -
+<strong>Superposición</strong>: más features pero con interferencia
+entre ellas - La sparsity determina cuál estrategia es óptima</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="vista-geometrica">3.1 Vista Geométrica</h3>
+<p>El canvas muestra las columnas de <span class="math inline">W</span>
+como vectores en 2D (cuando <span class="math inline">N = 2</span>):</p>
+<ul>
+<li><strong>Vectores coloreados</strong>: cada feature es un vector que
+apunta en una dirección</li>
+<li><strong>Longitud del vector</strong>: importancia de la feature
+(columnas más largas = features mejor representadas)</li>
+<li><strong>Ángulos entre vectores</strong>: interferencia — vectores
+cercanos interfieren más</li>
+<li><strong>Vectores unitarios</strong>: referencia para los ejes
+ortogonales</li>
+</ul>
+<p>Cuando <span class="math inline">M \leq N</span>, los vectores son
+ortogonales (sin interferencia). Cuando <span class="math inline">M >
+N</span>, empiezan a “apilarse”, creando superposición.</p>
+<h3 id="vista-diagrama-de-fase">3.2 Vista Diagrama de Fase</h3>
+<p>Muestra la transición entre representación dedicada y superposición
+como función de la sparsity y la ratio <span class="math inline">M/N</span>:</p>
+<ul>
+<li><strong>Eje X</strong>: sparsity (<span class="math inline">S</span>)</li>
+<li><strong>Eje Y</strong>: ratio <span class="math inline">M/N</span></li>
+<li><strong>Color</strong>: grado de superposición (frío = dedicado,
+cálido = superpuesto)</li>
+<li><strong>Punto actual</strong>: posición de los parámetros
+actuales</li>
+</ul>
+<h3 id="panel-lateral">3.3 Panel lateral</h3>
+<ul>
+<li><strong>Ecuación</strong>: <span class="math inline">\hat{x} = W^T W
+x, \; L = \|x - \hat{x}\|^2 + \lambda \cdot \text{sparsity}</span></li>
+<li><strong>Sliders</strong>: N (dimensiones), M (features), sparsity,
+lambda</li>
+<li><strong>Feature toggles</strong>: botones para activar/desactivar
+features individuales</li>
+<li><strong>Métricas</strong>: ratio M/N, loss total, reconstruction
+loss, sparsity loss, interferencia, features representadas</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="parametros-del-modelo">4.1 Parámetros del modelo</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 21%" />
+<col style="width: 27%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>N (dimensiones)</td>
+<td>2 – 10</td>
+<td>2</td>
+<td>Dimensiones del espacio de representación</td>
+</tr>
+<tr>
+<td>M (features)</td>
+<td>1 – 20</td>
+<td>3</td>
+<td>Número de features a codificar</td>
+</tr>
+<tr>
+<td>Sparsity (S)</td>
+<td>0 – 1.0</td>
+<td>0.90</td>
+<td>Fracción de features inactivas en promedio</td>
+</tr>
+<tr>
+<td>Lambda (<span class="math inline">\lambda</span>)</td>
+<td>0 – 1.0</td>
+<td>0.10</td>
+<td>Penalización de sparsity en la pérdida</td>
+</tr>
+</tbody>
+</table>
+<h3 id="vistas">4.2 Vistas</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Vista</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Geométrica</td>
+<td>Vectores de features en el espacio <span class="math inline">N</span>-dimensional (proyectado a 2D)</td>
+</tr>
+<tr>
+<td>Diagrama de Fase</td>
+<td>Mapa de transición entre representación y superposición</td>
+</tr>
+</tbody>
+</table>
+<h3 id="acciones">4.3 Acciones</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Optimizar W</td>
+<td>Ejecuta optimización de la matriz <span class="math inline">W</span>
+minimizando la pérdida</td>
+</tr>
+<tr>
+<td>Reset</td>
+<td>Reinicia <span class="math inline">W</span> a valores
+aleatorios</td>
+</tr>
+<tr>
+<td>Sonificar</td>
+<td>Reproduce las features como sonido</td>
+</tr>
+</tbody>
+</table>
+<h3 id="feature-toggles">4.4 Feature Toggles</h3>
+<p>Botones numerados y coloreados para cada feature. Al
+activar/desactivar una feature: - El vector correspondiente se resalta o
+atenúa - La métrica de interferencia se recalcula - Se puede explorar
+qué pasa al activar features que interfieren</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="funcion-de-perdida">5.1 Función de pérdida</h3>
+<p><span class="math display">\mathcal{L} = \mathbb{E}_x \left[ \|x -
+W^T W x\|^2 \right] + \lambda \cdot \text{regularización}</span></p>
+<p>El primer término mide la calidad de reconstrucción. El segundo
+penaliza la complejidad.</p>
+<h3 id="reconstruccion-expandida">5.2 Reconstrucción expandida</h3>
+<p>Para un vector de features <span class="math inline">x</span> con
+feature <span class="math inline">i</span> activa:</p>
+<p><span class="math display">\hat{x}_i = (W^T W)_{ii} \cdot x_i +
+\sum_{j \neq i} (W^T W)_{ij} \cdot x_j</span></p>
+<p>El primer término es la <strong>auto-reconstrucción</strong>. El
+segundo es la <strong>interferencia</strong> con otras features
+activas.</p>
+<h3 id="interferencia">5.3 Interferencia</h3>
+<p>La interferencia entre features <span class="math inline">i</span> y
+<span class="math inline">j</span> es:</p>
+<p><span class="math display">I_{ij} = (W^T W)_{ij} = w_i^T
+w_j</span></p>
+<p>donde <span class="math inline">w_i</span> es la columna <span class="math inline">i</span> de <span class="math inline">W</span>. Si
+<span class="math inline">w_i \perp w_j</span>, no hay interferencia. Si
+son paralelos, la interferencia es máxima.</p>
+<h3 id="superposicion-y-angulos">5.4 Superposición y ángulos</h3>
+<p>En 2D con <span class="math inline">M = 3</span> features, los
+vectores óptimos se distribuyen a 120° entre sí (como un triángulo
+equilátero), minimizando la interferencia mutua:</p>
+<p><span class="math display">\cos\theta_{ij} = w_i^T w_j / (\|w_i\|
+\|w_j\|)</span></p>
+<p>Para <span class="math inline">M</span> features en <span class="math inline">N</span> dimensiones, el ángulo máximo entre pares
+es limitado por la <strong>simplex bound</strong>.</p>
+<h3 id="el-rol-de-la-sparsity">5.5 El rol de la sparsity</h3>
+<p>La pérdida esperada de interferencia para el par <span class="math inline">(i, j)</span> es proporcional a <span class="math inline">P(x_i \neq 0 \text{ y } x_j \neq 0)</span>. Con
+sparsity <span class="math inline">S</span>:</p>
+<p><span class="math display">P(x_i \neq 0 \text{ y } x_j \neq 0) =
+(1-S)^2</span></p>
+<p>Con <span class="math inline">S = 0.95</span>: <span class="math inline">P = 0.0025</span>. La interferencia ocurre solo
+0.25% del tiempo, haciendo la superposición viable.</p>
+<h3 id="numero-efectivo-de-features">5.6 Número efectivo de
+features</h3>
+<p>El modelo puede representar efectivamente hasta:</p>
+<p><span class="math display">M_{\text{eff}} \approx
+\frac{N}{(1-S)^2}</span></p>
+<p>features con interferencia tolerable. Con <span class="math inline">N
+= 512</span> y <span class="math inline">S = 0.99</span>: <span class="math inline">M_{\text{eff}} \approx 5{,}120{,}000</span>.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="diseno-de-audio">6.1 Diseño de audio</h3>
+<p>Cada feature se mapea a un sonido:</p>
+<ul>
+<li><strong>Frecuencia</strong>: proporcional al índice de la feature
+(features bajas = graves)</li>
+<li><strong>Volumen</strong>: proporcional a la norma del vector <span class="math inline">\|w_i\|</span> (features bien representadas suenan
+más fuerte)</li>
+<li><strong>Interferencia</strong>: cuando dos features interfieren, se
+produce un <em>beating</em> (pulsación entre frecuencias cercanas)</li>
+</ul>
+<h3 id="mapeo">6.2 Mapeo</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Sonido</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Feature <span class="math inline">i</span> activa</td>
+<td>Nota: 200 + <span class="math inline">i \times 50</span> Hz, vol
+<span class="math inline">\propto \|w_i\|</span></td>
+</tr>
+<tr>
+<td>Optimización paso</td>
+<td>Click a 440 Hz</td>
+</tr>
+<tr>
+<td>Convergencia</td>
+<td>Acorde consonante</td>
+</tr>
+<tr>
+<td>Interferencia alta</td>
+<td>Beating entre notas cercanas</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="paso-1-sin-superposicion-m-leq-n">Paso 1: Sin superposición
+(<span class="math inline">M \leq N</span>)</h3>
+<ol type="1">
+<li>Fija <span class="math inline">N = 2</span>, <span class="math inline">M = 2</span></li>
+<li>Optimiza <span class="math inline">W</span></li>
+<li>Observa que los dos vectores son ortogonales (perpendiculares)</li>
+<li>Loss de reconstrucción ≈ 0, interferencia ≈ 0</li>
+</ol>
+<h3 id="paso-2-inicio-de-superposicion-m-3-n-2">Paso 2: Inicio de
+superposición (<span class="math inline">M = 3, N = 2</span>)</h3>
+<ol type="1">
+<li>Sube <span class="math inline">M</span> a 3 (con <span class="math inline">N = 2</span>)</li>
+<li>Optimiza <span class="math inline">W</span></li>
+<li>Los vectores ya no pueden ser ortogonales — se distribuyen a
+~120°</li>
+<li>La interferencia sube ligeramente pero la reconstrucción sigue
+siendo buena (con sparsity alta)</li>
+</ol>
+<h3 id="paso-3-el-rol-de-la-sparsity">Paso 3: El rol de la sparsity</h3>
+<ol type="1">
+<li>Con <span class="math inline">M = 5</span>, <span class="math inline">N = 2</span>, fija <span class="math inline">S =
+0.5</span> y optimiza</li>
+<li>Observa que algunos vectores son cortos (features
+“sacrificadas”)</li>
+<li>Ahora sube <span class="math inline">S</span> a 0.95 y optimiza de
+nuevo</li>
+<li>Todos los vectores son más largos — la superposición es viable con
+sparsity alta</li>
+</ol>
+<h3 id="paso-4-diagrama-de-fase">Paso 4: Diagrama de fase</h3>
+<ol type="1">
+<li>Cambia a vista <strong>Diagrama de Fase</strong></li>
+<li>Observa la frontera entre representación dedicada (frío) y
+superposición (cálido)</li>
+<li>Mueve el slider de sparsity: el punto se desplaza
+horizontalmente</li>
+<li>Mueve M/N: el punto se desplaza verticalmente</li>
+</ol>
+<h3 id="paso-5-feature-toggles">Paso 5: Feature toggles</h3>
+<ol type="1">
+<li>Vuelve a vista geométrica con <span class="math inline">M =
+5</span>, <span class="math inline">N = 2</span></li>
+<li>Activa solo 2 features no adyacentes — baja interferencia</li>
+<li>Activa 2 features adyacentes — alta interferencia</li>
+<li>Esto demuestra por qué la sparsity importa: features interferentes
+raramente están activas juntas</li>
+</ol>
+<h3 id="paso-6-escalar">Paso 6: Escalar</h3>
+<ol type="1">
+<li>Sube <span class="math inline">N</span> a 5 y <span class="math inline">M</span> a 20</li>
+<li>Optimiza W</li>
+<li>La vista 2D es una proyección, pero las métricas muestran que muchas
+features se representan exitosamente</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="polisemantismo">8.1 Polisemantismo</h3>
+<p>Cuando las features se superponen, una sola neurona puede activarse
+por múltiples features no relacionadas. Esto se llama
+<strong>polisemantismo</strong>: la neurona 42 podría activarse ante
+“puentes”, “bacterias” y “acentos franceses” porque estas features
+comparten la misma dirección.</p>
+<h3 id="sparse-autoencoders-saes">8.2 Sparse Autoencoders (SAEs)</h3>
+<p>Para descomponer las representaciones superpuestas en features
+interpretables, Anthropic entrena <strong>sparse
+autoencoders</strong>:</p>
+<p><span class="math display">h = \text{ReLU}(W_{\text{enc}} x +
+b_{\text{enc}})</span> <span class="math display">\hat{x} =
+W_{\text{dec}} h + b_{\text{dec}}</span></p>
+<p>con penalización L1 en <span class="math inline">h</span> para forzar
+sparsity. Las columnas de <span class="math inline">W_{\text{dec}}</span> corresponden a features
+interpretables.</p>
+<h3 id="transicion-de-fase-geometrica">8.3 Transición de fase
+geométrica</h3>
+<p>La transición de representación dedicada a superposición es un
+fenómeno de umbral:</p>
+<ul>
+<li>Para <span class="math inline">M/N < 1</span>: representación
+dedicada siempre gana</li>
+<li>Para <span class="math inline">M/N</span> ligeramente <span class="math inline">> 1</span>: depende de la sparsity</li>
+<li>Para <span class="math inline">M/N \gg 1</span>: superposición es
+inevitable si queremos representar todas las features</li>
+</ul>
+<h3 id="implicaciones-para-la-seguridad">8.4 Implicaciones para la
+seguridad</h3>
+<p>La superposición dificulta la interpretabilidad: no podemos
+simplemente mirar neuronas individuales para entender qué sabe un
+modelo. Los <strong>dictionary learning methods</strong> (SAEs, etc.)
+intentan encontrar las “features verdaderas” escondidas en la
+superposición.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-umbral-de-superposicion">Ejercicio 1: Umbral de
+superposición</h3>
+<p>Con <span class="math inline">N = 2</span> y sparsity <span class="math inline">S = 0.9</span>, incrementa <span class="math inline">M</span> de 1 a 10. Para cada valor, optimiza y
+registra la interferencia media. ¿En qué valor de <span class="math inline">M</span> la interferencia empieza a crecer
+significativamente?</p>
+<h3 id="ejercicio-2-angulos-optimos">Ejercicio 2: Ángulos óptimos</h3>
+<p>Con <span class="math inline">N = 2</span>, <span class="math inline">M = 3</span>, optimiza W. Mide (visualmente) los
+ángulos entre los 3 vectores. ¿Son aproximadamente iguales? ¿Cuánto mide
+cada uno? Compara con el valor teórico de <span class="math inline">360°/3 = 120°</span>.</p>
+<h3 id="ejercicio-3-sparsity-como-factor-habilitante">Ejercicio 3:
+Sparsity como factor habilitante</h3>
+<p>Fija <span class="math inline">N = 2</span>, <span class="math inline">M = 8</span>. Optimiza con <span class="math inline">S = 0.5</span> y luego con <span class="math inline">S = 0.99</span>. ¿Cuántas features se “representan”
+(norma del vector &gt; 0.5) en cada caso? Calcula <span class="math inline">M_{\text{eff}} = N/(1-S)^2</span> para cada
+caso.</p>
+<h3 id="ejercicio-4-perdida-de-reconstruccion">Ejercicio 4: Pérdida de
+reconstrucción</h3>
+<p>Con <span class="math inline">N = 2</span>, <span class="math inline">M = 5</span>, <span class="math inline">S =
+0.9</span>, optimiza y registra el reconstruction loss. Ahora sube <span class="math inline">N</span> a 5 (manteniendo <span class="math inline">M = 5</span>). ¿Cuánto baja el loss? ¿Es cero?</p>
+<h3 id="ejercicio-5-explorar-el-diagrama-de-fase">Ejercicio 5: Explorar
+el diagrama de fase</h3>
+<p>Mueve el punto en el diagrama de fase a la esquina (alta sparsity,
+alto M/N). ¿El color indica superposición o representación? Ahora
+muévelo a (baja sparsity, alto M/N). ¿Qué cambia?</p>
+<h3 id="ejercicio-6-interferencia-selectiva">Ejercicio 6: Interferencia
+selectiva</h3>
+<p>Con <span class="math inline">M = 6</span>, <span class="math inline">N = 2</span>, optimiza W. Usando los feature
+toggles, encuentra el par de features con mayor interferencia (vectores
+más paralelos). ¿Activar ambas simultáneamente causa un error de
+reconstrucción visible?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Superposición</td>
+<td>Codificar más features que dimensiones usando direcciones no
+ortogonales</td>
+</tr>
+<tr>
+<td>Feature</td>
+<td>Concepto o propiedad que el modelo necesita representar</td>
+</tr>
+<tr>
+<td>Dimensión</td>
+<td>Neurona o componente del espacio de representación</td>
+</tr>
+<tr>
+<td>Sparsity</td>
+<td>Fracción de features que están inactivas en un momento dado</td>
+</tr>
+<tr>
+<td>Interferencia</td>
+<td>Error causado por features que comparten las mismas dimensiones</td>
+</tr>
+<tr>
+<td>Polisemantismo</td>
+<td>Una neurona se activa ante múltiples features no relacionadas</td>
+</tr>
+<tr>
+<td>Monosemantismo</td>
+<td>Una neurona se activa ante una sola feature interpretable</td>
+</tr>
+<tr>
+<td>Toy model</td>
+<td>Modelo simplificado para estudiar un fenómeno aislado</td>
+</tr>
+<tr>
+<td>Autoencoder lineal</td>
+<td>Modelo <span class="math inline">\hat{x} = W^T W x</span> que
+reconstruye la entrada</td>
+</tr>
+<tr>
+<td>Reconstruction loss</td>
+<td><span class="math inline">\|x - \hat{x}\|^2</span> — error de
+reconstrucción</td>
+</tr>
+<tr>
+<td>Sparse Autoencoder (SAE)</td>
+<td>Autoencoder con penalización L1 para encontrar features
+interpretables</td>
+</tr>
+<tr>
+<td>Diagrama de fase</td>
+<td>Mapa que muestra transiciones entre regímenes (dedicado
+vs. superpuesto)</td>
+</tr>
+<tr>
+<td>Norma del vector</td>
+<td><span class="math inline">\|w_i\|</span> — longitud de la columna de
+W, mide cuán bien se representa una feature</td>
+</tr>
+<tr>
+<td>Ortogonalidad</td>
+<td>Vectores perpendiculares (<span class="math inline">w_i^T w_j =
+0</span>), sin interferencia</td>
+</tr>
+<tr>
+<td>Simplex bound</td>
+<td>Límite geométrico del ángulo mínimo entre <span class="math inline">M</span> vectores en <span class="math inline">N</span> dimensiones</td>
+</tr>
+<tr>
+<td>Dictionary learning</td>
+<td>Método para encontrar features interpretables en representaciones
+superpuestas</td>
+</tr>
+<tr>
+<td>Interpretabilidad</td>
+<td>Capacidad de entender qué ha aprendido un modelo</td>
+</tr>
+<tr>
+<td>Interpretabilidad mecanicista</td>
+<td>Programa de investigación para entender modelos a nivel de
+circuitos</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Elhage, N., et al. (2022). <em>Toy Models of Superposition</em>.
+Anthropic Research.</li>
+<li>Bricken, T., et al. (2023). <em>Towards Monosemanticity: Decomposing
+Language Models With Dictionary Learning</em>. Anthropic.</li>
+<li>Cunningham, H., et al. (2023). <em>Sparse Autoencoders Find Highly
+Interpretable Features in Language Models</em>. ICLR.</li>
+<li>Templeton, A., et al. (2024). <em>Scaling Monosemanticity:
+Extracting Interpretable Features from Claude 3 Sonnet</em>.
+Anthropic.</li>
+<li>Olah, C. (2023). <em>Mechanistic Interpretability, Variables, and
+the Importance of Interpretable Bases</em>. Transformer Circuits
+Thread.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

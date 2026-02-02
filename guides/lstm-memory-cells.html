@@ -1,0 +1,1040 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LSTM Memory Cells — El
+Río de la Memoria</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
+    --primary-light: #fcd34d;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #f59e0b;
+    --accent-light: #fcd34d;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #451a03 0%, #0f0a0a 60%, #1a0f05 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fcd34d; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fffbeb;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #92400e;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fffbeb;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fffbeb; }
+tr:hover { background: #fcd34d22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de una célula LSTM (Long Short-Term Memory)
+que procesa secuencias de caracteres paso a paso. Observa cómo las tres
+compuert...</p>
+        <div class="badge">Arquitecturas Clasicas</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#el-problema-de-la-memoria-en-rnns">2.1 El problema de la memoria
+en...</a></li>
+  <li class="sub-item"><a href="#la-arquitectura-lstm">2.2 La arquitectura LSTM</a></li>
+  <li class="sub-item"><a href="#las-tres-compuertas">2.3 Las tres compuertas</a></li>
+  <li class="sub-item"><a href="#el-cell-state-como-autopista">2.4 El cell state como
+autopista</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#visualizacion-del-canvas">3.2 Visualización del canvas</a></li>
+  <li class="sub-item"><a href="#metricas-en-header">3.3 Métricas en header</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#secuencia">4.1 Secuencia</a></li>
+  <li class="sub-item"><a href="#control-de-ejecucion">4.2 Control de ejecución</a></li>
+  <li class="sub-item"><a href="#forzar-compuertas">4.3 Forzar compuertas</a></li>
+  <li class="sub-item"><a href="#audio-y-metricas">4.4 Audio y métricas</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#codificacion-one-hot">5.1 Codificación one-hot</a></li>
+  <li class="sub-item"><a href="#concatenacion-de-entrada">5.2 Concatenación de entrada</a></li>
+  <li class="sub-item"><a href="#inicializacion-de-pesos">5.3 Inicialización de pesos</a></li>
+  <li class="sub-item"><a href="#prediccion">5.4 Predicción</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#mapeo-audio">6.1 Mapeo audio</a></li>
+  <li class="sub-item"><a href="#interpretacion-auditiva">6.2 Interpretación auditiva</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li class="sub-item"><a href="#primera-exploracion">7.1 Primera exploración</a></li>
+  <li class="sub-item"><a href="#comparar-patrones">7.2 Comparar patrones</a></li>
+  <li class="sub-item"><a href="#experimentar-con-compuertas-forzadas">7.3 Experimentar con
+compuertas ...</a></li>
+  <li class="sub-item"><a href="#variar-unidades">7.4 Variar unidades</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#vanishing-gradient-por-que-funciona-la-lstm">8.1 Vanishing
+gradient: por qué ...</a></li>
+  <li class="sub-item"><a href="#gru-la-alternativa-simplificada">8.2 GRU: la alternativa
+simplifi...</a></li>
+  <li class="sub-item"><a href="#peephole-connections">8.3 Peephole connections</a></li>
+  <li class="sub-item"><a href="#bidirectional-lstm">8.4 Bidirectional LSTM</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Las <strong>redes neuronales recurrentes</strong> (RNN) procesan
+datos secuenciales — texto, audio, series temporales — pasando
+información de un paso al siguiente. Pero las RNN simples sufren el
+problema del <strong>vanishing gradient</strong>: la información se
+diluye exponencialmente con cada paso, y la red “olvida” lo que vio hace
+más de unos pocos pasos.</p>
+<p>La <strong>LSTM</strong> (Long Short-Term Memory), propuesta por
+Hochreiter y Schmidhuber en 1997, resuelve este problema con un diseño
+elegante: un <strong>cell state</strong> (estado celular) que fluye
+horizontalmente a través del tiempo como un río, y tres
+<strong>compuertas</strong> que regulan qué información entra, se
+mantiene y sale.</p>
+<p>Esta simulación procesa secuencias de caracteres (como “abcabcabc”)
+paso a paso, mostrando en tiempo real cómo cada compuerta se activa,
+cómo evoluciona el cell state, y cómo la red aprende a predecir el
+siguiente carácter.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="el-problema-de-la-memoria-en-rnns">2.1 El problema de la memoria
+en RNNs</h3>
+<p>Una RNN simple tiene un único estado oculto <span class="math inline">h_t</span> que se actualiza en cada paso:</p>
+<p><span class="math display">h_t = \tanh(W_h h_{t-1} + W_x x_t +
+b)</span></p>
+<p>Cada multiplicación por <span class="math inline">W_h</span> escala
+el gradiente. Después de <span class="math inline">n</span> pasos, el
+gradiente se multiplica por <span class="math inline">W_h^n</span>: si
+los eigenvalores de <span class="math inline">W_h</span> son menores que
+1, el gradiente desaparece; si son mayores que 1, explota.</p>
+<h3 id="la-arquitectura-lstm">2.2 La arquitectura LSTM</h3>
+<p>La LSTM reemplaza la actualización simple con cuatro operaciones:</p>
+<p><strong>Forget gate</strong> — qué olvidar del cell state
+anterior:</p>
+<p><span class="math display">f_t = \sigma(W_f \cdot [h_{t-1}, x_t] +
+b_f)</span></p>
+<p><strong>Input gate</strong> — qué nueva información guardar:</p>
+<p><span class="math display">i_t = \sigma(W_i \cdot [h_{t-1}, x_t] +
+b_i)</span></p>
+<p><strong>Candidato</strong> — nueva información propuesta:</p>
+<p><span class="math display">\tilde{C}_t = \tanh(W_C \cdot [h_{t-1},
+x_t] + b_C)</span></p>
+<p><strong>Cell state</strong> — actualización de la memoria:</p>
+<p><span class="math display">C_t = f_t \odot C_{t-1} + i_t \odot
+\tilde{C}_t</span></p>
+<p><strong>Output gate</strong> — qué parte de la memoria usar:</p>
+<p><span class="math display">o_t = \sigma(W_o \cdot [h_{t-1}, x_t] +
+b_o)</span></p>
+<p><strong>Hidden state</strong> — la salida:</p>
+<p><span class="math display">h_t = o_t \odot \tanh(C_t)</span></p>
+<h3 id="las-tres-compuertas">2.3 Las tres compuertas</h3>
+<p>Cada compuerta usa una <strong>sigmoide</strong> <span class="math inline">\sigma</span> que produce valores entre 0 y 1:</p>
+<ul>
+<li><strong>0</strong> = bloquear completamente (cerrada)</li>
+<li><strong>1</strong> = dejar pasar todo (abierta)</li>
+<li><strong>Valores intermedios</strong> = filtrado parcial</li>
+</ul>
+<p>El operador <span class="math inline">\odot</span> es la
+multiplicación elemento a elemento (Hadamard product).</p>
+<h3 id="el-cell-state-como-autopista">2.4 El cell state como
+autopista</h3>
+<p>El cell state <span class="math inline">C_t</span> es la clave de la
+LSTM. Fluye de paso a paso con solo dos operaciones lineales
+(multiplicar por <span class="math inline">f_t</span>, sumar <span class="math inline">i_t \odot \tilde{C}_t</span>), lo que permite que
+los gradientes fluyan sin degradarse durante cientos de pasos.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Diagrama de la célula LSTM con flujo de datos animado</td>
+</tr>
+<tr>
+<td><strong>Badge overlay</strong></td>
+<td>Esquina sup. izq.</td>
+<td>Estado actual (“Introduce una secuencia”, “Procesando paso
+3/9”)</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Secuencia, control, compuertas forzadas, audio, métricas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="visualizacion-del-canvas">3.2 Visualización del canvas</h3>
+<p>El canvas muestra un diagrama esquemático de la célula LSTM:</p>
+<ul>
+<li><strong>Cell state</strong> (línea superior amarilla): flujo
+horizontal de la memoria</li>
+<li><strong>Forget gate</strong> (rojo): punto de multiplicación que
+borra información</li>
+<li><strong>Input gate</strong> (verde): punto de adición que escribe
+nueva información</li>
+<li><strong>Output gate</strong> (azul): filtro que selecciona qué sale
+al hidden state</li>
+<li><strong>Partículas animadas</strong>: fluyen por las conexiones
+mostrando la dirección de los datos</li>
+<li><strong>Barras de activación</strong>: intensidad de cada compuerta
+en el paso actual</li>
+</ul>
+<h3 id="metricas-en-header">3.3 Métricas en header</h3>
+<p>El header muestra paso actual, total de pasos y la predicción del
+carácter siguiente.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="secuencia">4.1 Secuencia</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 25%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Tipo</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Campo de texto</strong></td>
+<td>Input</td>
+<td>Secuencia de caracteres a procesar (máx. 20)</td>
+</tr>
+<tr>
+<td><strong>Repetitiva</strong></td>
+<td>Preset</td>
+<td>“abcabcabc” — patrón cíclico predecible</td>
+</tr>
+<tr>
+<td><strong>Pares</strong></td>
+<td>Preset</td>
+<td>“aabbccaabb” — repetición por parejas</td>
+</tr>
+<tr>
+<td><strong>Secuencial</strong></td>
+<td>Preset</td>
+<td>“abcdefgh” — orden alfabético sin repetición</td>
+</tr>
+<tr>
+<td><strong>Palíndromo</strong></td>
+<td>Preset</td>
+<td>“abbaabba” — patrón simétrico</td>
+</tr>
+<tr>
+<td><strong>Monótona</strong></td>
+<td>Preset</td>
+<td>“aaaaaaaaaa” — sin variación</td>
+</tr>
+<tr>
+<td><strong>Aleatoria</strong></td>
+<td>Preset</td>
+<td>Secuencia aleatoria de caracteres</td>
+</tr>
+</tbody>
+</table>
+<h3 id="control-de-ejecucion">4.2 Control de ejecución</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 50%" />
+<col style="width: 50%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Procesar</strong></td>
+<td>Ejecuta toda la secuencia de una vez</td>
+</tr>
+<tr>
+<td><strong>Paso a paso</strong></td>
+<td>Avanza un carácter</td>
+</tr>
+<tr>
+<td><strong>Animar</strong></td>
+<td>Reproducción automática con pausa entre pasos</td>
+</tr>
+<tr>
+<td><strong>Unidades LSTM</strong></td>
+<td>Slider 4-16 (paso 4): número de unidades en la capa oculta</td>
+</tr>
+</tbody>
+</table>
+<h3 id="forzar-compuertas">4.3 Forzar compuertas</h3>
+<p>Tres sliders permiten anular el valor aprendido de cada
+compuerta:</p>
+<table class="styled-table">
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 16%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Compuerta</th>
+<th>Rango</th>
+<th>Efecto de valor forzado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Forget gate</strong></td>
+<td>-1 (auto) a 100</td>
+<td>0 = borrar toda la memoria; 100 = retener todo</td>
+</tr>
+<tr>
+<td><strong>Input gate</strong></td>
+<td>-1 (auto) a 100</td>
+<td>0 = no guardar nada nuevo; 100 = guardar todo</td>
+</tr>
+<tr>
+<td><strong>Output gate</strong></td>
+<td>-1 (auto) a 100</td>
+<td>0 = no emitir nada; 100 = emitir todo</td>
+</tr>
+</tbody>
+</table>
+<p>El valor -1 significa “automático”: la red decide el valor con sus
+pesos aprendidos.</p>
+<h3 id="audio-y-metricas">4.4 Audio y métricas</h3>
+<ul>
+<li><strong>Volumen</strong>: 0-100%</li>
+<li><strong>Audio ON/OFF</strong>: toggle de sonificación</li>
+<li><strong>Métricas</strong>: paso actual, carácter, predicción, |cell
+state|, |hidden|, valores de cada compuerta con barras visuales</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="codificacion-one-hot">5.1 Codificación one-hot</h3>
+<p>Cada carácter se convierte en un vector one-hot de tamaño <span class="math inline">|\text{vocab}| = 26</span> (alfabeto):</p>
+<p><span class="math display">x_t = e_k \in \mathbb{R}^{26}, \quad
+\text{donde } k = \text{índice del carácter}</span></p>
+<h3 id="concatenacion-de-entrada">5.2 Concatenación de entrada</h3>
+<p>Las compuertas reciben la concatenación del hidden state anterior y
+la entrada actual:</p>
+<p><span class="math display">[h_{t-1}, x_t] \in \mathbb{R}^{n_h +
+26}</span></p>
+<p>donde <span class="math inline">n_h</span> es el número de unidades
+LSTM (4, 8, 12 o 16).</p>
+<h3 id="inicializacion-de-pesos">5.3 Inicialización de pesos</h3>
+<p>Los pesos se inicializan con distribución gaussiana escalada:</p>
+<p><span class="math display">W_{ij} \sim \mathcal{N}\left(0,
+\frac{1}{n_h + 26}\right)</span></p>
+<p>El <strong>bias del forget gate</strong> se inicializa a 1 (en lugar
+de 0) para que la red comience recordando por defecto — un truco
+práctico descubierto por Jozefowicz et al. (2015).</p>
+<h3 id="prediccion">5.4 Predicción</h3>
+<p>La capa de salida convierte el hidden state en probabilidades sobre
+el vocabulario:</p>
+<p><span class="math display">P(\text{siguiente} = k) =
+\text{softmax}(W_y h_t + b_y)_k</span></p>
+<p><span class="math display">\text{softmax}(z)_k =
+\frac{e^{z_k}}{\sum_j e^{z_j}}</span></p>
+<h3 id="normas-como-diagnostico">5.5 Normas como diagnóstico</h3>
+<p>La simulación muestra <span class="math inline">|C_t|</span> y <span class="math inline">|h_t|</span> (normas L2 de los vectores):</p>
+<p><span class="math display">|C_t| = \sqrt{\sum_i C_{t,i}^2}</span></p>
+<p>Si <span class="math inline">|C_t|</span> crece sin control, la
+memoria se satura. Si colapsa a 0, la red ha olvidado todo.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="mapeo-audio">6.1 Mapeo audio</h3>
+<p>La simulación sonifica el procesamiento de cada paso:</p>
+<table class="styled-table">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 54%" />
+</colgroup>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Sonido</th>
+<th>Parámetro mapeado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Forget gate</strong></td>
+<td>Nota grave</td>
+<td>Frecuencia proporcional a <span class="math inline">f_t</span> (más
+grave = más olvido)</td>
+</tr>
+<tr>
+<td><strong>Input gate</strong></td>
+<td>Nota media</td>
+<td>Frecuencia proporcional a <span class="math inline">i_t</span></td>
+</tr>
+<tr>
+<td><strong>Output gate</strong></td>
+<td>Nota aguda</td>
+<td>Frecuencia proporcional a <span class="math inline">o_t</span></td>
+</tr>
+<tr>
+<td><strong>Predicción correcta</strong></td>
+<td>Acorde consonante</td>
+<td>Armonía cuando la predicción coincide</td>
+</tr>
+<tr>
+<td><strong>Predicción incorrecta</strong></td>
+<td>Tono disonante</td>
+<td>Frecuencia desafinada</td>
+</tr>
+</tbody>
+</table>
+<h3 id="interpretacion-auditiva">6.2 Interpretación auditiva</h3>
+<ul>
+<li><strong>Secuencias predecibles</strong> (repetitivas): el audio se
+vuelve más armónico conforme la red aprende el patrón</li>
+<li><strong>Secuencias aleatorias</strong>: sonidos más caóticos e
+irregulares</li>
+<li><strong>Forget gate cerrada</strong> (forzada a 0): silencios o
+notas muy graves</li>
+<li><strong>Cell state saturado</strong>: frecuencias que alcanzan el
+límite superior</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="primera-exploracion">7.1 Primera exploración</h3>
+<ol type="1">
+<li>Deja la secuencia por defecto “abcabcabc”</li>
+<li>Pulsa <strong>Paso a paso</strong> repetidamente</li>
+<li>Observa cómo las barras de forget/input/output cambian en cada
+paso</li>
+<li>Nota cómo <span class="math inline">|C_t|</span> crece gradualmente
+— la red está acumulando memoria</li>
+<li>Compara la predicción con el carácter real del siguiente paso</li>
+</ol>
+<h3 id="comparar-patrones">7.2 Comparar patrones</h3>
+<ol type="1">
+<li>Prueba <strong>Repetitiva</strong> → la red aprende rápido
+(predicciones correctas tras pocos pasos)</li>
+<li>Prueba <strong>Monótona</strong> → forget gate alta, input gate baja
+(no necesita nueva info)</li>
+<li>Prueba <strong>Aleatoria</strong> → predicciones pobres, compuertas
+erráticas</li>
+<li>Compara los valores de <span class="math inline">|C_t|</span> entre
+las tres secuencias</li>
+</ol>
+<h3 id="experimentar-con-compuertas-forzadas">7.3 Experimentar con
+compuertas forzadas</h3>
+<ol type="1">
+<li>Fuerza <strong>Forget gate = 0</strong>: observa cómo <span class="math inline">|C_t|</span> cae a cero — sin memoria</li>
+<li>Fuerza <strong>Forget gate = 100</strong>: <span class="math inline">|C_t|</span> crece sin parar — memoria infinita</li>
+<li>Fuerza <strong>Input gate = 0</strong>: la red no puede guardar
+información nueva</li>
+<li>Fuerza <strong>Output gate = 0</strong>: la red tiene memoria
+interna pero no puede usarla para predecir</li>
+</ol>
+<h3 id="variar-unidades">7.4 Variar unidades</h3>
+<ol type="1">
+<li>Cambia a 4 unidades → menos capacidad, predicciones peores en
+secuencias complejas</li>
+<li>Cambia a 16 unidades → más capacidad, mejor con patrones largos</li>
+<li>Observa cómo <span class="math inline">|h_t|</span> escala con el
+número de unidades</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="vanishing-gradient-por-que-funciona-la-lstm">8.1 Vanishing
+gradient: por qué funciona la LSTM</h3>
+<p>En una RNN simple, el gradiente en el paso <span class="math inline">t</span> respecto al paso <span class="math inline">t-k</span> es:</p>
+<p><span class="math display">\frac{\partial L_t}{\partial h_{t-k}} =
+\prod_{i=t-k}^{t-1} W_h^T \cdot \text{diag}(\sigma'(z_i))</span></p>
+<p>Este producto tiende a 0 exponencialmente. En una LSTM, el gradiente
+a través del cell state es:</p>
+<p><span class="math display">\frac{\partial C_t}{\partial C_{t-1}} =
+f_t</span></p>
+<p>Si <span class="math inline">f_t \approx 1</span>, el gradiente fluye
+sin atenuación. La LSTM aprende cuándo olvidar (<span class="math inline">f_t \to 0</span>) y cuándo recordar (<span class="math inline">f_t \to 1</span>), controlando activamente el flujo
+del gradiente.</p>
+<h3 id="gru-la-alternativa-simplificada">8.2 GRU: la alternativa
+simplificada</h3>
+<p>La <strong>Gated Recurrent Unit</strong> (Cho et al., 2014) combina
+forget e input gate en una sola “update gate” <span class="math inline">z_t</span>:</p>
+<p><span class="math display">h_t = (1 - z_t) \odot h_{t-1} + z_t \odot
+\tilde{h}_t</span></p>
+<p>Menos parámetros, rendimiento similar en muchas tareas.</p>
+<h3 id="peephole-connections">8.3 Peephole connections</h3>
+<p>Variante de Gers &amp; Schmidhuber (2000) donde las compuertas
+también miran el cell state:</p>
+<p><span class="math display">f_t = \sigma(W_f \cdot [C_{t-1}, h_{t-1},
+x_t] + b_f)</span></p>
+<p>Permite a la red basar sus decisiones de compuerta en el contenido
+actual de la memoria.</p>
+<h3 id="bidirectional-lstm">8.4 Bidirectional LSTM</h3>
+<p>Procesa la secuencia en ambas direcciones y concatena los hidden
+states:</p>
+<p><span class="math display">\overrightarrow{h_t}, \overleftarrow{h_t}
+\to h_t = [\overrightarrow{h_t}; \overleftarrow{h_t}]</span></p>
+<p>Cada posición tiene contexto del pasado y del futuro.</p>
+<h3 id="lstm-vs-transformers">8.5 LSTM vs Transformers</h3>
+<p>Los Transformers han reemplazado a las LSTM en muchas tareas de NLP
+porque procesan toda la secuencia en paralelo (atención) en lugar de
+paso a paso. Sin embargo, las LSTM siguen siendo relevantes en streaming
+de datos, dispositivos con recursos limitados y series temporales en
+tiempo real.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-detector-de-patrones">Ejercicio 1: Detector de
+patrones</h3>
+<p>Usa la secuencia “abcabcabc”. Procésala paso a paso y anota en qué
+paso la predicción se vuelve correcta por primera vez. ¿Cuántos pasos
+necesita la red para “aprender” el patrón cíclico de período 3?</p>
+<h3 id="ejercicio-2-memoria-forzada">Ejercicio 2: Memoria forzada</h3>
+<p>Fuerza el forget gate a 0 y procesa “abcabcabc”. ¿Qué ocurre con las
+predicciones? Ahora fuerza el forget gate a 100. ¿Mejora o empeora?
+Explica por qué la red necesita un balance entre recordar y olvidar.</p>
+<h3 id="ejercicio-3-capacidad-vs-complejidad">Ejercicio 3: Capacidad vs
+complejidad</h3>
+<p>Compara el rendimiento con 4 unidades vs 16 unidades en la secuencia
+“abbaabba” (palíndromo). ¿Cuántas unidades necesita la red para capturar
+la simetría del palíndromo? ¿Hay un punto de rendimientos
+decrecientes?</p>
+<h3 id="ejercicio-4-secuencia-monotona">Ejercicio 4: Secuencia
+monótona</h3>
+<p>Procesa “aaaaaaaaaa” y observa las compuertas. ¿Qué valores toman
+forget, input y output gate? Interpreta: ¿por qué el forget gate es alto
+y el input gate bajo cuando la secuencia no cambia?</p>
+<h3 id="ejercicio-5-output-gate-aislada">Ejercicio 5: Output gate
+aislada</h3>
+<p>Fuerza input gate = 100 y forget gate = 100 (máxima memoria). Ahora
+varía el output gate de 0 a 100 mientras procesas una secuencia. ¿Cómo
+cambia la predicción? El output gate es como una válvula de lectura:
+¿qué pasa si la memoria está llena pero no se puede leer?</p>
+<h3 id="ejercicio-6-aleatoriedad-y-prediccion">Ejercicio 6: Aleatoriedad
+y predicción</h3>
+<p>Genera 5 secuencias aleatorias y compara las predicciones. ¿Por qué
+una secuencia verdaderamente aleatoria es inherentemente impredecible?
+Relaciona esto con la entropía de Shannon: <span class="math inline">H =
+-\sum p_i \log_2 p_i</span>. ¿Cuál sería la entropía máxima para un
+vocabulario de 26 caracteres?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>LSTM</strong></td>
+<td>Long Short-Term Memory: tipo de RNN con compuertas que controlan el
+flujo de información</td>
+</tr>
+<tr>
+<td><strong>Cell state</strong></td>
+<td>Vector de memoria que fluye horizontalmente a través de los pasos
+temporales</td>
+</tr>
+<tr>
+<td><strong>Hidden state</strong></td>
+<td>Salida de la célula LSTM en cada paso, usada para predicciones</td>
+</tr>
+<tr>
+<td><strong>Forget gate</strong></td>
+<td>Compuerta sigmoide que decide qué parte del cell state anterior
+borrar</td>
+</tr>
+<tr>
+<td><strong>Input gate</strong></td>
+<td>Compuerta sigmoide que decide qué nueva información guardar en el
+cell state</td>
+</tr>
+<tr>
+<td><strong>Output gate</strong></td>
+<td>Compuerta sigmoide que decide qué parte del cell state emitir como
+hidden state</td>
+</tr>
+<tr>
+<td><strong>Candidato</strong></td>
+<td>Valor propuesto para añadir al cell state, generado con tanh</td>
+</tr>
+<tr>
+<td><strong>Sigmoide</strong></td>
+<td>Función <span class="math inline">\sigma(x) = 1/(1+e^{-x})</span>
+que comprime valores al rango <span class="math inline">(0,1)</span></td>
+</tr>
+<tr>
+<td><strong>Hadamard product</strong></td>
+<td>Multiplicación elemento a elemento de dos vectores: <span class="math inline">(a \odot b)_i = a_i \cdot b_i</span></td>
+</tr>
+<tr>
+<td><strong>One-hot encoding</strong></td>
+<td>Representación de un carácter como vector con un 1 y el resto
+0s</td>
+</tr>
+<tr>
+<td><strong>Vanishing gradient</strong></td>
+<td>Problema donde los gradientes se atenúan exponencialmente en redes
+profundas/recurrentes</td>
+</tr>
+<tr>
+<td><strong>RNN</strong></td>
+<td>Red Neuronal Recurrente: arquitectura que procesa secuencias con
+estado oculto</td>
+</tr>
+<tr>
+<td><strong>GRU</strong></td>
+<td>Gated Recurrent Unit: variante simplificada de LSTM con 2
+compuertas</td>
+</tr>
+<tr>
+<td><strong>Softmax</strong></td>
+<td>Función que convierte un vector de scores en probabilidades que
+suman 1</td>
+</tr>
+<tr>
+<td><strong>Peephole</strong></td>
+<td>Variante LSTM donde las compuertas también observan el cell
+state</td>
+</tr>
+<tr>
+<td><strong>Bidirectional</strong></td>
+<td>LSTM que procesa la secuencia en ambas direcciones</td>
+</tr>
+<tr>
+<td><strong>Norma L2</strong></td>
+<td><span class="math inline">\|v\| = \sqrt{\sum v_i^2}</span>: magnitud
+de un vector</td>
+</tr>
+<tr>
+<td><strong>Secuencia</strong></td>
+<td>Serie ordenada de tokens (caracteres, palabras, valores) procesada
+paso a paso</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Hochreiter, S. &amp; Schmidhuber, J. (1997). “Long Short-Term
+Memory.” <em>Neural Computation</em>, 9(8), 1735-1780.</li>
+<li>Gers, F., Schmidhuber, J. &amp; Cummins, F. (2000). “Learning to
+Forget: Continual Prediction with LSTM.” <em>Neural Computation</em>,
+12(10), 2451-2471.</li>
+<li>Cho, K. et al. (2014). “Learning Phrase Representations using RNN
+Encoder-Decoder for Statistical Machine Translation.”
+<em>EMNLP</em>.</li>
+<li>Jozefowicz, R., Zaremba, W. &amp; Sutskever, I. (2015). “An
+Empirical Exploration of Recurrent Network Architectures.”
+<em>ICML</em>.</li>
+<li>Olah, C. (2015). “Understanding LSTM Networks.” <em>colah’s
+blog</em>.</li>
+<li>Greff, K. et al. (2017). “LSTM: A Search Space Odyssey.” <em>IEEE
+TNNLS</em>, 28(10), 2222-2232.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chain of
+Thought Unrolled — El Árbol del Razonamiento</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #8b5cf6;
+    --primary-dark: #7c3aed;
+    --primary-light: #c4b5fd;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #8b5cf6;
+    --accent-light: #c4b5fd;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #2e1065 0%, #0a0a1a 60%, #0f051a 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #c4b5fd; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #ede9fe;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #5b21b6;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #f5f3ff;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #f5f3ff; }
+tr:hover { background: #c4b5fd22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del razonamiento paso a paso (Chain of
+Thought) en modelos de lenguaje. Compara cómo un LLM resuelve problemas
+descomponiend...</p>
+        <div class="badge">Transformers y LLMs</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#razonamiento-implicito-vs.-explicito">2.1 Razonamiento implícito
+vs. e...</a></li>
+  <li class="sub-item"><a href="#la-inequalidad-clave">2.2 La inequalidad clave</a></li>
+  <li class="sub-item"><a href="#tipos-de-razonamiento">2.3 Tipos de razonamiento</a></li>
+  <li class="sub-item"><a href="#confianza-por-paso">2.4 Confianza por paso</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#canvas-principal">3.1 Canvas principal</a></li>
+  <li class="sub-item"><a href="#panel-lateral">3.2 Panel lateral</a></li>
+  <li class="sub-item"><a href="#barra-de-estado">3.3 Barra de estado</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#selector-de-problema">4.1 Selector de problema</a></li>
+  <li class="sub-item"><a href="#modos-de-resolucion">4.2 Modos de resolución</a></li>
+  <li class="sub-item"><a href="#configuracion">4.3 Configuración</a></li>
+  <li class="sub-item"><a href="#metricas">4.4 Métricas</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#probabilidad-condicional-con-cadena">5.1 Probabilidad
+condicional con...</a></li>
+  <li class="sub-item"><a href="#confianza-acumulada">5.2 Confianza acumulada</a></li>
+  <li class="sub-item"><a href="#self-consistency">5.3 Self-consistency</a></li>
+  <li class="sub-item"><a href="#alucinaciones-en-cadena">5.4 Alucinaciones en cadena</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#diseno-de-audio">6.1 Diseño de audio</a></li>
+  <li class="sub-item"><a href="#mapeo-de-frecuencias">6.2 Mapeo de frecuencias</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#tree-of-thought">8.1 Tree of Thought</a></li>
+  <li class="sub-item"><a href="#chain-of-thought-faithful-vs.-post-hoc">8.2 Chain of Thought
+Faithful vs...</a></li>
+  <li class="sub-item"><a href="#cot-como-computacion-implicita">8.3 CoT como computación
+implícita</a></li>
+  <li class="sub-item"><a href="#verificacion-y-auto-correccion">8.4 Verificación y
+auto-corrección</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Los <strong>modelos de lenguaje</strong> (LLMs) como GPT-4 o Claude
+son capaces de resolver problemas complejos, pero su rendimiento depende
+dramáticamente de <em>cómo</em> se les pide que razonen. Pedirle a un
+modelo que dé una respuesta directa (“¿Cuánto es 23 × 17?”) produce
+resultados diferentes a pedirle que <strong>piense paso a
+paso</strong>.</p>
+<p>El <strong>Chain of Thought</strong> (CoT), introducido por Wei et
+al. (2022), es una técnica de prompting que hace explícito el
+razonamiento intermedio. En lugar de un salto directo de pregunta a
+respuesta, el modelo genera una cadena de pasos lógicos.</p>
+<p>Esta simulación visualiza el proceso como un <strong>árbol de
+razonamiento</strong>: cada nodo es un paso con su confianza, los
+errores se muestran como backtracking (nodos rojos), y el modo de
+alucinación demuestra cómo los razonamientos pueden parecer lógicos pero
+contener errores sutiles.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="razonamiento-implicito-vs.-explicito">2.1 Razonamiento implícito
+vs. explícito</h3>
+<p>Un LLM sin CoT genera <span class="math inline">P(\text{respuesta} |
+\text{pregunta})</span> directamente. Con CoT, genera:</p>
+<p><span class="math display">P(\text{respuesta} | \text{pregunta}) =
+\sum_{\text{cadena}} P(\text{respuesta} | \text{cadena},
+\text{pregunta}) \cdot P(\text{cadena} | \text{pregunta})</span></p>
+<p>Al marginalizar sobre cadenas de razonamiento, el modelo puede
+“explorar” caminos lógicos intermedios que mejoran la probabilidad de
+llegar a la respuesta correcta.</p>
+<h3 id="la-inequalidad-clave">2.2 La inequalidad clave</h3>
+<p>La observación empírica fundamental es:</p>
+<p><span class="math display">P(\text{respuesta correcta} | \text{CoT})
+> P(\text{respuesta correcta} | \text{directa})</span></p>
+<p>Esta desigualdad se amplifica con la complejidad del problema: para
+aritmética simple la diferencia es pequeña, pero para razonamiento
+multi-paso se vuelve enorme.</p>
+<h3 id="tipos-de-razonamiento">2.3 Tipos de razonamiento</h3>
+<p>La simulación incluye 5 tipos de problemas:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Tipo</th>
+<th>Ejemplo</th>
+<th>Pasos CoT típicos</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Aritmética</td>
+<td>23 × 17</td>
+<td>5-7 (descomponer, multiplicar, sumar)</td>
+</tr>
+<tr>
+<td>Lógica</td>
+<td>Silogismo</td>
+<td>3-4 (premisas, deducción)</td>
+</tr>
+<tr>
+<td>Secuencia</td>
+<td>2, 6, 18, 54, ?</td>
+<td>3-4 (patrón, regla, aplicar)</td>
+</tr>
+<tr>
+<td>Analogía</td>
+<td>Día:Noche :: Calor:?</td>
+<td>2-3 (relación, aplicar)</td>
+</tr>
+<tr>
+<td>Multi-paso</td>
+<td>Problema verbal</td>
+<td>5-8 (parsear, modelar, resolver)</td>
+</tr>
+</tbody>
+</table>
+<h3 id="confianza-por-paso">2.4 Confianza por paso</h3>
+<p>Cada nodo del árbol tiene una <strong>confianza</strong> <span class="math inline">c \in [0, 1]</span> que refleja cuán seguro está el
+modelo de ese paso intermedio. Visualmente se codifica con color: verde
+= alta confianza, amarillo = media, rojo = baja (posible error o
+backtracking).</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="canvas-principal">3.1 Canvas principal</h3>
+<p>El canvas muestra el <strong>árbol de razonamiento</strong>:</p>
+<ul>
+<li><strong>Nodos circulares</strong>: cada paso de razonamiento,
+coloreados por confianza</li>
+<li><strong>Aristas</strong>: conexiones entre pasos (padre → hijo)</li>
+<li><strong>Nodos rojos</strong>: backtracking — pasos descartados por
+error detectado</li>
+<li><strong>Nodo final</strong>: respuesta, resaltado con borde
+brillante</li>
+<li><strong>Comparación</strong>: si se usa respuesta directa, aparece
+un solo nodo versus el árbol completo</li>
+</ul>
+<h3 id="panel-lateral">3.2 Panel lateral</h3>
+<ul>
+<li><strong>Ecuación</strong>: <span class="math inline">P(\text{answer}
+| \text{CoT}) > P(\text{answer} | \text{direct})</span></li>
+<li><strong>Selector de problema</strong>: 5 problemas predefinidos</li>
+<li><strong>Botones</strong>: Resolver con CoT, Respuesta Directa,
+Reset</li>
+<li><strong>Toggles</strong>: Modo Alucinación, Mostrar Confianza</li>
+<li><strong>Comparación</strong>: tabla con pasos, confianza y
+corrección para ambos métodos</li>
+</ul>
+<h3 id="barra-de-estado">3.3 Barra de estado</h3>
+<p>Muestra el conteo de nodos activos y la confianza general del
+razonamiento.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="selector-de-problema">4.1 Selector de problema</h3>
+<p>Dropdown con 5 problemas de dificultad creciente: -
+<strong>Aritmética</strong>: 23 × 17 = ? — requiere descomposición -
+<strong>Lógica</strong>: Todos A son B. X es A. ¿X es B? — silogismo
+clásico - <strong>Secuencia</strong>: 2, 6, 18, 54, ? — progresión
+geométrica - <strong>Analogía</strong>: Día:Noche :: Calor:? — relación
+de opuestos - <strong>Multi-paso</strong>: Si tengo 5 manzanas… —
+problema verbal compuesto</p>
+<h3 id="modos-de-resolucion">4.2 Modos de resolución</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Resolver con CoT</td>
+<td>Genera el árbol de razonamiento paso a paso con animación</td>
+</tr>
+<tr>
+<td>Respuesta Directa</td>
+<td>Genera un único nodo con la respuesta inmediata</td>
+</tr>
+<tr>
+<td>Reset</td>
+<td>Limpia el canvas y las métricas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuracion">4.3 Configuración</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 47%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modo Alucinación</td>
+<td>Introduce errores sutiles en los pasos intermedios: cálculos
+incorrectos que “parecen” lógicos</td>
+</tr>
+<tr>
+<td>Mostrar Confianza</td>
+<td>Muestra/oculta los valores numéricos de confianza en cada nodo</td>
+</tr>
+</tbody>
+</table>
+<h3 id="metricas">4.4 Métricas</h3>
+<p>La sección de comparación muestra lado a lado: - Número de pasos CoT
+- Confianza CoT vs. Directa - Si cada método llegó a la respuesta
+correcta</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="probabilidad-condicional-con-cadena">5.1 Probabilidad
+condicional con cadena</h3>
+<p>Para un problema con respuesta <span class="math inline">a</span> y
+cadena de razonamiento <span class="math inline">c_1, c_2, \ldots,
+c_n</span>:</p>
+<p><span class="math display">P(a | x) = P(a | c_n, x) \prod_{i=1}^{n}
+P(c_i | c_{i-1}, \ldots, c_1, x)</span></p>
+<p>Cada paso condiciona en todos los anteriores, creando una cadena de
+dependencias.</p>
+<h3 id="confianza-acumulada">5.2 Confianza acumulada</h3>
+<p>La confianza total de una cadena es aproximadamente:</p>
+<p><span class="math display">C_{\text{total}} = \prod_{i=1}^{n}
+c_i</span></p>
+<p>donde <span class="math inline">c_i</span> es la confianza del paso
+<span class="math inline">i</span>. Esto implica que una cadena larga
+con pasos de confianza 0.9 cada uno tiene confianza total <span class="math inline">0.9^n</span>, que decrece exponencialmente.</p>
+<h3 id="self-consistency">5.3 Self-consistency</h3>
+<p>Una mejora sobre CoT es generar <span class="math inline">k</span>
+cadenas de razonamiento y tomar la respuesta mayoritaria:</p>
+<p><span class="math display">a^* = \arg\max_a \sum_{j=1}^{k}
+\mathbb{1}[a_j = a]</span></p>
+<p>Esto es equivalente a un ensemble de razonamientos: si 7 de 10
+cadenas llegan a “391”, esa es probablemente la respuesta correcta.</p>
+<h3 id="alucinaciones-en-cadena">5.4 Alucinaciones en cadena</h3>
+<p>Una alucinación ocurre cuando un paso <span class="math inline">c_i</span> es incorrecto pero tiene alta confianza
+aparente. El error se propaga:</p>
+<p><span class="math display">P(a_{\text{correcta}} | c_1, \ldots,
+c_i^{\text{error}}, \ldots, c_n) \approx 0</span></p>
+<p>Un solo paso erróneo puede invalidar toda la cadena. La simulación
+demuestra esto visualmente con nodos de alta confianza pero contenido
+incorrecto.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="diseno-de-audio">6.1 Diseño de audio</h3>
+<p>Cada evento del razonamiento produce un sonido:</p>
+<ul>
+<li><strong>Nuevo nodo</strong>: nota ascendente cuya frecuencia refleja
+la confianza</li>
+<li><strong>Backtracking</strong>: tono descendente en rojo</li>
+<li><strong>Respuesta final</strong>: acorde mayor si correcta, menor si
+incorrecta</li>
+<li><strong>Alucinación</strong>: nota con ligero detune (desafinación
+intencional)</li>
+</ul>
+<h3 id="mapeo-de-frecuencias">6.2 Mapeo de frecuencias</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Evento</th>
+<th>Frecuencia</th>
+<th>Duración</th>
+<th>Tipo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nodo normal</td>
+<td>300 + <span class="math inline">c \times 400</span> Hz</td>
+<td>0.2s</td>
+<td>sine</td>
+</tr>
+<tr>
+<td>Backtrack</td>
+<td>600 → 200 Hz (glide)</td>
+<td>0.3s</td>
+<td>sawtooth</td>
+</tr>
+<tr>
+<td>Respuesta correcta</td>
+<td>Acorde C-E-G</td>
+<td>0.5s</td>
+<td>sine</td>
+</tr>
+<tr>
+<td>Respuesta incorrecta</td>
+<td>200 Hz</td>
+<td>0.4s</td>
+<td>triangle</td>
+</tr>
+<tr>
+<td>Alucinación</td>
+<td>freq ± 8 Hz</td>
+<td>0.25s</td>
+<td>sine (detuned)</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="paso-1-resolver-con-cot">Paso 1: Resolver con CoT</h3>
+<ol type="1">
+<li>Selecciona el problema <em>“Aritmética: 23 × 17”</em></li>
+<li>Pulsa <strong>Resolver con CoT</strong></li>
+<li>Observa cómo el árbol crece: “Descomponer 23 × 17” → “23 × 10 = 230”
+→ “23 × 7 = ?” → …</li>
+<li>Cada nodo muestra su texto y confianza coloreada</li>
+</ol>
+<h3 id="paso-2-comparar-con-respuesta-directa">Paso 2: Comparar con
+respuesta directa</h3>
+<ol type="1">
+<li>Pulsa <strong>Reset</strong>, luego <strong>Respuesta
+Directa</strong></li>
+<li>Aparece un único nodo con la respuesta</li>
+<li>Compara las métricas: ¿es correcta? ¿Con qué confianza?</li>
+<li>Para aritmética simple, ambos métodos pueden acertar, pero CoT es
+más fiable</li>
+</ol>
+<h3 id="paso-3-escalar-la-dificultad">Paso 3: Escalar la dificultad</h3>
+<ol type="1">
+<li>Cambia a <em>“Multi-paso: Si tengo 5 manzanas…”</em></li>
+<li>Resuelve con CoT: observa 5-8 pasos con confianzas variables</li>
+<li>Resuelve con Directa: la confianza baja notablemente</li>
+<li>Este es el régimen donde CoT brilla</li>
+</ol>
+<h3 id="paso-4-explorar-alucinaciones">Paso 4: Explorar
+alucinaciones</h3>
+<ol type="1">
+<li>Activa <strong>Modo Alucinación</strong></li>
+<li>Resuelve el problema aritmético con CoT</li>
+<li>Observa que un paso intermedio tiene confianza alta pero contiene un
+error (e.g., “20 × 7 = 160” en vez de 140)</li>
+<li>El error se propaga: la respuesta final es incorrecta a pesar del
+“razonamiento”</li>
+</ol>
+<h3 id="paso-5-logica-y-backtracking">Paso 5: Lógica y backtracking</h3>
+<ol type="1">
+<li>Selecciona el problema de lógica (silogismo)</li>
+<li>Resuelve con CoT</li>
+<li>Observa si hay nodos rojos de backtracking donde el modelo corrigió
+un razonamiento</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="tree-of-thought">8.1 Tree of Thought</h3>
+<p>Una extensión de CoT donde el modelo explora múltiples caminos de
+razonamiento en paralelo, podando ramas poco prometedoras:</p>
+<p><span class="math display">\text{ToT}: \text{BFS/DFS sobre el espacio
+de razonamientos}</span></p>
+<p>En lugar de una cadena lineal, se genera un árbol completo y se
+selecciona el mejor camino.</p>
+<h3 id="chain-of-thought-faithful-vs.-post-hoc">8.2 Chain of Thought
+Faithful vs. Post-hoc</h3>
+<p>Un debate activo: ¿los pasos de CoT reflejan el razonamiento
+<em>real</em> del modelo, o son racionalizaciones post-hoc? Estudios
+muestran que modificar los pasos intermedios a veces no cambia la
+respuesta, sugiriendo que el modelo ya “sabe” la respuesta y genera el
+razonamiento como justificación.</p>
+<h3 id="cot-como-computacion-implicita">8.3 CoT como computación
+implícita</h3>
+<p>Cada token generado en la cadena CoT actúa como un “paso de
+computación” adicional. Un modelo con <span class="math inline">L</span>
+layers de Transformer y <span class="math inline">n</span> tokens de CoT
+tiene efectivamente <span class="math inline">L \times n</span> pasos de
+procesamiento, versus solo <span class="math inline">L</span> sin CoT.
+Esto explica por qué CoT ayuda: da al modelo más “tiempo para
+pensar”.</p>
+<h3 id="verificacion-y-auto-correccion">8.4 Verificación y
+auto-corrección</h3>
+<p>Técnicas modernas combinan CoT con verificadores:</p>
+<ol type="1">
+<li>Generar cadena de razonamiento</li>
+<li>Verificar cada paso con un modelo verificador</li>
+<li>Si un paso falla, regenerar desde ese punto</li>
+</ol>
+<p>Esto mitiga las alucinaciones al introducir un mecanismo de
+feedback.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-longitud-optima-de-cadena">Ejercicio 1: Longitud
+óptima de cadena</h3>
+<p>Resuelve cada uno de los 5 problemas con CoT. Registra el número de
+pasos y si la respuesta fue correcta. ¿Hay correlación entre el número
+de pasos y la dificultad del problema?</p>
+<h3 id="ejercicio-2-tasa-de-error-con-alucinaciones">Ejercicio 2: Tasa
+de error con alucinaciones</h3>
+<p>Con el modo alucinación activado, resuelve el problema aritmético 10
+veces con CoT. ¿En cuántas ocasiones la respuesta final fue incorrecta?
+Calcula la tasa de error y compárala con la tasa sin alucinaciones.</p>
+<h3 id="ejercicio-3-confianza-acumulada">Ejercicio 3: Confianza
+acumulada</h3>
+<p>Para el problema multi-paso, anota la confianza de cada nodo de la
+cadena CoT. Calcula <span class="math inline">C_{\text{total}} = \prod
+c_i</span>. ¿El producto explica la confianza final mostrada? ¿Qué pasa
+si un solo paso tiene <span class="math inline">c_i = 0.5</span>?</p>
+<h3 id="ejercicio-4-cot-vs.-directa-por-tipo">Ejercicio 4: CoT
+vs. Directa por tipo</h3>
+<p>Completa una tabla comparando CoT vs. Directa para cada tipo de
+problema (aritmética, lógica, secuencia, analogía, multi-paso). ¿Para
+qué tipos la diferencia es más pronunciada?</p>
+<h3 id="ejercicio-5-self-consistency-manual">Ejercicio 5:
+Self-consistency manual</h3>
+<p>Resuelve el problema aritmético con CoT 5 veces. Si obtienes
+resultados diferentes, ¿cuál elegirías por votación mayoritaria? Compara
+con la respuesta verdadera.</p>
+<h3 id="ejercicio-6-detectar-la-alucinacion">Ejercicio 6: Detectar la
+alucinación</h3>
+<p>Activa el modo alucinación y resuelve un problema. Sin mirar la
+respuesta correcta, intenta identificar visualmente qué nodo contiene el
+error basándote solo en los textos de cada paso. ¿Es fácil o
+difícil?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 45%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Chain of Thought (CoT)</td>
+<td>Técnica de prompting que hace explícito el razonamiento paso a
+paso</td>
+</tr>
+<tr>
+<td>Prompting</td>
+<td>Técnica de formular instrucciones para guiar la salida de un
+LLM</td>
+</tr>
+<tr>
+<td>LLM</td>
+<td>Large Language Model — modelo de lenguaje de gran escala</td>
+</tr>
+<tr>
+<td>Razonamiento multi-paso</td>
+<td>Problemas que requieren múltiples operaciones lógicas
+secuenciales</td>
+</tr>
+<tr>
+<td>Backtracking</td>
+<td>Retroceder en la cadena de razonamiento al detectar un error</td>
+</tr>
+<tr>
+<td>Alucinación</td>
+<td>Paso de razonamiento que parece correcto pero contiene errores
+factuales</td>
+</tr>
+<tr>
+<td>Confianza</td>
+<td>Probabilidad asignada a cada paso del razonamiento (0 a 1)</td>
+</tr>
+<tr>
+<td>Self-consistency</td>
+<td>Generar múltiples cadenas CoT y elegir la respuesta mayoritaria</td>
+</tr>
+<tr>
+<td>Tree of Thought (ToT)</td>
+<td>Extensión de CoT que explora múltiples caminos en paralelo</td>
+</tr>
+<tr>
+<td>Zero-shot CoT</td>
+<td>Usar CoT sin ejemplos, solo con “Let’s think step by step”</td>
+</tr>
+<tr>
+<td>Few-shot CoT</td>
+<td>Incluir ejemplos resueltos paso a paso en el prompt</td>
+</tr>
+<tr>
+<td>Verificador</td>
+<td>Modelo que evalúa la corrección de cada paso de razonamiento</td>
+</tr>
+<tr>
+<td>Token</td>
+<td>Unidad mínima de texto procesada por el LLM</td>
+</tr>
+<tr>
+<td>Marginalización</td>
+<td>Sumar sobre todas las cadenas posibles para obtener <span class="math inline">P(\text{respuesta})</span></td>
+</tr>
+<tr>
+<td>Ensemble</td>
+<td>Combinar múltiples predicciones para mejorar la precisión</td>
+</tr>
+<tr>
+<td>Descomposición</td>
+<td>Dividir un problema complejo en subproblemas más simples</td>
+</tr>
+<tr>
+<td>Scratchpad</td>
+<td>Espacio de trabajo intermedio donde el modelo “escribe” su
+razonamiento</td>
+</tr>
+<tr>
+<td>Faithfulness</td>
+<td>Grado en que los pasos CoT reflejan el proceso real del modelo</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Wei, J., et al. (2022). <em>Chain-of-Thought Prompting Elicits
+Reasoning in Large Language Models</em>. NeurIPS.</li>
+<li>Wang, X., et al. (2023). <em>Self-Consistency Improves Chain of
+Thought Reasoning</em>. ICLR.</li>
+<li>Yao, S., et al. (2023). <em>Tree of Thoughts: Deliberate Problem
+Solving with Large Language Models</em>. NeurIPS.</li>
+<li>Kojima, T., et al. (2022). <em>Large Language Models are Zero-Shot
+Reasoners</em>. NeurIPS.</li>
+<li>Turpin, M., et al. (2023). <em>Language Models Don’t Always Say What
+They Think: Unfaithful Explanations in Chain-of-Thought Prompting</em>.
+NeurIPS.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

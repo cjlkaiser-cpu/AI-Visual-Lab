@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weight
+Initialization Galaxy — Propagación de Varianza en Redes Profundas</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #ef4444;
+    --primary-dark: #dc2626;
+    --primary-light: #fca5a5;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #ef4444;
+    --accent-light: #fca5a5;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #450a0a 0%, #0f0a0a 60%, #1a0505 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fca5a5; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fef2f2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #991b1b;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fef2f2;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fef2f2; }
+tr:hover { background: #fca5a522; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva que visualiza cómo diferentes esquemas de
+inicialización de pesos afectan la propagación de señales a través de
+redes neuron...</p>
+        <div class="badge">Fundamentos</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#el-problema-de-la-inicializacion">2.1 El problema de la
+inicializa...</a></li>
+  <li class="sub-item"><a href="#explosion-y-desvanecimiento">2.2 Explosión y
+desvanecimiento</a></li>
+  <li class="sub-item"><a href="#los-tres-esquemas-clasicos">2.3 Los tres esquemas clásicos</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#los-histogramas-galacticos">3.2 Los histogramas galácticos</a></li>
+  <li class="sub-item"><a href="#grafica-de-varianza-por-capa">3.3 Gráfica de varianza por
+capa</a></li>
+  <li class="sub-item"><a href="#diagnostico">3.4 Diagnóstico</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#metodo-de-inicializacion">4.1 Método de inicialización</a></li>
+  <li class="sub-item"><a href="#funcion-de-activacion">4.2 Función de activación</a></li>
+  <li class="sub-item"><a href="#arquitectura">4.3 Arquitectura</a></li>
+  <li class="sub-item"><a href="#control-de-propagacion">4.4 Control de propagación</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#derivacion-de-xavierglorot">5.1 Derivación de Xavier/Glorot</a></li>
+  <li class="sub-item"><a href="#derivacion-de-hekaiming">5.2 Derivación de He/Kaiming</a></li>
+  <li class="sub-item"><a href="#factor-de-escala-por-capa">5.3 Factor de escala por capa</a></li>
+  <li class="sub-item"><a href="#efecto-de-la-funcion-de-activacion">5.4 Efecto de la función de
+acti...</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#nota-por-capa">6.1 Nota por capa</a></li>
+  <li class="sub-item"><a href="#secuencia-de-propagacion">6.2 Secuencia de propagación</a></li>
+  <li class="sub-item"><a href="#acorde-de-diagnostico">6.3 Acorde de diagnóstico</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#inicializacion-ortogonal">8.1 Inicialización ortogonal</a></li>
+  <li class="sub-item"><a href="#batch-normalization-como-solucion">8.2 Batch Normalization como
+sol...</a></li>
+  <li class="sub-item"><a href="#layer-normalization-y-alternativas">8.3 Layer Normalization y
+altern...</a></li>
+  <li class="sub-item"><a href="#residual-connections-y-el-problema-de-profundidad">8.4 Residual
+connections y el pr...</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Antes de que una red neuronal aprenda cualquier cosa, sus pesos deben
+recibir <strong>valores iniciales</strong>. Esta decisión, que parece
+trivial, determina si el entrenamiento será exitoso o fallará
+catastróficamente. Pesos demasiado grandes causan que las señales
+exploten exponencialmente; pesos demasiado pequeños hacen que colapsen a
+cero.</p>
+<p>Esta simulación te permite ver ese fenómeno directamente. Construyes
+una red de hasta 30 capas y 256 neuronas por capa, seleccionas un método
+de inicialización y una función de activación, y observas cómo un batch
+de datos se transforma al pasar por cada capa. Los histogramas de
+activaciones de cada capa se muestran como “galaxias” — distribuciones
+de puntos que pueden expandirse, comprimirse o mantenerse estables.</p>
+<p>La clave está en una ecuación simple: <span class="math inline">\text{Var}[a_l] = n_{in} \cdot \text{Var}[w] \cdot
+\text{Var}[a_{l-1}]</span>. Si el producto <span class="math inline">n_{in} \cdot \text{Var}[w] \neq 1</span>, la
+varianza cambia exponencialmente con la profundidad.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="el-problema-de-la-inicializacion">2.1 El problema de la
+inicialización</h3>
+<p>En una capa densa, la pre-activación de la neurona <span class="math inline">j</span> es:</p>
+<p><span class="math display">z_j = \sum_{i=1}^{n} w_{ij} a_i +
+b_j</span></p>
+<p>Si los pesos <span class="math inline">w_{ij}</span> y las
+activaciones <span class="math inline">a_i</span> son independientes con
+media cero:</p>
+<p><span class="math display">\text{Var}[z_j] = n_{in} \cdot
+\text{Var}[w] \cdot \text{Var}[a]</span></p>
+<p>Para que la varianza se mantenga estable capa a capa,
+necesitamos:</p>
+<p><span class="math display">n_{in} \cdot \text{Var}[w] = 1</span></p>
+<h3 id="explosion-y-desvanecimiento">2.2 Explosión y
+desvanecimiento</h3>
+<p>Si <span class="math inline">n_{in} \cdot \text{Var}[w] >
+1</span>, la varianza crece exponencialmente:</p>
+<p><span class="math display">\text{Var}[a_L] = (n \cdot
+\text{Var}[w])^L \cdot \text{Var}[a_0] \to \infty</span></p>
+<p>Si <span class="math inline">n_{in} \cdot \text{Var}[w] <
+1</span>, la varianza decrece exponencialmente:</p>
+<p><span class="math display">\text{Var}[a_L] = (n \cdot
+\text{Var}[w])^L \cdot \text{Var}[a_0] \to 0</span></p>
+<p>En una red de 30 capas, incluso un factor de <span class="math inline">1.5</span> por capa resulta en <span class="math inline">1.5^{30} \approx 191000</span> — explosión
+total.</p>
+<h3 id="los-tres-esquemas-clasicos">2.3 Los tres esquemas clásicos</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Método</th>
+<th>Varianza</th>
+<th>Diseñado para</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Xavier/Glorot</td>
+<td><span class="math inline">\frac{2}{n_{in} + n_{out}}</span></td>
+<td>Sigmoid, Tanh</td>
+</tr>
+<tr>
+<td>He/Kaiming</td>
+<td><span class="math inline">\frac{2}{n_{in}}</span></td>
+<td>ReLU</td>
+</tr>
+<tr>
+<td>LeCun</td>
+<td><span class="math inline">\frac{1}{n_{in}}</span></td>
+<td>SELU</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Histogramas de activaciones por capa como “galaxias”</td>
+</tr>
+<tr>
+<td><strong>Tooltip</strong></td>
+<td>Sobre histograma hovereado</td>
+<td>Varianza, media, min/max de la capa</td>
+</tr>
+<tr>
+<td><strong>Badge de estado</strong></td>
+<td>Canvas</td>
+<td>Indica “Estable”, “Vanishing” o “Exploding”</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Inicialización, activación, arquitectura, métricas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="los-histogramas-galacticos">3.2 Los histogramas galácticos</h3>
+<p>Cada capa se representa como un histograma vertical de las
+activaciones del batch:</p>
+<ul>
+<li><strong>Histograma ancho y centrado</strong>: distribución saludable
+(varianza ≈ 1)</li>
+<li><strong>Histograma que colapsa a una línea</strong>: señal
+desvanecida (varianza → 0)</li>
+<li><strong>Histograma que se desborda</strong>: señal explosiva
+(varianza → ∞)</li>
+<li><strong>Partículas estelares</strong>: puntos individuales del batch
+que flotan alrededor del histograma</li>
+<li><strong>Glow</strong>: resplandor en los histogramas proporcional a
+la varianza</li>
+</ul>
+<h3 id="grafica-de-varianza-por-capa">3.3 Gráfica de varianza por
+capa</h3>
+<p>Miniatura que muestra <span class="math inline">\log(\text{Var})</span> en función del número de
+capa. Una línea horizontal indica estabilidad; una línea descendente
+indica vanishing; ascendente indica explosión.</p>
+<h3 id="diagnostico">3.4 Diagnóstico</h3>
+<p>Panel con: estado general, varianza de entrada, varianza de salida,
+ratio salida/entrada, presencia de NaN, varianza media, y número de
+capas estables.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="metodo-de-inicializacion">4.1 Método de inicialización</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 38%" />
+<col style="width: 38%" />
+</colgroup>
+<thead>
+<tr>
+<th>Método</th>
+<th>Distribución</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Xavier/Glorot</strong></td>
+<td><span class="math inline">\mathcal{N}(0,
+2/(n_{in}+n_{out}))</span></td>
+<td>Equilibra forward y backward pass</td>
+</tr>
+<tr>
+<td><strong>He/Kaiming</strong></td>
+<td><span class="math inline">\mathcal{N}(0, 2/n_{in})</span></td>
+<td>Compensa la “muerte” de mitad de ReLU</td>
+</tr>
+<tr>
+<td><strong>LeCun</strong></td>
+<td><span class="math inline">\mathcal{N}(0, 1/n_{in})</span></td>
+<td>Variante conservadora para SELU</td>
+</tr>
+<tr>
+<td><strong>Normal(0, 1)</strong></td>
+<td><span class="math inline">\mathcal{N}(0, 1)</span></td>
+<td>Demasiado grande — explosión garantizada</td>
+</tr>
+<tr>
+<td><strong>Normal(0, 0.01)</strong></td>
+<td><span class="math inline">\mathcal{N}(0, 0.0001)</span></td>
+<td>Demasiado pequeño — colapso garantizado</td>
+</tr>
+<tr>
+<td><strong>Zeros</strong></td>
+<td><span class="math inline">w = 0</span></td>
+<td>Sin ruptura de simetría — la red no aprende</td>
+</tr>
+</tbody>
+</table>
+<h3 id="funcion-de-activacion">4.2 Función de activación</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Activación</th>
+<th>Efecto en varianza</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>ReLU</strong></td>
+<td>Elimina valores negativos → reduce varianza a la mitad</td>
+</tr>
+<tr>
+<td><strong>Sigmoid</strong></td>
+<td>Comprime a <span class="math inline">(0,1)</span> → reduce varianza
+drásticamente</td>
+</tr>
+<tr>
+<td><strong>Tanh</strong></td>
+<td>Comprime a <span class="math inline">(-1,1)</span> → reduce
+varianza</td>
+</tr>
+<tr>
+<td><strong>Lineal</strong></td>
+<td>Sin efecto → solo la inicialización importa</td>
+</tr>
+</tbody>
+</table>
+<h3 id="arquitectura">4.3 Arquitectura</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Profundidad</td>
+<td>2 – 30 capas</td>
+<td>10</td>
+</tr>
+<tr>
+<td>Ancho</td>
+<td>8 – 256 neuronas</td>
+<td>64</td>
+</tr>
+<tr>
+<td>Batch size</td>
+<td>1 – 128</td>
+<td>32</td>
+</tr>
+</tbody>
+</table>
+<h3 id="control-de-propagacion">4.4 Control de propagación</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 46%" />
+<col style="width: 53%" />
+</colgroup>
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Propagar</strong></td>
+<td>Inicializa pesos y propaga un batch completo instantáneamente</td>
+</tr>
+<tr>
+<td><strong>Animar</strong></td>
+<td>Propaga capa por capa con animación visual</td>
+</tr>
+<tr>
+<td><strong>Comparar Todo</strong></td>
+<td>Ejecuta todas las combinaciones de inicialización + activación</td>
+</tr>
+</tbody>
+</table>
+<h3 id="opciones-visuales">4.5 Opciones visuales</h3>
+<ul>
+<li><strong>Partículas estelares</strong>: muestra puntos individuales
+del batch flotando alrededor del histograma</li>
+<li><strong>Glow en histogramas</strong>: añade un efecto de resplandor
+proporcional a la energía de cada capa</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="derivacion-de-xavierglorot">5.1 Derivación de Xavier/Glorot</h3>
+<p>Para una capa con <span class="math inline">n_{in}</span> entradas y
+<span class="math inline">n_{out}</span> salidas, queremos mantener la
+varianza en el forward pass:</p>
+<p><span class="math display">\text{Var}[z] = n_{in} \cdot \text{Var}[w]
+\cdot \text{Var}[a] \implies \text{Var}[w] = \frac{1}{n_{in}}</span></p>
+<p>Y también en el backward pass:</p>
+<p><span class="math display">\text{Var}[\delta] = n_{out} \cdot
+\text{Var}[w] \cdot \text{Var}[\delta'] \implies \text{Var}[w] =
+\frac{1}{n_{out}}</span></p>
+<p>Como no podemos satisfacer ambas simultáneamente, Xavier usa el
+<strong>promedio</strong>:</p>
+<p><span class="math display">\text{Var}[w] = \frac{2}{n_{in} +
+n_{out}}</span></p>
+<h3 id="derivacion-de-hekaiming">5.2 Derivación de He/Kaiming</h3>
+<p>ReLU elimina todos los valores negativos, reduciendo la varianza a la
+mitad:</p>
+<p><span class="math display">\text{Var}[\text{ReLU}(z)] =
+\frac{1}{2}\text{Var}[z]</span></p>
+<p>Para compensar, He duplica la varianza de Xavier (solo para
+forward):</p>
+<p><span class="math display">\text{Var}[w] =
+\frac{2}{n_{in}}</span></p>
+<h3 id="factor-de-escala-por-capa">5.3 Factor de escala por capa</h3>
+<p>Para activación lineal, el factor de escala por capa es:</p>
+<p><span class="math display">\alpha = n_{in} \cdot
+\text{Var}[w]</span></p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Método</th>
+<th><span class="math inline">\alpha</span> (con <span class="math inline">n_{in} = 64</span>)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Xavier</td>
+<td><span class="math inline">64 \cdot 2/128 = 1.0</span></td>
+</tr>
+<tr>
+<td>He</td>
+<td><span class="math inline">64 \cdot 2/64 = 2.0</span></td>
+</tr>
+<tr>
+<td>LeCun</td>
+<td><span class="math inline">64 \cdot 1/64 = 1.0</span></td>
+</tr>
+<tr>
+<td>Normal(0,1)</td>
+<td><span class="math inline">64 \cdot 1 = 64</span></td>
+</tr>
+<tr>
+<td>Normal(0,0.01)</td>
+<td><span class="math inline">64 \cdot 0.0001 = 0.0064</span></td>
+</tr>
+</tbody>
+</table>
+<p>Con 10 capas: Normal(0,1) → <span class="math inline">64^{10} \approx
+10^{18}</span> (NaN). Normal(0,0.01) → <span class="math inline">0.0064^{10} \approx 10^{-22}</span> (cero).</p>
+<h3 id="efecto-de-la-funcion-de-activacion">5.4 Efecto de la función de
+activación</h3>
+<p>La varianza después de aplicar la activación <span class="math inline">\sigma</span> es:</p>
+<p><span class="math display">\text{Var}[\sigma(z)] =
+\mathbb{E}[\sigma(z)^2] - \mathbb{E}[\sigma(z)]^2</span></p>
+<p>Para Sigmoid con <span class="math inline">z \sim \mathcal{N}(0,
+1)</span>: <span class="math inline">\text{Var}[\sigma(z)] \approx
+0.05</span>. Esto significa que sigmoid aplasta la varianza a <span class="math inline">1/20</span> de su valor original <strong>en cada
+capa</strong>.</p>
+<h3 id="el-problema-de-simetria-con-zeros">5.5 El problema de simetría
+con zeros</h3>
+<p>Si todos los pesos son cero, todas las neuronas de una capa computan
+la misma función. Sus gradientes son idénticos, se actualizan de forma
+idéntica, y <strong>nunca se diferencian</strong>. La red tiene
+efectivamente una sola neurona por capa.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="nota-por-capa">6.1 Nota por capa</h3>
+<p>Cada capa produce una nota cuya frecuencia depende de la
+varianza:</p>
+<ul>
+<li><strong>Varianza estable</strong> (<span class="math inline">\approx
+1</span>): nota media (<span class="math inline">\sim 440</span> Hz),
+armónica</li>
+<li><strong>Varianza alta</strong> (explosión): nota aguda, volumen
+creciente</li>
+<li><strong>Varianza baja</strong> (vanishing): nota grave, volumen
+decreciente</li>
+<li><strong>NaN/Infinito</strong>: silencio abrupto (la señal
+murió)</li>
+</ul>
+<h3 id="secuencia-de-propagacion">6.2 Secuencia de propagación</h3>
+<p>Durante la animación, las notas suenan en secuencia (una por capa),
+creando una melodía ascendente (explosión), descendente (vanishing) o
+plana (estable).</p>
+<h3 id="acorde-de-diagnostico">6.3 Acorde de diagnóstico</h3>
+<p>Al completar la propagación: - <strong>Estable</strong>: acorde mayor
+consonante - <strong>Vanishing</strong>: secuencia descendente
+melancólica - <strong>Exploding</strong>: cluster disonante
+ascendente</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="experimento-1-xavier-relu-el-error-clasico">Experimento 1:
+Xavier + ReLU (el error clásico)</h3>
+<ol type="1">
+<li>Selecciona <strong>Xavier</strong> y <strong>ReLU</strong>,
+profundidad 10, ancho 64</li>
+<li>Click en <strong>Propagar</strong></li>
+<li>Observa los histogramas: la varianza debería decrecer
+ligeramente</li>
+<li>Xavier está diseñado para sigmoid/tanh, no para ReLU</li>
+<li>Cambia a <strong>He</strong> y propaga de nuevo: los histogramas se
+mantienen más estables</li>
+<li><strong>Conclusión</strong>: usar el esquema correcto para cada
+activación importa</li>
+</ol>
+<h3 id="experimento-2-normal01-la-explosion">Experimento 2: Normal(0,1)
+— la explosión</h3>
+<ol type="1">
+<li>Selecciona <strong>Normal(0, 1)</strong> y <strong>Lineal</strong>,
+profundidad 10</li>
+<li>Propaga — las últimas capas tendrán varianza astronómica</li>
+<li>La gráfica de varianza será una línea ascendente exponencial</li>
+<li>Con profundidad 20, el diagnóstico mostrará NaN</li>
+<li><span class="math inline">n_{in} \cdot \text{Var}[w] = 64 \cdot 1 =
+64</span> → la varianza se multiplica por 64 en cada capa</li>
+</ol>
+<h3 id="experimento-3-normal0-0.01-el-colapso">Experimento 3: Normal(0,
+0.01) — el colapso</h3>
+<ol type="1">
+<li>Selecciona <strong>Normal(0, 0.01)</strong> y
+<strong>Lineal</strong>, profundidad 10</li>
+<li>Propaga — los histogramas colapsan rápidamente a una línea vertical
+en cero</li>
+<li>Con sigmoid, es aún peor: las activaciones se concentran en <span class="math inline">\sigma(0) = 0.5</span> (un valor constante)</li>
+<li><strong>Conclusión</strong>: pesos demasiado pequeños matan las
+señales</li>
+</ol>
+<h3 id="experimento-4-la-profundidad-amplifica">Experimento 4: La
+profundidad amplifica</h3>
+<ol type="1">
+<li>Usa <strong>Xavier + Sigmoid</strong>, profundidad 5 →
+razonablemente estable</li>
+<li>Sube a profundidad 15 → se nota el vanishing</li>
+<li>Profundidad 30 → colapso total</li>
+<li>Repite con <strong>He + ReLU</strong> profundidad 30 → mucho más
+estable</li>
+<li><strong>Conclusión</strong>: la profundidad amplifica cualquier
+desequilibrio</li>
+</ol>
+<h3 id="experimento-5-comparar-todo">Experimento 5: Comparar Todo</h3>
+<ol type="1">
+<li>Click en <strong>Comparar Todo</strong></li>
+<li>La simulación muestra una cuadrícula con todas las combinaciones de
+inicialización × activación</li>
+<li>Identifica las combinaciones “verdes” (estables) y “rojas”
+(inestables)</li>
+<li>He + ReLU y Xavier + Tanh deberían ser las más estables</li>
+</ol>
+<h3 id="experimento-6-el-efecto-del-ancho">Experimento 6: El efecto del
+ancho</h3>
+<ol type="1">
+<li>Fija He + ReLU, profundidad 10</li>
+<li>Prueba ancho 8, luego 64, luego 256</li>
+<li>Observa la gráfica de varianza: ¿el ancho afecta la
+estabilidad?</li>
+<li>La fórmula de He ajusta <span class="math inline">\text{Var}[w] =
+2/n_{in}</span>, compensando el ancho</li>
+<li>Sin este ajuste (Normal(0,1)), redes más anchas explotan más
+rápido</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="inicializacion-ortogonal">8.1 Inicialización ortogonal</h3>
+<p>Además de los métodos basados en varianza, se puede inicializar con
+matrices <strong>ortogonales</strong> (<span class="math inline">W^T W =
+I</span>). Esto preserva exactamente las normas de los vectores y es
+óptimo para redes lineales profundas. La descomposición QR de una matriz
+gaussiana aleatoria produce una inicialización ortogonal.</p>
+<h3 id="batch-normalization-como-solucion">8.2 Batch Normalization como
+solución</h3>
+<p><strong>Batch Normalization</strong> (Ioffe &amp; Szegedy, 2015)
+normaliza las activaciones en cada capa a media 0 y varianza 1 durante
+el entrenamiento. Esto hace que la red sea mucho menos sensible a la
+inicialización — pero no la hace irrelevante (la inicialización aún
+afecta la velocidad de convergencia).</p>
+<h3 id="layer-normalization-y-alternativas">8.3 Layer Normalization y
+alternativas</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Técnica</th>
+<th>Normaliza sobre</th>
+<th>Uso principal</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Batch Norm</td>
+<td>Batch × Features</td>
+<td>CNNs</td>
+</tr>
+<tr>
+<td>Layer Norm</td>
+<td>Features</td>
+<td>Transformers</td>
+</tr>
+<tr>
+<td>Group Norm</td>
+<td>Grupos de features</td>
+<td>CNNs con batch pequeño</td>
+</tr>
+<tr>
+<td>RMS Norm</td>
+<td>RMS de features</td>
+<td>LLMs modernos</td>
+</tr>
+</tbody>
+</table>
+<h3 id="residual-connections-y-el-problema-de-profundidad">8.4 Residual
+connections y el problema de profundidad</h3>
+<p>Las <strong>conexiones residuales</strong> (<span class="math inline">a_l = f(a_{l-1}) + a_{l-1}</span>) de ResNet mitigan
+el vanishing gradient al crear un “atajo” para las señales. La
+inicialización sigue siendo importante — He se diseñó específicamente
+pensando en ResNets.</p>
+<h3 id="data-dependent-initialization">8.5 Data-dependent
+initialization</h3>
+<p>Métodos modernos como <strong>LSUV</strong> (Layer-Sequential Unit
+Variance) inicializan los pesos iterativamente, propagando datos reales
+y ajustando la escala de cada capa hasta que la varianza sea exactamente
+1. Esto es más robusto que los métodos analíticos cuando las
+suposiciones (distribución gaussiana, independencia) no se cumplen.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-calculo-de-varianza">Ejercicio 1: Cálculo de
+varianza</h3>
+<p>Para una red de ancho 32 con Normal(0, 1) y activación lineal,
+calcula <span class="math inline">\text{Var}[a_5]</span> si <span class="math inline">\text{Var}[a_0] = 1</span>. Verifica tu cálculo
+configurando la simulación con esos parámetros y leyendo la varianza de
+la capa 5.</p>
+<h3 id="ejercicio-2-disena-tu-propio-esquema">Ejercicio 2: Diseña tu
+propio esquema</h3>
+<p>Si tu red tiene capas de ancho variable (32, 64, 128, 64, 32), ¿qué
+varianza de pesos usarías en cada capa para mantener la varianza
+constante con activación lineal? Compara con lo que He y Xavier
+producen.</p>
+<h3 id="ejercicio-3-sigmoid-vs.-relu-con-xavier">Ejercicio 3: Sigmoid
+vs. ReLU con Xavier</h3>
+<p>Fija Xavier, profundidad 20, ancho 64. Propaga con Sigmoid y anota la
+varianza de las capas 5, 10, 15 y 20. Repite con ReLU. ¿Para cuál
+función Xavier mantiene mejor la varianza? ¿Por qué?</p>
+<h3 id="ejercicio-4-el-punto-de-quiebre">Ejercicio 4: El punto de
+quiebre</h3>
+<p>Con Normal(0, 1) y activación lineal, ¿cuál es la profundidad máxima
+antes de obtener NaN? Prueba con ancho 8, 64 y 256. ¿Redes más estrechas
+aguantan más capas o menos?</p>
+<h3 id="ejercicio-5-zeros-y-simetria">Ejercicio 5: Zeros y simetría</h3>
+<p>Inicializa con Zeros y cualquier activación, profundidad 5. Observa
+los histogramas: ¿todas las neuronas tienen el mismo valor? Intenta
+entrenar (en la simulación de Backpropagation Flow) una red inicializada
+con zeros. ¿Qué ocurre con el loss?</p>
+<h3 id="ejercicio-6-efecto-del-batch-size">Ejercicio 6: Efecto del batch
+size</h3>
+<p>Fija He + ReLU, profundidad 15. Propaga con batch size 1, 32 y 128.
+¿Cambia el diagnóstico? ¿La varianza estimada es más ruidosa con batch
+size pequeño? Explica por qué.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Inicialización de pesos</strong></td>
+<td>Asignación de valores iniciales a los parámetros de la red antes del
+entrenamiento</td>
+</tr>
+<tr>
+<td><strong>Varianza</strong> (<span class="math inline">\text{Var}</span>)</td>
+<td>Medida de dispersión: <span class="math inline">\text{Var}[X] =
+\mathbb{E}[X^2] - \mathbb{E}[X]^2</span></td>
+</tr>
+<tr>
+<td><strong>Xavier/Glorot</strong></td>
+<td>Inicialización con <span class="math inline">\text{Var}[w] =
+2/(n_{in}+n_{out})</span>; óptima para sigmoid/tanh</td>
+</tr>
+<tr>
+<td><strong>He/Kaiming</strong></td>
+<td>Inicialización con <span class="math inline">\text{Var}[w] =
+2/n_{in}</span>; óptima para ReLU</td>
+</tr>
+<tr>
+<td><strong>LeCun</strong></td>
+<td>Inicialización con <span class="math inline">\text{Var}[w] =
+1/n_{in}</span>; variante para SELU</td>
+</tr>
+<tr>
+<td><strong>Explosión de activaciones</strong></td>
+<td>Varianza que crece exponencialmente con la profundidad</td>
+</tr>
+<tr>
+<td><strong>Desvanecimiento de activaciones</strong></td>
+<td>Varianza que decrece exponencialmente con la profundidad</td>
+</tr>
+<tr>
+<td><strong>Ruptura de simetría</strong></td>
+<td>Necesidad de que los pesos iniciales sean diferentes para que las
+neuronas se especialicen</td>
+</tr>
+<tr>
+<td><strong>NaN</strong></td>
+<td>Not a Number; ocurre cuando los valores exceden el rango del punto
+flotante</td>
+</tr>
+<tr>
+<td><strong>Batch size</strong></td>
+<td>Número de muestras propagadas simultáneamente para estimar la
+distribución</td>
+</tr>
+<tr>
+<td><strong>Factor de escala por capa</strong> (<span class="math inline">\alpha</span>)</td>
+<td><span class="math inline">n_{in} \cdot \text{Var}[w]</span>; debe
+ser <span class="math inline">\approx 1</span> para estabilidad</td>
+</tr>
+<tr>
+<td><strong>Batch Normalization</strong></td>
+<td>Técnica que normaliza activaciones a media 0 y varianza 1 en cada
+capa</td>
+</tr>
+<tr>
+<td><strong>Conexión residual</strong></td>
+<td>Atajo que suma la entrada a la salida: <span class="math inline">a_l
+= f(a_{l-1}) + a_{l-1}</span></td>
+</tr>
+<tr>
+<td><strong>Inicialización ortogonal</strong></td>
+<td>Pesos como matrices ortogonales que preservan normas
+exactamente</td>
+</tr>
+<tr>
+<td><strong>Histograma de activaciones</strong></td>
+<td>Distribución de los valores de salida de una capa para un batch
+dado</td>
+</tr>
+<tr>
+<td><strong>Diagnóstico</strong></td>
+<td>Clasificación del estado de propagación: Estable, Vanishing o
+Exploding</td>
+</tr>
+<tr>
+<td><strong>Profundidad</strong></td>
+<td>Número de capas de la red; amplifica cualquier desequilibrio en la
+varianza</td>
+</tr>
+<tr>
+<td><strong>Partículas estelares</strong></td>
+<td>Representación visual de puntos individuales del batch en el
+histograma</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li><p><strong>Glorot, X. &amp; Bengio, Y.</strong> (2010).
+“Understanding the Difficulty of Training Deep Feedforward Neural
+Networks.” <em>Proceedings of AISTATS 2010</em>.</p></li>
+<li><p><strong>He, K., Zhang, X., Ren, S. &amp; Sun, J.</strong> (2015).
+“Delving Deep into Rectifiers: Surpassing Human-Level Performance on
+ImageNet Classification.” <em>ICCV 2015</em>. arXiv:1502.01852.</p></li>
+<li><p><strong>LeCun, Y., Bottou, L., Orr, G. B. &amp; Müller,
+K.-R.</strong> (1998). “Efficient BackProp.” <em>Neural Networks: Tricks
+of the Trade</em>, Springer, 9–50.</p></li>
+<li><p><strong>Ioffe, S. &amp; Szegedy, C.</strong> (2015). “Batch
+Normalization: Accelerating Deep Network Training by Reducing Internal
+Covariate Shift.” <em>Proceedings of ICML 2015</em>.
+arXiv:1502.03167.</p></li>
+<li><p><strong>Saxe, A. M., McClelland, J. L. &amp; Ganguli, S.</strong>
+(2014). “Exact Solutions to the Nonlinear Dynamics of Learning in Deep
+Linear Neural Networks.” <em>ICLR 2014</em>. arXiv:1312.6120.</p></li>
+<li><p><strong>Mishkin, D. &amp; Matas, J.</strong> (2016). “All You
+Need is a Good Init.” <em>ICLR 2016</em>. arXiv:1511.06422.</p></li>
+<li><p><strong>Goodfellow, I., Bengio, Y. &amp; Courville, A.</strong>
+(2016). <em>Deep Learning</em>, Section 8.4: Parameter Initialization
+Strategies. MIT Press.</p></li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,1042 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GAN Duel — El Duelo
+Adversarial</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
+    --primary-light: #fcd34d;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #f59e0b;
+    --accent-light: #fcd34d;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #451a03 0%, #0f0a0a 60%, #1a0f05 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fcd34d; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fffbeb;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #92400e;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fffbeb;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fffbeb; }
+tr:hover { background: #fcd34d22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva de una GAN (Generative Adversarial Network)
+donde un generador y un discriminador compiten en 2D. Elige una
+distribución obj...</p>
+        <div class="badge">Arquitecturas Clasicas</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#el-juego-minimax">2.1 El juego minimax</a></li>
+  <li class="sub-item"><a href="#el-generador">2.2 El generador</a></li>
+  <li class="sub-item"><a href="#el-discriminador">2.3 El discriminador</a></li>
+  <li class="sub-item"><a href="#equilibrio-de-nash">2.4 Equilibrio de Nash</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#visualizacion-del-canvas">3.2 Visualización del canvas</a></li>
+  <li class="sub-item"><a href="#header">3.3 Header</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#entrenamiento">4.1 Entrenamiento</a></li>
+  <li class="sub-item"><a href="#configuracion">4.2 Configuración</a></li>
+  <li class="sub-item"><a href="#grafico-de-loss">4.3 Gráfico de loss</a></li>
+  <li class="sub-item"><a href="#estado">4.4 Estado</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#loss-del-discriminador">5.1 Loss del discriminador</a></li>
+  <li class="sub-item"><a href="#loss-del-generador">5.2 Loss del generador</a></li>
+  <li class="sub-item"><a href="#entrenamiento-alternante">5.3 Entrenamiento alternante</a></li>
+  <li class="sub-item"><a href="#distribuciones-implementadas">5.4 Distribuciones
+implementadas</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#mapeo-audio">6.1 Mapeo audio</a></li>
+  <li class="sub-item"><a href="#interpretacion">6.2 Interpretación</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li class="sub-item"><a href="#primera-exploracion">7.1 Primera exploración</a></li>
+  <li class="sub-item"><a href="#comparar-distribuciones">7.2 Comparar distribuciones</a></li>
+  <li class="sub-item"><a href="#provocar-mode-collapse">7.3 Provocar mode collapse</a></li>
+  <li class="sub-item"><a href="#balance-de-learning-rates">7.4 Balance de learning rates</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#teorema-de-convergencia-de-goodfellow">8.1 Teorema de
+convergencia de G...</a></li>
+  <li class="sub-item"><a href="#wasserstein-gan-wgan">8.2 Wasserstein GAN (WGAN)</a></li>
+  <li class="sub-item"><a href="#mode-collapse-en-detalle">8.3 Mode collapse en detalle</a></li>
+  <li class="sub-item"><a href="#gans-condicionales">8.4 GANs condicionales</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>Una <strong>GAN</strong> (Generative Adversarial Network) es un
+sistema de dos redes neuronales que compiten entre sí como en un
+juego:</p>
+<ul>
+<li>El <strong>Generador</strong> (G) intenta crear datos falsos que
+parezcan reales</li>
+<li>El <strong>Discriminador</strong> (D) intenta distinguir datos
+reales de falsos</li>
+</ul>
+<p>Esta competencia impulsa a ambas redes a mejorar: G genera datos cada
+vez más realistas, D se vuelve cada vez mejor detectando
+falsificaciones. En el equilibrio ideal, G produce datos indistinguibles
+de los reales.</p>
+<p>Esta simulación trabaja en 2D: la distribución “real” son puntos en
+formas geométricas (anillo, clusters, espiral), y el generador aprende a
+producir puntos que imiten esa distribución. Puedes observar en tiempo
+real cómo los puntos generados (rojos) convergen hacia los puntos reales
+(verdes), mientras el heatmap de fondo muestra dónde el discriminador
+cree que hay datos reales (azul) o falsos.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="el-juego-minimax">2.1 El juego minimax</h3>
+<p>La GAN se formula como un juego de suma cero:</p>
+<p><span class="math display">\min_G \max_D \; \mathbb{E}_{x \sim
+p_\text{data}}[\log D(x)] + \mathbb{E}_{z \sim p_z}[\log(1 -
+D(G(z)))]</span></p>
+<ul>
+<li><span class="math inline">D(x)</span>: probabilidad de que <span class="math inline">x</span> sea real (según el discriminador)</li>
+<li><span class="math inline">G(z)</span>: dato generado a partir del
+ruido <span class="math inline">z</span></li>
+<li><span class="math inline">p_\text{data}</span>: distribución de
+datos reales</li>
+<li><span class="math inline">p_z</span>: distribución del ruido de
+entrada (típicamente gaussiana)</li>
+</ul>
+<h3 id="el-generador">2.2 El generador</h3>
+<p>El generador toma <strong>ruido aleatorio</strong> <span class="math inline">z \sim \mathcal{N}(0, I)</span> y lo transforma en
+puntos 2D:</p>
+<p><span class="math display">G: \mathbb{R}^{d_z} \to
+\mathbb{R}^2</span></p>
+<p>Su objetivo es que <span class="math inline">D(G(z))</span> sea lo
+más cercano posible a 1 (engañar al discriminador).</p>
+<h3 id="el-discriminador">2.3 El discriminador</h3>
+<p>El discriminador recibe un punto 2D y produce la probabilidad de que
+sea real:</p>
+<p><span class="math display">D: \mathbb{R}^2 \to [0, 1]</span></p>
+<p>Se entrena con datos reales (etiqueta 1) y datos generados (etiqueta
+0).</p>
+<h3 id="equilibrio-de-nash">2.4 Equilibrio de Nash</h3>
+<p>El estado ideal es el <strong>equilibrio de Nash</strong>: G produce
+datos con la misma distribución que los reales, y D no puede
+distinguirlos (<span class="math inline">D(x) = 0.5</span> para todo
+<span class="math inline">x</span>). En la práctica, alcanzar este
+equilibrio es difícil, y las GANs suelen oscilar.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Puntos reales (verdes), generados (rojos), heatmap del
+discriminador</td>
+</tr>
+<tr>
+<td><strong>Badge overlay</strong></td>
+<td>Esquina sup. izq.</td>
+<td>Estado (“Pulsa Entrenar”, “Entrenando…”)</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Entrenamiento, configuración, loss chart, estado, audio</td>
+</tr>
+</tbody>
+</table>
+<h3 id="visualizacion-del-canvas">3.2 Visualización del canvas</h3>
+<ul>
+<li><strong>Puntos verdes</strong> (<span class="math inline">\bullet</span>): muestras de la distribución
+real</li>
+<li><strong>Puntos rojos</strong> (<span class="math inline">\bullet</span>): muestras generadas por G</li>
+<li><strong>Heatmap de fondo</strong>: campo de decisión de D
+<ul>
+<li>Azul intenso = D cree que hay datos reales (<span class="math inline">D(x) \to 1</span>)</li>
+<li>Oscuro/negro = D cree que es espacio vacío (<span class="math inline">D(x) \to 0</span>)</li>
+</ul></li>
+<li><strong>Convergencia</strong>: cuando los puntos rojos se superponen
+con los verdes, G ha aprendido</li>
+</ul>
+<h3 id="header">3.3 Header</h3>
+<p>Muestra el paso de entrenamiento actual, G loss y D loss.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="entrenamiento">4.1 Entrenamiento</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entrenar</strong></td>
+<td>Inicia/pausa el entrenamiento continuo</td>
+</tr>
+<tr>
+<td><strong>+1 Paso</strong></td>
+<td>Un solo paso de entrenamiento</td>
+</tr>
+<tr>
+<td><strong>+100</strong></td>
+<td>100 pasos de una vez</td>
+</tr>
+<tr>
+<td><strong>Reset</strong></td>
+<td>Reinicia pesos y entrenamiento</td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuracion">4.2 Configuración</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 22%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Rango</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Distribución</strong></td>
+<td>Anillo, Dos clusters, Espiral, Grid, Gaussiana</td>
+<td>Forma de la distribución real</td>
+</tr>
+<tr>
+<td><strong>LR Generador</strong></td>
+<td><span class="math inline">10^{-4}</span> a <span class="math inline">10^{-1}</span> (log)</td>
+<td>Learning rate del generador</td>
+</tr>
+<tr>
+<td><strong>LR Discriminador</strong></td>
+<td><span class="math inline">10^{-4}</span> a <span class="math inline">10^{-1}</span> (log)</td>
+<td>Learning rate del discriminador</td>
+</tr>
+<tr>
+<td><strong>Puntos por batch</strong></td>
+<td>16–256 (paso 16)</td>
+<td>Tamaño del mini-batch</td>
+</tr>
+</tbody>
+</table>
+<h3 id="grafico-de-loss">4.3 Gráfico de loss</h3>
+<p>Un mini-gráfico muestra la evolución temporal de: - <strong>G
+loss</strong> (rojo): pérdida del generador - <strong>D loss</strong>
+(azul): pérdida del discriminador</p>
+<h3 id="estado">4.4 Estado</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Métrica</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Paso</strong></td>
+<td>Número de iteración actual</td>
+</tr>
+<tr>
+<td><strong>G loss</strong></td>
+<td>Pérdida del generador</td>
+</tr>
+<tr>
+<td><strong>D loss</strong></td>
+<td>Pérdida del discriminador</td>
+</tr>
+<tr>
+<td><strong>D(real) medio</strong></td>
+<td>Probabilidad media asignada a datos reales</td>
+</tr>
+<tr>
+<td><strong>D(fake) medio</strong></td>
+<td>Probabilidad media asignada a datos generados</td>
+</tr>
+<tr>
+<td><strong>Mode collapse</strong></td>
+<td>Detector automático: Sí/No</td>
+</tr>
+</tbody>
+</table>
+<h3 id="audio">4.5 Audio</h3>
+<ul>
+<li><strong>Volumen</strong>: 0-100%</li>
+<li><strong>Audio ON/OFF</strong>: toggle</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="loss-del-discriminador">5.1 Loss del discriminador</h3>
+<p><span class="math display">L_D = -\frac{1}{m}\sum_{i=1}^{m}\left[\log
+D(x^{(i)}) + \log(1 - D(G(z^{(i)})))\right]</span></p>
+<p>El discriminador quiere <strong>maximizar</strong> esta expresión:
+dar probabilidades altas a datos reales y bajas a datos falsos.</p>
+<h3 id="loss-del-generador">5.2 Loss del generador</h3>
+<p><span class="math display">L_G = -\frac{1}{m}\sum_{i=1}^{m}\log
+D(G(z^{(i)}))</span></p>
+<p>El generador quiere <strong>minimizar</strong> esta expresión: hacer
+que el discriminador asigne probabilidades altas a sus datos falsos.</p>
+<p>En la práctica se usa <span class="math inline">-\log D(G(z))</span>
+en lugar de <span class="math inline">\log(1 - D(G(z)))</span> porque
+proporciona gradientes más fuertes al inicio del entrenamiento (truco de
+Goodfellow).</p>
+<h3 id="entrenamiento-alternante">5.3 Entrenamiento alternante</h3>
+<p>En cada paso: 1. <strong>Entrenar D</strong>: generar batch de datos
+reales y falsos, calcular <span class="math inline">L_D</span>,
+actualizar pesos de D 2. <strong>Entrenar G</strong>: generar batch de
+datos falsos, calcular <span class="math inline">L_G</span>, actualizar
+pesos de G</p>
+<h3 id="distribuciones-implementadas">5.4 Distribuciones
+implementadas</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 52%" />
+<col style="width: 48%" />
+</colgroup>
+<thead>
+<tr>
+<th>Distribución</th>
+<th>Generación</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Anillo</strong></td>
+<td><span class="math inline">(r\cos\theta, r\sin\theta)</span> con
+<span class="math inline">\theta \sim U[0, 2\pi]</span>, <span class="math inline">r</span> con ruido gaussiano</td>
+</tr>
+<tr>
+<td><strong>Dos clusters</strong></td>
+<td>Mezcla de dos gaussianas centradas en <span class="math inline">(\pm
+c, 0)</span></td>
+</tr>
+<tr>
+<td><strong>Espiral</strong></td>
+<td><span class="math inline">(\theta\cos\theta,
+\theta\sin\theta)</span> con <span class="math inline">\theta \in [0,
+4\pi]</span> y ruido</td>
+</tr>
+<tr>
+<td><strong>Grid</strong></td>
+<td>Puntos en rejilla regular con ruido gaussiano</td>
+</tr>
+<tr>
+<td><strong>Gaussiana</strong></td>
+<td><span class="math inline">\mathcal{N}(0, \sigma^2 I)</span></td>
+</tr>
+</tbody>
+</table>
+<h3 id="deteccion-de-mode-collapse">5.5 Detección de mode collapse</h3>
+<p>La simulación detecta mode collapse cuando la varianza de los puntos
+generados cae por debajo de un umbral:</p>
+<p><span class="math display">\text{var}(G(z)) < \epsilon \cdot
+\text{var}(x_\text{real})</span></p>
+<p>Mode collapse ocurre cuando G produce puntos en una sola región,
+ignorando la diversidad de la distribución real.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="mapeo-audio">6.1 Mapeo audio</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 54%" />
+</colgroup>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Sonido</th>
+<th>Parámetro mapeado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Paso de entrenamiento</strong></td>
+<td>Pulso rítmico</td>
+<td>Velocidad del entrenamiento</td>
+</tr>
+<tr>
+<td><strong>G loss bajando</strong></td>
+<td>Tono ascendente suave</td>
+<td>El generador mejora</td>
+</tr>
+<tr>
+<td><strong>D loss bajando</strong></td>
+<td>Tono descendente</td>
+<td>El discriminador mejora</td>
+</tr>
+<tr>
+<td><strong>Equilibrio</strong></td>
+<td>Armonía</td>
+<td>G loss ≈ D loss</td>
+</tr>
+<tr>
+<td><strong>Mode collapse</strong></td>
+<td>Tono monótono repetitivo</td>
+<td>Varianza baja en puntos generados</td>
+</tr>
+<tr>
+<td><strong>Convergencia</strong></td>
+<td>Acorde resuelto</td>
+<td>Distribuciones superpuestas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="interpretacion">6.2 Interpretación</h3>
+<p>El “duelo” audible: cuando G y D están equilibrados, el sonido es
+armónico. Cuando uno domina, hay disonancia. Mode collapse produce un
+sonido repetitivo y sin variación.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="primera-exploracion">7.1 Primera exploración</h3>
+<ol type="1">
+<li>Selecciona la distribución <strong>Anillo</strong></li>
+<li>Pulsa <strong>Entrenar</strong> y observa los puntos rojos converger
+hacia el anillo verde</li>
+<li>Mira el heatmap: D empieza coloreando todo en azul (cree que todo es
+real), luego refina</li>
+<li>Observa las losses: al principio D loss baja rápido, luego G empieza
+a mejorar</li>
+<li>Pausa cuando D(real) ≈ 0.5 y D(fake) ≈ 0.5 — has alcanzado un
+cuasi-equilibrio</li>
+</ol>
+<h3 id="comparar-distribuciones">7.2 Comparar distribuciones</h3>
+<ol type="1">
+<li>Prueba cada distribución: Anillo → Clusters → Espiral → Grid →
+Gaussiana</li>
+<li>La <strong>Gaussiana</strong> es la más fácil (unimodal)</li>
+<li>La <strong>Espiral</strong> es la más difícil (estructura continua
+compleja)</li>
+<li>Los <strong>Clusters</strong> pueden causar mode collapse (G solo
+aprende un cluster)</li>
+</ol>
+<h3 id="provocar-mode-collapse">7.3 Provocar mode collapse</h3>
+<ol type="1">
+<li>Selecciona <strong>Dos clusters</strong></li>
+<li>Pon LR Generador = 0.1 (muy alto) y LR Discriminador = 0.001
+(bajo)</li>
+<li>Entrena: el generador aprende un solo cluster y se queda ahí</li>
+<li>La métrica “Mode collapse” debería cambiar a “Sí”</li>
+<li>Reset y usa LR más balanceados para evitarlo</li>
+</ol>
+<h3 id="balance-de-learning-rates">7.4 Balance de learning rates</h3>
+<ol type="1">
+<li>Con la distribución <strong>Anillo</strong>:
+<ul>
+<li>LR G = 0.01, LR D = 0.01 → entrenamiento estable</li>
+<li>LR G = 0.1, LR D = 0.001 → G domina, mode collapse probable</li>
+<li>LR G = 0.001, LR D = 0.1 → D domina, G no aprende</li>
+</ul></li>
+<li>Observa cómo el balance de LR es crucial para la estabilidad</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="teorema-de-convergencia-de-goodfellow">8.1 Teorema de
+convergencia de Goodfellow</h3>
+<p>Si G y D tienen capacidad infinita y D se entrena hasta el óptimo en
+cada paso, G converge a <span class="math inline">p_\text{data}</span>.
+El discriminador óptimo es:</p>
+<p><span class="math display">D^*(x) =
+\frac{p_\text{data}(x)}{p_\text{data}(x) + p_G(x)}</span></p>
+<p>En el equilibrio: <span class="math inline">p_G =
+p_\text{data}</span> y <span class="math inline">D^*(x) = 0.5</span>
+para todo <span class="math inline">x</span>.</p>
+<h3 id="wasserstein-gan-wgan">8.2 Wasserstein GAN (WGAN)</h3>
+<p>La GAN original sufre de inestabilidad de entrenamiento. La WGAN
+reemplaza la divergencia de Jensen-Shannon con la <strong>distancia de
+Wasserstein</strong>:</p>
+<p><span class="math display">W(p_r, p_g) = \inf_{\gamma \in \Pi(p_r,
+p_g)} \mathbb{E}_{(x,y) \sim \gamma}[\|x - y\|]</span></p>
+<p>Esto proporciona gradientes más estables y evita el problema de
+“vanishing gradients” cuando D es demasiado bueno.</p>
+<h3 id="mode-collapse-en-detalle">8.3 Mode collapse en detalle</h3>
+<p>Mode collapse viene en dos formas: - <strong>Parcial</strong>: G
+produce datos en solo algunas modas de la distribución (ej: 1 de 2
+clusters) - <strong>Total</strong>: G produce un único punto o una
+región diminuta</p>
+<p>Soluciones: mini-batch discrimination, unrolled GANs, spectral
+normalization.</p>
+<h3 id="gans-condicionales">8.4 GANs condicionales</h3>
+<p>Las GANs condicionales añaden información de clase <span class="math inline">y</span>:</p>
+<p><span class="math display">G(z, y) \to x, \quad D(x, y) \to [0,
+1]</span></p>
+<p>Permiten generar datos específicos: “genera un perro” o “convierte
+día a noche”.</p>
+<h3 id="aplicaciones-modernas">8.5 Aplicaciones modernas</h3>
+<ul>
+<li><strong>Generación de imágenes</strong>: StyleGAN, DALL-E (con
+variantes)</li>
+<li><strong>Transferencia de estilo</strong>: CycleGAN convierte
+caballos en cebras</li>
+<li><strong>Super-resolución</strong>: SRGAN mejora la resolución de
+imágenes</li>
+<li><strong>Datos sintéticos</strong>: generar datos de entrenamiento
+donde hay escasez</li>
+<li><strong>Drug discovery</strong>: generar moléculas candidatas</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-convergencia-en-anillo">Ejercicio 1: Convergencia en
+anillo</h3>
+<p>Entrena con distribución <strong>Anillo</strong> y learning rates por
+defecto (0.01). ¿En cuántos pasos los puntos rojos cubren razonablemente
+el anillo? ¿D(real) y D(fake) convergen a 0.5?</p>
+<h3 id="ejercicio-2-mode-collapse-controlado">Ejercicio 2: Mode collapse
+controlado</h3>
+<p>Con <strong>Dos clusters</strong>, intenta provocar mode collapse
+ajustando los learning rates. Documenta la combinación de LR G y LR D
+que causa collapse. Luego encuentra una combinación que lo evite. ¿Cuál
+es la relación crítica LR_G/LR_D?</p>
+<h3 id="ejercicio-3-espiral-dificil">Ejercicio 3: Espiral difícil</h3>
+<p>La distribución <strong>Espiral</strong> tiene estructura continua no
+convexa. Entrena hasta 500 pasos. ¿G captura la estructura espiral
+completa o solo partes? ¿Ayuda aumentar el batch size? Compara batch 16
+vs batch 256.</p>
+<h3 id="ejercicio-4-lectura-del-heatmap">Ejercicio 4: Lectura del
+heatmap</h3>
+<p>Con distribución <strong>Grid</strong>, entrena hasta que el heatmap
+de D se estabilice. ¿Cuántos “picos” azules muestra el heatmap?
+¿Coinciden con las posiciones del grid? ¿Qué pasa entre los picos (en el
+espacio vacío)?</p>
+<h3 id="ejercicio-5-analisis-de-las-losses">Ejercicio 5: Análisis de las
+losses</h3>
+<p>Entrena con distribución <strong>Gaussiana</strong> durante 300
+pasos. Dibuja (en papel) la evolución de G loss y D loss. ¿Hay un patrón
+oscilatorio? ¿Las losses convergen a algún valor? En el equilibrio
+teórico, <span class="math inline">L_G = L_D = \log 2 \approx
+0.693</span>. ¿Qué tan cerca llegas?</p>
+<h3 id="ejercicio-6-batch-size-y-estabilidad">Ejercicio 6: Batch size y
+estabilidad</h3>
+<p>Fija la distribución <strong>Anillo</strong> y LR = 0.01 para ambos.
+Entrena 200 pasos con batch 16, luego reset y 200 pasos con batch 256.
+Compara la suavidad de las curvas de loss y la calidad de los puntos
+generados. ¿Por qué batches más grandes producen entrenamiento más
+estable?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>GAN</strong></td>
+<td>Generative Adversarial Network: dos redes que compiten (generador vs
+discriminador)</td>
+</tr>
+<tr>
+<td><strong>Generador (G)</strong></td>
+<td>Red que transforma ruido aleatorio en datos sintéticos</td>
+</tr>
+<tr>
+<td><strong>Discriminador (D)</strong></td>
+<td>Red que clasifica datos como reales o generados</td>
+</tr>
+<tr>
+<td><strong>Minimax</strong></td>
+<td>Formulación de juego: G minimiza lo que D maximiza</td>
+</tr>
+<tr>
+<td><strong>Equilibrio de Nash</strong></td>
+<td>Estado donde ningún jugador puede mejorar unilateralmente</td>
+</tr>
+<tr>
+<td><strong>Mode collapse</strong></td>
+<td>Fallo donde G produce muestras con poca diversidad</td>
+</tr>
+<tr>
+<td><strong>Distribución latente</strong></td>
+<td>Distribución del ruido de entrada del generador (típicamente
+gaussiana)</td>
+</tr>
+<tr>
+<td><strong>Loss del generador</strong></td>
+<td><span class="math inline">-\log D(G(z))</span>: penalización cuando
+D detecta los datos falsos</td>
+</tr>
+<tr>
+<td><strong>Loss del discriminador</strong></td>
+<td><span class="math inline">-[\log D(x) + \log(1-D(G(z)))]</span>:
+penalización por errores de clasificación</td>
+</tr>
+<tr>
+<td><strong>D(real)</strong></td>
+<td>Probabilidad media que D asigna a datos reales (idealmente →
+0.5)</td>
+</tr>
+<tr>
+<td><strong>D(fake)</strong></td>
+<td>Probabilidad media que D asigna a datos generados (idealmente →
+0.5)</td>
+</tr>
+<tr>
+<td><strong>Learning rate</strong></td>
+<td>Tasa de aprendizaje: magnitud de cada actualización de pesos</td>
+</tr>
+<tr>
+<td><strong>Batch size</strong></td>
+<td>Número de muestras procesadas por paso de entrenamiento</td>
+</tr>
+<tr>
+<td><strong>Heatmap</strong></td>
+<td>Mapa de calor que visualiza el campo de decisión de D</td>
+</tr>
+<tr>
+<td><strong>Wasserstein</strong></td>
+<td>Distancia alternativa que mejora la estabilidad del
+entrenamiento</td>
+</tr>
+<tr>
+<td><strong>Condicional</strong></td>
+<td>GAN que recibe información adicional (clase, texto) para generar
+datos específicos</td>
+</tr>
+<tr>
+<td><strong>Spectral normalization</strong></td>
+<td>Técnica de regularización para estabilizar el entrenamiento de
+D</td>
+</tr>
+<tr>
+<td><strong>Convergencia</strong></td>
+<td>Estado donde la distribución generada coincide con la real</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Goodfellow, I. et al. (2014). “Generative Adversarial Nets.”
+<em>NeurIPS</em>.</li>
+<li>Arjovsky, M., Chintala, S. &amp; Bottou, L. (2017). “Wasserstein
+GAN.” <em>ICML</em>.</li>
+<li>Radford, A., Metz, L. &amp; Chintala, S. (2016). “Unsupervised
+Representation Learning with Deep Convolutional GANs.”
+<em>ICLR</em>.</li>
+<li>Karras, T. et al. (2019). “A Style-Based Generator Architecture for
+GANs.” <em>CVPR</em>.</li>
+<li>Salimans, T. et al. (2016). “Improved Techniques for Training GANs.”
+<em>NeurIPS</em>.</li>
+<li>Goodfellow, I. (2016). “NIPS 2016 Tutorial: Generative Adversarial
+Networks.” <em>arXiv:1701.00160</em>.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

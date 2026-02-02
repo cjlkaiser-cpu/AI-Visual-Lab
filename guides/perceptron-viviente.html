@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perceptrón
+Viviente — Clasificador Lineal 2D Interactivo</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #ef4444;
+    --primary-dark: #dc2626;
+    --primary-light: #fca5a5;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #ef4444;
+    --accent-light: #fca5a5;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #450a0a 0%, #0f0a0a 60%, #1a0505 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fca5a5; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fef2f2;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #991b1b;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fef2f2;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fef2f2; }
+tr:hover { background: #fca5a522; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del perceptrón de Rosenblatt: la neurona
+artificial más simple que aprende a trazar una frontera de decisión
+lineal en el pl...</p>
+        <div class="badge">Fundamentos</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#la-neurona-artificial">2.1 La neurona artificial</a></li>
+  <li class="sub-item"><a href="#la-frontera-de-decision">2.2 La frontera de decisión</a></li>
+  <li class="sub-item"><a href="#separabilidad-lineal">2.3 Separabilidad lineal</a></li>
+  <li class="sub-item"><a href="#el-vector-de-pesos">2.4 El vector de pesos</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#el-canvas">3.2 El canvas</a></li>
+  <li class="sub-item"><a href="#el-header">3.3 El header</a></li>
+  <li class="sub-item"><a href="#ecuacion-en-el-canvas">3.4 Ecuación en el canvas</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#dataset">4.1 Dataset</a></li>
+  <li class="sub-item"><a href="#parametros">4.2 Parámetros</a></li>
+  <li class="sub-item"><a href="#entrenamiento">4.3 Entrenamiento</a></li>
+  <li class="sub-item"><a href="#audio">4.4 Audio</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#funcion-de-decision">5.1 Función de decisión</a></li>
+  <li class="sub-item"><a href="#regla-de-aprendizaje">5.2 Regla de aprendizaje</a></li>
+  <li class="sub-item"><a href="#geometria-de-la-frontera">5.3 Geometría de la frontera</a></li>
+  <li class="sub-item"><a href="#teorema-de-convergencia-del-perceptron">5.4 Teorema de
+convergencia del ...</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#mapeo-error-intervalo-musical">6.1 Mapeo error → intervalo
+musical</a></li>
+  <li class="sub-item"><a href="#otros-sonidos">6.2 Otros sonidos</a></li>
+  <li class="sub-item"><a href="#formas-de-onda">6.3 Formas de onda</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#del-perceptron-al-mlp">8.1 Del perceptrón al MLP</a></li>
+  <li class="sub-item"><a href="#margen-y-svm">8.2 Margen y SVM</a></li>
+  <li class="sub-item"><a href="#regla-delta-vs.-regla-del-perceptron">8.3 Regla delta vs. regla
+del pe...</a></li>
+  <li class="sub-item"><a href="#contexto-historico">8.4 Contexto histórico</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>En 1958, Frank Rosenblatt presentó el <strong>perceptrón</strong>: un
+algoritmo inspirado en la neurona biológica capaz de aprender a
+clasificar patrones. Era la primera vez que una máquina podía
+<em>aprender de los datos</em> sin ser programada explícitamente para
+cada caso.</p>
+<p>Esta simulación te permite experimentar con un perceptrón de dos
+entradas en tiempo real. Puedes colocar puntos en un plano 2D,
+asignarles clases, y observar cómo el algoritmo ajusta sus pesos para
+encontrar una <strong>frontera de decisión</strong> — una línea recta
+que separa las dos clases.</p>
+<p>El perceptrón es el átomo de las redes neuronales modernas.
+Entenderlo profundamente es el primer paso para comprender arquitecturas
+con millones de parámetros. Esta simulación hace visible lo que
+normalmente ocurre en silencio dentro de un
+<code>model.fit()</code>.</p>
+<h3 id="para-quien-es-esta-guia">¿Para quién es esta guía?</h3>
+<ul>
+<li>Estudiantes que se inician en machine learning</li>
+<li>Programadores curiosos sobre cómo funcionan las redes neuronales por
+dentro</li>
+<li>Cualquiera que quiera <em>ver</em> y <em>escuchar</em> cómo aprende
+una neurona artificial</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="la-neurona-artificial">2.1 La neurona artificial</h3>
+<p>El perceptrón toma dos valores de entrada <span class="math inline">x_1</span> y <span class="math inline">x_2</span>,
+los multiplica por sus respectivos <strong>pesos</strong> <span class="math inline">w_1</span> y <span class="math inline">w_2</span>,
+suma un <strong>sesgo</strong> (bias) <span class="math inline">b</span>, y aplica una función de activación
+escalón:</p>
+<p><span class="math display">y = \text{sign}(w_1 x_1 + w_2 x_2 +
+b)</span></p>
+<p>Si la suma ponderada es positiva o cero, la salida es <strong>clase
+1</strong> (rojo). Si es negativa, es <strong>clase 0</strong>
+(azul).</p>
+<h3 id="la-frontera-de-decision">2.2 La frontera de decisión</h3>
+<p>La ecuación <span class="math inline">w_1 x_1 + w_2 x_2 + b =
+0</span> define una <strong>línea recta</strong> en el plano. Esta línea
+es la frontera de decisión: todos los puntos de un lado se clasifican
+como clase 0, y los del otro como clase 1.</p>
+<p>La línea amarilla que ves en la simulación <em>es</em> esta ecuación
+hecha visible. El <strong>vector de pesos</strong> <span class="math inline">\mathbf{w} = (w_1, w_2)</span> es perpendicular a la
+frontera y apunta hacia la región de clase 1.</p>
+<h3 id="separabilidad-lineal">2.3 Separabilidad lineal</h3>
+<p>Un conjunto de datos es <strong>linealmente separable</strong> si
+existe una línea recta (en 2D) o un hiperplano (en dimensiones
+superiores) que separa perfectamente las dos clases. El perceptrón solo
+puede resolver problemas linealmente separables.</p>
+<h3 id="el-vector-de-pesos">2.4 El vector de pesos</h3>
+<p>El vector <span class="math inline">\mathbf{w} = (w_1, w_2)</span>
+tiene una interpretación geométrica directa:</p>
+<ul>
+<li>Su <strong>dirección</strong> determina la orientación de la
+frontera de decisión</li>
+<li>Su <strong>magnitud</strong> <span class="math inline">\|\mathbf{w}\| = \sqrt{w_1^2 + w_2^2}</span> indica
+la “confianza” del clasificador</li>
+<li>El <strong>sesgo</strong> <span class="math inline">b</span>
+desplaza la frontera paralelamente, alejándola del origen</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<p>La simulación se divide en dos áreas principales:</p>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda (área grande)</td>
+<td>Plano 2D con puntos, frontera de decisión, regiones coloreadas</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Ecuación, dataset, parámetros, entrenamiento, audio,
+estadísticas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="el-canvas">3.2 El canvas</h3>
+<p>El canvas muestra un plano cartesiano con ejes <span class="math inline">x_1</span> (horizontal) y <span class="math inline">x_2</span> (vertical), ambos en el rango <span class="math inline">[-1, 1]</span>. Los elementos visuales son:</p>
+<ul>
+<li><strong>Fondo degradado</strong>: azul (clase 0) a rojo (clase 1),
+mostrando la región de decisión continua calculada con una sigmoide
+suave sobre la salida cruda del perceptrón</li>
+<li><strong>Línea amarilla</strong>: la frontera de decisión <span class="math inline">w_1 x_1 + w_2 x_2 + b = 0</span></li>
+<li><strong>Flecha punteada</strong>: el vector de pesos <span class="math inline">\mathbf{w}</span>, perpendicular a la frontera</li>
+<li><strong>Puntos azules</strong>: datos de clase 0</li>
+<li><strong>Puntos rojos</strong>: datos de clase 1</li>
+<li><strong>Halo dorado pulsante</strong>: puntos mal clasificados</li>
+<li><strong>Cruz amarilla</strong>: marca sobre puntos con predicción
+incorrecta</li>
+<li><strong>Badge verde “CONVERGIDO”</strong>: aparece cuando accuracy =
+100%</li>
+<li><strong>Aviso rojo</strong>: aparece tras 200+ epochs sin
+convergencia</li>
+</ul>
+<h3 id="el-header">3.3 El header</h3>
+<p>Muestra en tiempo real: número de epoch actual, accuracy (%) y error
+rate.</p>
+<h3 id="ecuacion-en-el-canvas">3.4 Ecuación en el canvas</h3>
+<p>En la esquina superior izquierda del canvas se muestra la ecuación
+actual de la frontera en forma numérica: por ejemplo,
+<code>0.45x₁ + 0.72x₂ - 0.31 = 0</code>.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="dataset">4.1 Dataset</h3>
+<p><strong>Selector de clase</strong>: dos botones para elegir qué clase
+se asignará al siguiente punto que coloques — Clase 0 (azul) o Clase 1
+(rojo).</p>
+<p><strong>Presets de datos</strong>: menú desplegable con
+configuraciones predefinidas:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Preset</th>
+<th>Descripción</th>
+<th>¿Separable?</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Lineal</strong></td>
+<td>Puntos separados por <span class="math inline">y > 0.3x +
+0.1</span></td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><strong>Diagonal</strong></td>
+<td>Puntos separados por <span class="math inline">x + y >
+0</span></td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><strong>Vertical</strong></td>
+<td>Puntos separados por <span class="math inline">x >
+0.2</span></td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><strong>Clusters</strong></td>
+<td>Dos grupos compactos en esquinas opuestas</td>
+<td>Sí</td>
+</tr>
+<tr>
+<td><strong>XOR</strong></td>
+<td>Patrón exclusivo-or: <span class="math inline">(x>0) \neq
+(y>0)</span></td>
+<td><strong>No</strong></td>
+</tr>
+<tr>
+<td><strong>Limpiar</strong></td>
+<td>Elimina todos los puntos</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Interacción con el mouse</strong>:</p>
+<ul>
+<li><strong>Click izquierdo</strong>: añadir un punto de la clase
+seleccionada</li>
+<li><strong>Arrastrar</strong>: mover un punto existente</li>
+<li><strong>Click derecho</strong>: eliminar el punto más cercano</li>
+<li><strong>Hover</strong>: muestra tooltip con coordenadas, clase real,
+predicción y salida cruda</li>
+</ul>
+<h3 id="parametros">4.2 Parámetros</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 27%" />
+<col style="width: 21%" />
+<col style="width: 27%" />
+<col style="width: 24%" />
+</colgroup>
+<thead>
+<tr>
+<th>Control</th>
+<th>Rango</th>
+<th>Default</th>
+<th>Efecto</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Learning rate (<span class="math inline">\eta</span>)</td>
+<td>0.001 – 1.0</td>
+<td>0.100</td>
+<td>Magnitud de los ajustes de peso por paso</td>
+</tr>
+<tr>
+<td><span class="math inline">w_1</span></td>
+<td>-3.0 – 3.0</td>
+<td>0.00</td>
+<td>Peso de la entrada <span class="math inline">x_1</span></td>
+</tr>
+<tr>
+<td><span class="math inline">w_2</span></td>
+<td>-3.0 – 3.0</td>
+<td>0.00</td>
+<td>Peso de la entrada <span class="math inline">x_2</span></td>
+</tr>
+<tr>
+<td>bias (<span class="math inline">b</span>)</td>
+<td>-3.0 – 3.0</td>
+<td>0.00</td>
+<td>Desplazamiento de la frontera</td>
+</tr>
+</tbody>
+</table>
+<p>Los sliders de <span class="math inline">w_1</span>, <span class="math inline">w_2</span> y <span class="math inline">b</span> se
+actualizan en tiempo real durante el entrenamiento. También puedes
+moverlos manualmente para experimentar con diferentes configuraciones de
+pesos.</p>
+<h3 id="entrenamiento">4.3 Entrenamiento</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Botón</th>
+<th>Acción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Entrenar</strong></td>
+<td>Inicia/detiene el entrenamiento automático</td>
+</tr>
+<tr>
+<td><strong>1 Paso</strong></td>
+<td>Ejecuta una actualización sobre un punto aleatorio</td>
+</tr>
+<tr>
+<td><strong>1 Epoch</strong></td>
+<td>Recorre todos los puntos una vez (orden aleatorio)</td>
+</tr>
+<tr>
+<td><strong>Reset</strong></td>
+<td>Reinicia los pesos a valores aleatorios pequeños</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Velocidad</strong>: slider de 1 a 50 epochs por segundo.</p>
+<p><strong>Gráfica de loss</strong>: miniatura que muestra el historial
+del error (rojo) y accuracy (verde) durante las últimas 200 epochs.</p>
+<h3 id="audio">4.4 Audio</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Audio ON/OFF</strong></td>
+<td>Activa o desactiva la sonificación</td>
+</tr>
+<tr>
+<td><strong>Volumen</strong></td>
+<td>0% – 100%</td>
+</tr>
+<tr>
+<td><strong>Forma de onda</strong></td>
+<td>Sine, Triangle, Square, Sawtooth</td>
+</tr>
+</tbody>
+</table>
+<h3 id="valores-en-tiempo-real">4.5 Valores en tiempo real</h3>
+<p>Panel de estadísticas que muestra: Epoch, Accuracy, Error rate, <span class="math inline">w_1</span>, <span class="math inline">w_2</span>,
+bias, <span class="math inline">\|\mathbf{w}\|</span> (norma del vector
+de pesos), número total de puntos, y número de puntos mal
+clasificados.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="funcion-de-decision">5.1 Función de decisión</h3>
+<p>El perceptrón computa una <strong>combinación lineal</strong> de las
+entradas:</p>
+<p><span class="math display">z = w_1 x_1 + w_2 x_2 + b = \mathbf{w}^T
+\mathbf{x} + b</span></p>
+<p>La predicción se obtiene aplicando la función escalón (sign):</p>
+<p><span class="math display">\hat{y} = \begin{cases} 1 & \text{si }
+z \geq 0 \\ 0 & \text{si } z < 0 \end{cases}</span></p>
+<h3 id="regla-de-aprendizaje">5.2 Regla de aprendizaje</h3>
+<p>Para cada punto <span class="math inline">(x_1^{(i)},
+x_2^{(i)})</span> con etiqueta <span class="math inline">t^{(i)}</span>
+y predicción <span class="math inline">\hat{y}^{(i)}</span>, los pesos
+se actualizan según:</p>
+<p><span class="math display">w_j \leftarrow w_j + \eta \cdot (t^{(i)} -
+\hat{y}^{(i)}) \cdot x_j^{(i)}</span></p>
+<p><span class="math display">b \leftarrow b + \eta \cdot (t^{(i)} -
+\hat{y}^{(i)})</span></p>
+<p>donde <span class="math inline">\eta</span> es el <strong>learning
+rate</strong> (tasa de aprendizaje). Observa que:</p>
+<ul>
+<li>Si la predicción es correcta (<span class="math inline">t =
+\hat{y}</span>), el factor <span class="math inline">(t - \hat{y}) =
+0</span> y no hay actualización</li>
+<li>Si predice 0 cuando debería ser 1, <span class="math inline">(t -
+\hat{y}) = 1</span>: los pesos se incrementan en la dirección del
+punto</li>
+<li>Si predice 1 cuando debería ser 0, <span class="math inline">(t -
+\hat{y}) = -1</span>: los pesos se decrementan</li>
+</ul>
+<h3 id="geometria-de-la-frontera">5.3 Geometría de la frontera</h3>
+<p>La frontera de decisión es la recta definida por:</p>
+<p><span class="math display">w_1 x_1 + w_2 x_2 + b = 0</span></p>
+<p>Se puede reescribir en forma explícita (cuando <span class="math inline">w_2 \neq 0</span>):</p>
+<p><span class="math display">x_2 = -\frac{w_1}{w_2} x_1 -
+\frac{b}{w_2}</span></p>
+<p>La <strong>pendiente</strong> es <span class="math inline">-w_1/w_2</span> y la <strong>ordenada al
+origen</strong> es <span class="math inline">-b/w_2</span>.</p>
+<p>La <strong>distancia</strong> del origen a la frontera es:</p>
+<p><span class="math display">d = \frac{|b|}{\|\mathbf{w}\|} =
+\frac{|b|}{\sqrt{w_1^2 + w_2^2}}</span></p>
+<h3 id="teorema-de-convergencia-del-perceptron">5.4 Teorema de
+convergencia del perceptrón</h3>
+<p><strong>Teorema</strong> (Rosenblatt, 1962; Novikoff, 1963): Si el
+conjunto de datos es linealmente separable con margen <span class="math inline">\gamma > 0</span> y todos los puntos satisfacen
+<span class="math inline">\|\mathbf{x}\| \leq R</span>, entonces el
+algoritmo del perceptrón converge en a lo sumo:</p>
+<p><span class="math display">k \leq
+\left(\frac{R}{\gamma}\right)^2</span></p>
+<p>actualizaciones, donde <span class="math inline">\gamma</span> es el
+margen geométrico máximo (la mayor distancia mínima entre los puntos y
+cualquier hiperplano separador).</p>
+<p>Este teorema garantiza que si una solución existe, el perceptrón
+<em>la encontrará</em> en un número finito de pasos. Sin embargo,
+<strong>no dice nada</strong> sobre cuántos epochs serán necesarios —
+solo acota el número total de actualizaciones de peso.</p>
+<h3 id="la-limitacion-xor">5.5 La limitación XOR</h3>
+<p>El XOR (o exclusivo) asigna clase 1 cuando exactamente una de las dos
+entradas es positiva:</p>
+<table class="styled-table">
+<thead>
+<tr>
+<th style="text-align: center;"><span class="math inline">x_1 >
+0</span></th>
+<th style="text-align: center;"><span class="math inline">x_2 >
+0</span></th>
+<th style="text-align: center;">XOR</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">0</td>
+</tr>
+<tr>
+<td style="text-align: center;">Sí</td>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td style="text-align: center;">No</td>
+<td style="text-align: center;">Sí</td>
+<td style="text-align: center;">1</td>
+</tr>
+<tr>
+<td style="text-align: center;">Sí</td>
+<td style="text-align: center;">Sí</td>
+<td style="text-align: center;">0</td>
+</tr>
+</tbody>
+</table>
+<p>No existe ninguna línea recta que separe las clases 0 y 1 del XOR.
+Esto se puede demostrar formalmente: para separar (0,0) y (1,1) de (1,0)
+y (0,1), necesitaríamos simultáneamente <span class="math inline">w_1 +
+w_2 + b < 0</span> y <span class="math inline">w_1 + b \geq 0</span>
+y <span class="math inline">w_2 + b \geq 0</span> y <span class="math inline">b < 0</span>, lo cual es una contradicción.</p>
+<p>Minsky y Papert demostraron esta limitación formalmente en
+<em>Perceptrons</em> (1969), lo que contribuyó al primer “invierno de la
+IA”.</p>
+<h3 id="visualizacion-de-la-region-de-decision">5.6 Visualización de la
+región de decisión</h3>
+<p>La simulación muestra un degradado continuo en lugar de una frontera
+binaria abrupta. Internamente se computa una <strong>sigmoide
+suavizada</strong> sobre la salida cruda:</p>
+<p><span class="math display">\sigma(z) = \frac{1}{1 +
+e^{-4z}}</span></p>
+<p>El factor 4 comprime la transición. Los colores interpolan entre azul
+(clase 0, <span class="math inline">\sigma \approx 0</span>) y rojo
+(clase 1, <span class="math inline">\sigma \approx 1</span>), haciendo
+visible la “confianza” del clasificador en cada región del plano.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<p>La simulación traduce el estado del entrenamiento a sonido, creando
+un canal sensorial adicional para comprender el aprendizaje.</p>
+<h3 id="mapeo-error-intervalo-musical">6.1 Mapeo error → intervalo
+musical</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 17%" />
+<col style="width: 20%" />
+<col style="width: 28%" />
+<col style="width: 33%" />
+</colgroup>
+<thead>
+<tr>
+<th>Error</th>
+<th>Sonido</th>
+<th>Intervalo</th>
+<th>Significado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math inline">> 50\%</span></td>
+<td>Disonante</td>
+<td>Tritono (C–F#)</td>
+<td>El perceptrón clasifica peor que el azar</td>
+</tr>
+<tr>
+<td><span class="math inline">20\%</span>–<span class="math inline">50\%</span></td>
+<td>Tenso</td>
+<td>Tercera menor (C–Eb)</td>
+<td>Mejorando, pero con errores significativos</td>
+</tr>
+<tr>
+<td><span class="math inline">1\%</span>–<span class="math inline">20\%</span></td>
+<td>Armónico</td>
+<td>Quinta justa (C–G)</td>
+<td>Casi convergido</td>
+</tr>
+<tr>
+<td><span class="math inline">0\%</span></td>
+<td>Consonante</td>
+<td>Acorde mayor (C–E–G–C’)</td>
+<td><strong>Convergencia total</strong></td>
+</tr>
+</tbody>
+</table>
+<p>La nota base es <span class="math inline">C_4 = 261.63</span> Hz. Los
+intervalos se calculan con temperamento igual: semitono = <span class="math inline">2^{1/12}</span>.</p>
+<h3 id="otros-sonidos">6.2 Otros sonidos</h3>
+<ul>
+<li><strong>Tick de actualización</strong> (880 Hz, 40ms): suena con
+cada ajuste de peso</li>
+<li><strong>Nota grave de error</strong> (110 Hz, 120ms): punto mal
+clasificado durante paso individual</li>
+<li><strong>Acorde de convergencia</strong> (C mayor completo, 800ms):
+se reproduce una sola vez al alcanzar 100% accuracy</li>
+<li><strong>Click de punto nuevo</strong>: <span class="math inline">C_5</span> (523 Hz) para clase 0, <span class="math inline">E_4</span> (330 Hz) para clase 1</li>
+</ul>
+<h3 id="formas-de-onda">6.3 Formas de onda</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Forma</th>
+<th>Carácter</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Sine</strong></td>
+<td>Suave, puro, fundamental</td>
+</tr>
+<tr>
+<td><strong>Triangle</strong></td>
+<td>Ligeramente brillante, armónicos impares</td>
+</tr>
+<tr>
+<td><strong>Square</strong></td>
+<td>Hueco, robótico, rico en armónicos impares</td>
+</tr>
+<tr>
+<td><strong>Sawtooth</strong></td>
+<td>Brillante, zumbante, todos los armónicos</td>
+</tr>
+</tbody>
+</table>
+<p>Cada forma de onda pasa por un filtro lowpass (frecuencia de corte =
+<span class="math inline">4f</span>, <span class="math inline">Q =
+0.7</span>) para evitar sonidos estridentes.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="experimento-1-clasificacion-lineal-basica">Experimento 1:
+Clasificación lineal básica</h3>
+<ol type="1">
+<li><strong>Carga el preset “Lineal”</strong> desde el menú
+desplegable</li>
+<li>Observa los 40 puntos distribuidos con la frontera teórica <span class="math inline">y = 0.3x + 0.1</span></li>
+<li>Los pesos se inicializan aleatoriamente — la línea amarilla estará
+en una posición arbitraria</li>
+<li><strong>Haz click en “Entrenar”</strong> y observa cómo la frontera
+se ajusta epoch tras epoch</li>
+<li>Nota cómo los halos dorados (puntos mal clasificados) van
+desapareciendo</li>
+<li>Cuando el badge “CONVERGIDO” aparezca, el perceptrón habrá
+encontrado una frontera válida</li>
+<li>Observa los valores finales de <span class="math inline">w_1</span>,
+<span class="math inline">w_2</span> y <span class="math inline">b</span> en el panel de estadísticas</li>
+</ol>
+<h3 id="experimento-2-efecto-del-learning-rate">Experimento 2: Efecto
+del learning rate</h3>
+<ol type="1">
+<li>Carga el preset “Diagonal”</li>
+<li>Fija <span class="math inline">\eta = 0.001</span> (mínimo) y
+entrena. Observa cómo la convergencia es <strong>lenta pero
+estable</strong></li>
+<li>Reset y fija <span class="math inline">\eta = 1.0</span> (máximo).
+La frontera <strong>salta violentamente</strong> entre posiciones</li>
+<li>Prueba <span class="math inline">\eta = 0.1</span> (valor medio):
+buen balance entre velocidad y estabilidad</li>
+<li>Compara las curvas de loss en el mini-gráfico para cada valor</li>
+</ol>
+<h3 id="experimento-3-la-imposibilidad-del-xor">Experimento 3: La
+imposibilidad del XOR</h3>
+<ol type="1">
+<li><strong>Carga el preset “XOR”</strong></li>
+<li>Inicia el entrenamiento automático</li>
+<li>Observa cómo la frontera oscila sin encontrar una posición
+estable</li>
+<li>Después de 200 epochs, aparecerá el aviso rojo: “¿No linealmente
+separable?”</li>
+<li>El accuracy nunca superará ~75% (solo puede clasificar correctamente
+3 de los 4 cuadrantes)</li>
+<li><strong>Esto no es un bug</strong> — es una limitación fundamental
+del perceptrón de una sola capa</li>
+</ol>
+<h3 id="experimento-4-construccion-manual-de-la-frontera">Experimento 4:
+Construcción manual de la frontera</h3>
+<ol type="1">
+<li>Selecciona “Limpiar todo” para empezar en blanco</li>
+<li>Coloca 5 puntos azules (clase 0) en la parte inferior y 5 rojos
+(clase 1) en la superior</li>
+<li><strong>Sin entrenar</strong>, mueve manualmente los sliders de
+<span class="math inline">w_1</span>, <span class="math inline">w_2</span> y <span class="math inline">b</span></li>
+<li>Intenta posicionar la frontera amarilla de forma que separe los dos
+grupos</li>
+<li>Observa cómo <span class="math inline">w_2</span> controla la
+inclinación y <span class="math inline">b</span> el desplazamiento
+vertical</li>
+<li>Cuando lo hayas logrado manualmente, verifica con “Entrenar” que el
+algoritmo llega a una solución similar</li>
+</ol>
+<h3 id="experimento-5-sensibilidad-a-outliers">Experimento 5:
+Sensibilidad a outliers</h3>
+<ol type="1">
+<li>Carga el preset “Clusters”</li>
+<li>Entrena hasta convergencia</li>
+<li>Ahora coloca un punto rojo (clase 1) <strong>dentro</strong> del
+cluster azul</li>
+<li>Observa cómo la frontera se reajusta drásticamente para intentar
+clasificar correctamente ese único punto</li>
+<li>Si el punto está muy profundo dentro del cluster opuesto, puede
+causar que otros puntos se clasifiquen mal</li>
+<li>Esto ilustra la <strong>sensibilidad</strong> del perceptrón a datos
+ruidosos o anómalos</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="del-perceptron-al-mlp">8.1 Del perceptrón al MLP</h3>
+<p>La limitación del XOR se resuelve añadiendo <strong>capas
+ocultas</strong>. Un perceptrón multicapa (MLP) con una capa oculta de 2
+neuronas puede resolver XOR:</p>
+<p><span class="math display">h_1 = \text{sign}(x_1 + x_2 - 0.5), \quad
+h_2 = \text{sign}(x_1 + x_2 - 1.5)</span> <span class="math display">y =
+\text{sign}(h_1 - h_2 - 0.5)</span></p>
+<p>La primera neurona oculta detecta “al menos uno positivo” y la
+segunda “ambos positivos”. La neurona de salida computa la diferencia:
+XOR.</p>
+<h3 id="margen-y-svm">8.2 Margen y SVM</h3>
+<p>El perceptrón encuentra <em>alguna</em> frontera separadora, pero no
+necesariamente la mejor. Las <strong>máquinas de vectores de
+soporte</strong> (SVM) buscan la frontera con el <strong>margen
+máximo</strong> — la mayor distancia entre la frontera y los puntos más
+cercanos de cada clase.</p>
+<h3 id="regla-delta-vs.-regla-del-perceptron">8.3 Regla delta vs. regla
+del perceptrón</h3>
+<p>La regla del perceptrón usa la predicción discreta (<span class="math inline">\hat{y} \in \{0, 1\}</span>). La <strong>regla
+delta</strong> (Widrow-Hoff) usa la salida cruda continua <span class="math inline">z</span>:</p>
+<p><span class="math display">w_j \leftarrow w_j + \eta \cdot (t^{(i)} -
+z^{(i)}) \cdot x_j^{(i)}</span></p>
+<p>La regla delta minimiza el error cuadrático medio y converge incluso
+para datos no separables (al mejor hiperplano en sentido de mínimos
+cuadrados).</p>
+<h3 id="contexto-historico">8.4 Contexto histórico</h3>
+<ul>
+<li><strong>1943</strong>: McCulloch y Pitts proponen el modelo de
+neurona artificial</li>
+<li><strong>1958</strong>: Rosenblatt construye el Mark I Perceptron en
+el Cornell Aeronautical Laboratory</li>
+<li><strong>1960</strong>: Widrow y Hoff desarrollan ADALINE con la
+regla delta</li>
+<li><strong>1969</strong>: Minsky y Papert publican
+<em>Perceptrons</em>, demostrando limitaciones fundamentales</li>
+<li><strong>1969–1986</strong>: “Invierno de la IA” — reducción drástica
+en la investigación de redes neuronales</li>
+<li><strong>1986</strong>: Rumelhart, Hinton y Williams popularizan la
+retropropagación, superando la limitación de una sola capa</li>
+</ul>
+<h3 id="interpretacion-geometrica-de-la-actualizacion">8.5
+Interpretación geométrica de la actualización</h3>
+<p>Cuando un punto <span class="math inline">\mathbf{x}^{(i)}</span> es
+mal clasificado, la actualización <span class="math inline">\mathbf{w}
+\leftarrow \mathbf{w} + \eta(t - \hat{y})\mathbf{x}^{(i)}</span> tiene
+un efecto geométrico claro:</p>
+<ul>
+<li>Si <span class="math inline">t = 1</span> y <span class="math inline">\hat{y} = 0</span>: el vector de pesos <strong>rota
+hacia</strong> el punto, incluyéndolo en la región positiva</li>
+<li>Si <span class="math inline">t = 0</span> y <span class="math inline">\hat{y} = 1</span>: el vector de pesos <strong>rota
+alejándose</strong> del punto, excluyéndolo de la región positiva</li>
+</ul>
+<p>La magnitud de la rotación es proporcional a <span class="math inline">\eta</span> y a la distancia del punto al
+origen.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-frontera-vertical">Ejercicio 1: Frontera
+vertical</h3>
+<p>Configura manualmente los pesos para que la frontera de decisión sea
+una línea <strong>perfectamente vertical</strong> en <span class="math inline">x_1 = 0</span>. ¿Qué valores de <span class="math inline">w_1</span>, <span class="math inline">w_2</span> y
+<span class="math inline">b</span> necesitas? Verifica tu respuesta
+cargando el preset “Vertical” y comparando con la solución del
+entrenamiento automático.</p>
+<p><em>Pista</em>: si <span class="math inline">w_2 = 0</span>, la
+ecuación se reduce a <span class="math inline">w_1 x_1 + b =
+0</span>.</p>
+<h3 id="ejercicio-2-velocidad-de-convergencia">Ejercicio 2: Velocidad de
+convergencia</h3>
+<p>Carga el preset “Clusters” tres veces, usando <span class="math inline">\eta = 0.01</span>, <span class="math inline">\eta =
+0.1</span> y <span class="math inline">\eta = 0.5</span>. Para cada
+caso, anota: - Número de epochs hasta convergencia - Forma de la curva
+de loss (suave vs. errática) - Posición final de la frontera</p>
+<p>¿Qué valor de <span class="math inline">\eta</span> da la
+convergencia más rápida? ¿Y la más estable?</p>
+<h3 id="ejercicio-3-capacidad-maxima">Ejercicio 3: Capacidad máxima</h3>
+<p>Empieza con un plano vacío. Añade puntos alternando entre clase 0 y
+clase 1, cada vez más cerca entre sí. ¿Cuántos puntos puedes añadir
+antes de que el perceptrón ya no pueda separarlos? ¿Depende de la
+distribución espacial?</p>
+<h3 id="ejercicio-4-demostracion-geometrica-del-xor">Ejercicio 4:
+Demostración geométrica del XOR</h3>
+<p>Carga el preset XOR. En una hoja de papel, dibuja los cuatro
+cuadrantes con sus clases asignadas. Intenta trazar <em>una sola línea
+recta</em> que separe los puntos rojos de los azules. Explica
+formalmente por qué es imposible usando un sistema de inecuaciones.</p>
+<h3 id="ejercicio-5-peso-como-direccion">Ejercicio 5: Peso como
+dirección</h3>
+<p>Con el preset “Diagonal” convergido, observa la dirección del vector
+de pesos (flecha punteada). ¿Es perpendicular a la frontera? Mide los
+ángulos visualmente. Ahora calcula: si <span class="math inline">w_1 =
+a</span> y <span class="math inline">w_2 = b</span>, ¿cuál es el ángulo
+que forma <span class="math inline">\mathbf{w}</span> con el eje <span class="math inline">x_1</span>? Usa <span class="math inline">\theta =
+\arctan(w_2/w_1)</span> y verifica que coincide con lo que ves.</p>
+<h3 id="ejercicio-6-reconstruccion-de-la-ecuacion">Ejercicio 6:
+Reconstrucción de la ecuación</h3>
+<p>Entrena el perceptrón con el preset “Lineal” hasta convergencia. Lee
+los valores de <span class="math inline">w_1</span>, <span class="math inline">w_2</span> y <span class="math inline">b</span> del
+panel de estadísticas. Escribe la ecuación de la frontera en forma <span class="math inline">x_2 = mx_1 + n</span>. ¿Es similar a la ecuación
+original del preset (<span class="math inline">x_2 = 0.3x_1 +
+0.1</span>)? ¿Por qué puede ser diferente?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Perceptrón</strong></td>
+<td>Neurona artificial que computa <span class="math inline">y =
+\text{sign}(\mathbf{w}^T\mathbf{x} + b)</span> y aprende mediante
+actualizaciones de pesos</td>
+</tr>
+<tr>
+<td><strong>Peso</strong> (<span class="math inline">w_i</span>)</td>
+<td>Coeficiente que multiplica cada entrada, determinando su importancia
+relativa</td>
+</tr>
+<tr>
+<td><strong>Sesgo</strong> (bias, <span class="math inline">b</span>)</td>
+<td>Término independiente que desplaza la frontera de decisión respecto
+al origen</td>
+</tr>
+<tr>
+<td><strong>Frontera de decisión</strong></td>
+<td>Recta (2D) o hiperplano (nD) donde <span class="math inline">\mathbf{w}^T\mathbf{x} + b = 0</span>; separa las
+regiones de clase</td>
+</tr>
+<tr>
+<td><strong>Learning rate</strong> (<span class="math inline">\eta</span>)</td>
+<td>Tasa de aprendizaje que controla la magnitud de cada actualización
+de pesos</td>
+</tr>
+<tr>
+<td><strong>Epoch</strong></td>
+<td>Una pasada completa por todos los puntos del dataset de
+entrenamiento</td>
+</tr>
+<tr>
+<td><strong>Accuracy</strong></td>
+<td>Fracción de puntos correctamente clasificados: <span class="math inline">\text{acc} = \frac{\text{correctos}}{N}</span></td>
+</tr>
+<tr>
+<td><strong>Error rate</strong></td>
+<td>Complemento del accuracy: <span class="math inline">1 -
+\text{acc}</span></td>
+</tr>
+<tr>
+<td><strong>Convergencia</strong></td>
+<td>Estado donde todos los puntos se clasifican correctamente (accuracy
+= 100%)</td>
+</tr>
+<tr>
+<td><strong>Separabilidad lineal</strong></td>
+<td>Propiedad de un dataset donde existe un hiperplano que separa
+perfectamente las clases</td>
+</tr>
+<tr>
+<td><strong>XOR</strong></td>
+<td>Función lógica “o exclusivo”; ejemplo canónico de problema no
+linealmente separable</td>
+</tr>
+<tr>
+<td><strong>Función escalón</strong> (sign)</td>
+<td>Función de activación que devuelve 1 si <span class="math inline">z
+\geq 0</span> y 0 si <span class="math inline">z < 0</span></td>
+</tr>
+<tr>
+<td><strong>Vector de pesos</strong> (<span class="math inline">\mathbf{w}</span>)</td>
+<td>Vector <span class="math inline">(w_1, w_2)</span> que determina la
+orientación de la frontera; perpendicular a ella</td>
+</tr>
+<tr>
+<td><strong>Combinación lineal</strong></td>
+<td>Expresión <span class="math inline">\sum_i w_i x_i + b</span>; la
+operación fundamental del perceptrón</td>
+</tr>
+<tr>
+<td><strong>Margen</strong> (<span class="math inline">\gamma</span>)</td>
+<td>Distancia mínima entre la frontera de decisión y el punto más
+cercano del dataset</td>
+</tr>
+<tr>
+<td><strong>Regla del perceptrón</strong></td>
+<td>Algoritmo de actualización: <span class="math inline">w_i \leftarrow
+w_i + \eta(t-\hat{y})x_i</span></td>
+</tr>
+<tr>
+<td><strong>Disonancia</strong></td>
+<td>En la sonificación, intervalos musicales tensos que representan
+error alto</td>
+</tr>
+<tr>
+<td><strong>Consonancia</strong></td>
+<td>En la sonificación, intervalos armónicos que representan error bajo
+o convergencia</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li><p><strong>Rosenblatt, F.</strong> (1958). “The Perceptron: A
+Probabilistic Model for Information Storage and Organization in the
+Brain.” <em>Psychological Review</em>, 65(6), 386–408.</p></li>
+<li><p><strong>Minsky, M. &amp; Papert, S.</strong> (1969).
+<em>Perceptrons: An Introduction to Computational Geometry</em>. MIT
+Press.</p></li>
+<li><p><strong>Novikoff, A. B. J.</strong> (1963). “On Convergence
+Proofs for Perceptrons.” <em>Proceedings of the Symposium on the
+Mathematical Theory of Automata</em>, 12, 615–622.</p></li>
+<li><p><strong>Widrow, B. &amp; Hoff, M. E.</strong> (1960). “Adaptive
+Switching Circuits.” <em>IRE WESCON Convention Record</em>, Part 4,
+96–104.</p></li>
+<li><p><strong>Rumelhart, D. E., Hinton, G. E. &amp; Williams, R.
+J.</strong> (1986). “Learning Representations by Back-propagating
+Errors.” <em>Nature</em>, 323(6088), 533–536.</p></li>
+<li><p><strong>McCulloch, W. S. &amp; Pitts, W.</strong> (1943). “A
+Logical Calculus of Ideas Immanent in Nervous Activity.” <em>Bulletin of
+Mathematical Biophysics</em>, 5(4), 115–133.</p></li>
+<li><p><strong>Bishop, C. M.</strong> (2006). <em>Pattern Recognition
+and Machine Learning</em>, Chapter 4. Springer.</p></li>
+<li><p><strong>Goodfellow, I., Bengio, Y. &amp; Courville, A.</strong>
+(2016). <em>Deep Learning</em>, Chapter 6. MIT Press. Disponible en <a
+href="https://www.deeplearningbook.org/">deeplearningbook.org</a>.</p></li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>

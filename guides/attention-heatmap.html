@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attention
+Heatmap — Visualizando Quién Mira a Quién</title>
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <style>
+    
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500&display=swap');
+
+:root {
+    --primary: #f59e0b;
+    --primary-dark: #d97706;
+    --primary-light: #fcd34d;
+    --secondary: #4a5568;
+    --bg-light: #f8f9fc;
+    --bg-code: #0f0e1a;
+    --border: #d1d5db;
+    --text: #1a202c;
+    --text-light: #4a5568;
+    --accent: #f59e0b;
+    --accent-light: #fcd34d;
+    --font-serif: 'Cormorant Garamond', Georgia, serif;
+    --font-sans: 'Source Sans 3', 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: var(--font-serif);
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text);
+    background: var(--bg-light);
+}
+
+header {
+    background: linear-gradient(135deg, #451a03 0%, #0f0a0a 60%, #1a0f05 100%);
+    color: white;
+    padding: 2.5rem 2rem;
+    text-align: center;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 4px 12px -2px rgba(0,0,0,0.35);
+    border-bottom: 3px solid var(--accent);
+}
+
+header h1 {
+    font-family: var(--font-serif);
+    font-size: 2.2rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+header h1 .hl { color: #fcd34d; }
+
+header p {
+    font-family: var(--font-sans);
+    opacity: 0.92;
+    font-size: 1rem;
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+header .badge {
+    display: inline-block;
+    margin-top: 0.5rem;
+    padding: 0.2rem 0.8rem;
+    border-radius: 999px;
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+}
+
+.container { display: flex; max-width: 1600px; margin: 0 auto; }
+
+.sidebar {
+    width: 260px;
+    background: white;
+    border-right: 1px solid var(--border);
+    height: calc(100vh - 100px);
+    position: sticky;
+    top: 100px;
+    overflow-y: auto;
+    padding: 1rem;
+    flex-shrink: 0;
+}
+
+.sidebar h3 {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 600;
+    color: var(--secondary);
+    margin-bottom: 1rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--border);
+}
+
+.sidebar ul { list-style: none; }
+.sidebar li { margin-bottom: 0.2rem; }
+.sidebar a {
+    display: block;
+    padding: 0.4rem 0.6rem;
+    color: var(--text);
+    text-decoration: none;
+    border-radius: 4px;
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+.sidebar a:hover { background: var(--bg-light); color: var(--accent); }
+.sidebar a.active { background: var(--accent); color: white; }
+.sidebar .sub-item a {
+    padding-left: 1.4rem;
+    font-size: 0.8rem;
+    color: var(--text-light);
+}
+
+.main-content {
+    flex: 1;
+    padding: 2rem;
+    max-width: 960px;
+    min-width: 0;
+}
+
+section {
+    background: white;
+    border-radius: 4px;
+    padding: 2.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    border: 1px solid var(--border);
+}
+
+h2 {
+    font-family: var(--font-serif);
+    color: var(--accent);
+    font-size: 1.8rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--accent);
+}
+
+h3 {
+    font-family: var(--font-serif);
+    color: var(--text);
+    font-size: 1.4rem;
+    font-weight: 600;
+    margin: 2rem 0 1rem;
+}
+
+h4 {
+    font-family: var(--font-sans);
+    color: var(--accent);
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 1.5rem 0 0.75rem;
+}
+
+h5 {
+    font-family: var(--font-sans);
+    color: var(--text-light);
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 1rem 0 0.5rem;
+}
+
+p {
+    margin-bottom: 1.2rem;
+    text-align: justify;
+    hyphens: auto;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+pre {
+    background: var(--bg-code);
+    color: #e2e8f0;
+    padding: 1.5rem;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    line-height: 1.7;
+    border-left: 4px solid var(--accent);
+}
+
+code {
+    background: #fffbeb;
+    padding: 0.2rem 0.5rem;
+    border-radius: 3px;
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    color: #92400e;
+}
+
+pre code { background: none; padding: 0; color: inherit; }
+
+blockquote {
+    border-left: 4px solid var(--accent);
+    margin: 1.5rem 0;
+    padding: 1.25rem 1.5rem;
+    background: #fffbeb;
+    border-radius: 0 4px 4px 0;
+    font-style: italic;
+}
+
+blockquote p { margin-bottom: 0.5rem; text-align: left; }
+blockquote p:last-child { margin-bottom: 0; }
+
+table, .styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    font-family: var(--font-sans);
+    font-size: 0.95rem;
+}
+
+th, td {
+    padding: 0.875rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+
+th {
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.08em;
+}
+
+tr:nth-child(even) { background: #fffbeb; }
+tr:hover { background: #fcd34d22; }
+
+ul, ol { margin: 1.25rem 0; padding-left: 1.75rem; }
+li { margin-bottom: 0.6rem; line-height: 1.7; }
+
+hr, .section-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 2rem 0;
+}
+
+.katex-display {
+    margin: 1.5rem 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 0.5rem 0;
+}
+
+.katex { font-size: 1.1em; color: var(--text); }
+.katex-display > .katex { font-size: 1.15em; }
+
+.diagram {
+    background: #f8f7f4;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1.5rem;
+    margin: 1.75rem 0;
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+    overflow-x: auto;
+    white-space: pre;
+    line-height: 1.5;
+    border-left: 4px solid var(--accent);
+}
+
+details {
+    margin: 1.5rem 0;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+summary {
+    padding: 1rem 1.25rem;
+    background: #f8f7f4;
+    cursor: pointer;
+    font-family: var(--font-serif);
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+summary:hover { background: #eeeee8; }
+summary::marker { color: var(--accent); }
+
+li > strong:first-child, p > strong:first-child {
+    color: var(--primary-dark);
+}
+
+@media (max-width: 1200px) { .sidebar { display: none; } }
+@media (max-width: 768px) {
+    .main-content { padding: 1rem; }
+    section { padding: 1.5rem; }
+    header { padding: 1.5rem 1rem; }
+    header h1 { font-size: 1.6rem; }
+}
+
+@media print {
+    .sidebar, header { display: none; }
+    .main-content { max-width: 100%; padding: 0; }
+    section { break-inside: avoid; box-shadow: none; border: none; padding: 1rem 0; }
+    body { font-size: 10pt; }
+}
+
+html { scroll-behavior: smooth; }
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    </style>
+</head>
+<body>
+    <header>
+        <h1><span class="hl">AI Visual Lab</span> — Guia Tutorial</h1>
+        <p>Simulación interactiva del mecanismo de atención multi-head (Scaled
+Dot-Product Attention). Escribe una frase, configura el número de heads
+y la di...</p>
+        <div class="badge">Arquitecturas Clasicas</div>
+    </header>
+
+    <div class="container">
+        <nav class="sidebar">
+<h3>Indice</h3>
+<ul>
+  <li><a href="#introduccion">1. Introducción</a></li>
+  <li><a href="#conceptos-fundamentales">2. Conceptos Fundamentales</a></li>
+  <li class="sub-item"><a href="#query-key-value">2.1 Query, Key, Value</a></li>
+  <li class="sub-item"><a href="#scaled-dot-product-attention">2.2 Scaled Dot-Product
+Attention</a></li>
+  <li class="sub-item"><a href="#multi-head-attention">2.3 Multi-Head Attention</a></li>
+  <li class="sub-item"><a href="#por-que-escalar-por-sqrtd_k">2.4 ¿Por qué escalar por \sqrt{d...</a></li>
+  <li><a href="#la-interfaz">3. La Interfaz</a></li>
+  <li class="sub-item"><a href="#estructura-general">3.1 Estructura general</a></li>
+  <li class="sub-item"><a href="#el-heatmap">3.2 El heatmap</a></li>
+  <li class="sub-item"><a href="#metricas-en-header">3.3 Métricas en header</a></li>
+  <li><a href="#controles-interactivos">4. Controles Interactivos</a></li>
+  <li class="sub-item"><a href="#frase">4.1 Frase</a></li>
+  <li class="sub-item"><a href="#configuracion">4.2 Configuración</a></li>
+  <li class="sub-item"><a href="#attention-head">4.3 Attention head</a></li>
+  <li class="sub-item"><a href="#audio-y-metricas">4.4 Audio y métricas</a></li>
+  <li><a href="#las-matematicas">5. Las Matemáticas</a></li>
+  <li class="sub-item"><a href="#dimensiones-del-modelo">5.1 Dimensiones del modelo</a></li>
+  <li class="sub-item"><a href="#scores-de-atencion-con-temperatura">5.2 Scores de atención con
+tempe...</a></li>
+  <li class="sub-item"><a href="#entropia-de-la-atencion">5.3 Entropía de la atención</a></li>
+  <li class="sub-item"><a href="#softmax-y-estabilidad-numerica">5.4 Softmax y estabilidad
+numérica</a></li>
+  <li><a href="#sonificacion">6. Sonificación</a></li>
+  <li class="sub-item"><a href="#mapeo-audio">6.1 Mapeo audio</a></li>
+  <li class="sub-item"><a href="#interpretacion-auditiva">6.2 Interpretación auditiva</a></li>
+  <li><a href="#guia-paso-a-paso">7. Guía Paso a Paso</a></li>
+  <li class="sub-item"><a href="#primera-exploracion">7.1 Primera exploración</a></li>
+  <li class="sub-item"><a href="#explorar-multi-head">7.2 Explorar multi-head</a></li>
+  <li class="sub-item"><a href="#experimentar-con-temperatura">7.3 Experimentar con
+temperatura</a></li>
+  <li class="sub-item"><a href="#variar-dimensiones">7.4 Variar dimensiones</a></li>
+  <li><a href="#conceptos-avanzados">8. Conceptos Avanzados</a></li>
+  <li class="sub-item"><a href="#self-attention-vs-cross-attention">8.1 Self-attention vs
+Cross-atte...</a></li>
+  <li class="sub-item"><a href="#causal-masking">8.2 Causal masking</a></li>
+  <li class="sub-item"><a href="#positional-encoding">8.3 Positional encoding</a></li>
+  <li class="sub-item"><a href="#complejidad-computacional">8.4 Complejidad computacional</a></li>
+  <li><a href="#ejercicios">9. Ejercicios</a></li>
+  <li><a href="#glosario">10. Glosario</a></li>
+  <li><a href="#referencias">11. Referencias</a></li>
+</ul>
+</nav>
+        <main class="main-content">
+            
+
+<hr class="section-divider" />
+
+
+<section id="sec-introduccion">
+<h2 id="introduccion">1. Introducción</h2>
+<p>El <strong>mecanismo de atención</strong> es el corazón de los
+Transformers, la arquitectura que impulsa GPT, BERT, y la mayoría de
+modelos de lenguaje modernos. Su idea central es simple pero poderosa:
+en lugar de procesar una secuencia paso a paso (como una LSTM), la
+atención permite que <strong>cada token mire directamente a todos los
+demás tokens</strong> y decida a cuáles prestar atención.</p>
+<p>Esta simulación calcula la atención multi-head para una frase que tú
+escribes. Genera pesos aleatorios para las matrices Q, K, V (Query, Key,
+Value), computa los scores de atención, y los visualiza como un
+<strong>heatmap</strong>: una matriz donde la intensidad de cada celda
+indica cuánta atención presta el token de la fila al token de la
+columna.</p>
+<p>Puedes cambiar el número de heads, la dimensión de las keys (<span class="math inline">d_k</span>), y la <strong>temperatura</strong> del
+softmax para ver cómo afectan la distribución de atención.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-fundamentales">
+<h2 id="conceptos-fundamentales">2. Conceptos Fundamentales</h2>
+<h3 id="query-key-value">2.1 Query, Key, Value</h3>
+<p>Cada token genera tres vectores a partir de su embedding <span class="math inline">x</span>:</p>
+<p><span class="math display">Q = xW^Q, \quad K = xW^K, \quad V =
+xW^V</span></p>
+<ul>
+<li><strong>Query</strong> (<span class="math inline">Q</span>): “¿Qué
+estoy buscando?”</li>
+<li><strong>Key</strong> (<span class="math inline">K</span>): “¿Qué
+ofrezco?”</li>
+<li><strong>Value</strong> (<span class="math inline">V</span>): “¿Cuál
+es mi contenido?”</li>
+</ul>
+<p>La atención es un mecanismo de <strong>recuperación
+asociativa</strong>: cada Query busca las Keys más compatibles y
+recupera sus Values.</p>
+<h3 id="scaled-dot-product-attention">2.2 Scaled Dot-Product
+Attention</h3>
+<p><span class="math display">\text{Attention}(Q, K, V) =
+\text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k}}\right)V</span></p>
+<ol type="1">
+<li><strong>Scores</strong>: <span class="math inline">S = QK^T</span> —
+producto punto entre queries y keys</li>
+<li><strong>Escalado</strong>: dividir por <span class="math inline">\sqrt{d_k}</span> para evitar que los scores sean
+demasiado grandes</li>
+<li><strong>Softmax</strong>: convertir scores en probabilidades (cada
+fila suma 1)</li>
+<li><strong>Salida</strong>: promedio ponderado de los values</li>
+</ol>
+<h3 id="multi-head-attention">2.3 Multi-Head Attention</h3>
+<p>En lugar de un solo conjunto de Q, K, V, se usan <span class="math inline">h</span> “heads” en paralelo:</p>
+<p><span class="math display">\text{MultiHead}(Q, K, V) =
+\text{Concat}(\text{head}_1, \ldots, \text{head}_h)W^O</span></p>
+<p>donde <span class="math inline">\text{head}_i =
+\text{Attention}(QW_i^Q, KW_i^K, VW_i^V)</span>.</p>
+<p>Cada head puede aprender a atender a diferentes tipos de relaciones
+simultáneamente.</p>
+<h3 id="por-que-escalar-por-sqrtd_k">2.4 ¿Por qué escalar por <span class="math inline">\sqrt{d_k}</span>?</h3>
+<p>Si <span class="math inline">Q</span> y <span class="math inline">K</span> tienen componentes i.i.d. con media 0 y
+varianza 1, el producto punto <span class="math inline">Q \cdot K</span>
+tiene media 0 y varianza <span class="math inline">d_k</span>. Al
+dividir por <span class="math inline">\sqrt{d_k}</span>, la varianza se
+normaliza a 1, evitando que el softmax se sature en valores
+extremos.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-la-interfaz">
+<h2 id="la-interfaz">3. La Interfaz</h2>
+<h3 id="estructura-general">3.1 Estructura general</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 23%" />
+<col style="width: 42%" />
+<col style="width: 34%" />
+</colgroup>
+<thead>
+<tr>
+<th>Área</th>
+<th>Ubicación</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Canvas principal</strong></td>
+<td>Izquierda</td>
+<td>Heatmap de atención + líneas de conexión entre tokens</td>
+</tr>
+<tr>
+<td><strong>Tooltip</strong></td>
+<td>Flotante</td>
+<td>Score de atención al pasar el mouse sobre una celda</td>
+</tr>
+<tr>
+<td><strong>Panel de controles</strong></td>
+<td>Derecha (360px)</td>
+<td>Frase, configuración, heads, audio, métricas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="el-heatmap">3.2 El heatmap</h3>
+<p>La visualización principal es una <strong>matriz cuadrada</strong> de
+<span class="math inline">n \times n</span> (donde <span class="math inline">n</span> = número de tokens):</p>
+<ul>
+<li><strong>Filas</strong>: tokens que “preguntan” (queries)</li>
+<li><strong>Columnas</strong>: tokens que “responden” (keys)</li>
+<li><strong>Color</strong>: intensidad proporcional al peso de atención
+(más brillante = más atención)</li>
+<li><strong>Líneas de atención</strong>: arcos que conectan tokens, con
+grosor proporcional al peso</li>
+</ul>
+<h3 id="metricas-en-header">3.3 Métricas en header</h3>
+<ul>
+<li><strong>Heads</strong>: número de heads activos</li>
+<li><strong>Tokens</strong>: longitud de la frase</li>
+<li><strong><span class="math inline">d_k</span></strong>: dimensión de
+cada head</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-controles-interactivos">
+<h2 id="controles-interactivos">4. Controles Interactivos</h2>
+<h3 id="frase">4.1 Frase</h3>
+<table class="styled-table">
+<thead>
+<tr>
+<th>Control</th>
+<th>Tipo</th>
+<th>Función</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Campo de texto</strong></td>
+<td>Input</td>
+<td>Frase a analizar</td>
+</tr>
+<tr>
+<td><strong>Calcular</strong></td>
+<td>Botón</td>
+<td>Recomputa la atención con la frase actual</td>
+</tr>
+<tr>
+<td><strong>Gato</strong></td>
+<td>Preset</td>
+<td>“el gato se sienta en la alfombra”</td>
+</tr>
+<tr>
+<td><strong>Negación</strong></td>
+<td>Preset</td>
+<td>“yo no creo que el pueda venir hoy”</td>
+</tr>
+<tr>
+<td><strong>Referencia</strong></td>
+<td>Preset</td>
+<td>“la reina mando al rey a dormir”</td>
+</tr>
+<tr>
+<td><strong>Inglés</strong></td>
+<td>Preset</td>
+<td>“the cat sat on the mat near me”</td>
+</tr>
+</tbody>
+</table>
+<h3 id="configuracion">4.2 Configuración</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 22%" />
+<col style="width: 41%" />
+</colgroup>
+<thead>
+<tr>
+<th>Parámetro</th>
+<th>Rango</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Número de heads</strong></td>
+<td>1–8</td>
+<td>Cantidad de heads de atención en paralelo</td>
+</tr>
+<tr>
+<td><strong>Dimensión <span class="math inline">d_k</span></strong></td>
+<td>4–32 (paso 4)</td>
+<td>Dimensionalidad de cada head</td>
+</tr>
+<tr>
+<td><strong>Temperatura</strong></td>
+<td>0.1–5.0</td>
+<td>Controla la “agudeza” del softmax</td>
+</tr>
+</tbody>
+</table>
+<h3 id="attention-head">4.3 Attention head</h3>
+<ul>
+<li><strong>Tabs numerados</strong>: selecciona qué head visualizar (H0,
+H1, …, H7)</li>
+<li><strong>Mostrar valores numéricos</strong>: checkbox para superponer
+los pesos sobre el heatmap</li>
+<li><strong>Líneas de atención</strong>: checkbox para mostrar/ocultar
+los arcos entre tokens</li>
+</ul>
+<h3 id="audio-y-metricas">4.4 Audio y métricas</h3>
+<ul>
+<li><strong>Volumen</strong>: 0-100%</li>
+<li><strong>Audio ON/OFF</strong>: toggle de sonificación</li>
+<li><strong>Métricas</strong>: tokens, heads, <span class="math inline">d_k</span>, <span class="math inline">d_\text{model}</span> (= heads × <span class="math inline">d_k</span>), entropía media, máxima atención</li>
+</ul>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-las-matematicas">
+<h2 id="las-matematicas">5. Las Matemáticas</h2>
+<h3 id="dimensiones-del-modelo">5.1 Dimensiones del modelo</h3>
+<p><span class="math display">d_\text{model} = h \times d_k</span></p>
+<p>Con 4 heads y <span class="math inline">d_k = 8</span>: <span class="math inline">d_\text{model} = 32</span>. Cada token se representa
+como un vector de dimensión 32, dividido en 4 sub-espacios de 8
+dimensiones.</p>
+<h3 id="scores-de-atencion-con-temperatura">5.2 Scores de atención con
+temperatura</h3>
+<p>La simulación incorpora un parámetro de temperatura <span class="math inline">T</span>:</p>
+<p><span class="math display">\text{Attention}(Q, K, V) =
+\text{softmax}\!\left(\frac{QK^T}{\sqrt{d_k} \cdot T}\right)V</span></p>
+<ul>
+<li><span class="math inline">T < 1</span>: atención
+<strong>concentrada</strong> (sharp) — pocos tokens reciben casi toda la
+atención</li>
+<li><span class="math inline">T = 1</span>: comportamiento estándar</li>
+<li><span class="math inline">T > 1</span>: atención
+<strong>dispersa</strong> (flat) — la atención se distribuye más
+uniformemente</li>
+</ul>
+<h3 id="entropia-de-la-atencion">5.3 Entropía de la atención</h3>
+<p>La <strong>entropía</strong> mide cuán dispersa está la distribución
+de atención de un token:</p>
+<p><span class="math display">H_i = -\sum_{j=1}^{n} \alpha_{ij} \log_2
+\alpha_{ij}</span></p>
+<p>donde <span class="math inline">\alpha_{ij}</span> es el peso de
+atención del token <span class="math inline">i</span> al token <span class="math inline">j</span>.</p>
+<ul>
+<li><strong>Entropía baja</strong>: atención concentrada en pocos
+tokens</li>
+<li><strong>Entropía alta</strong> (máximo <span class="math inline">\log_2 n</span>): atención uniforme sobre todos los
+tokens</li>
+</ul>
+<h3 id="softmax-y-estabilidad-numerica">5.4 Softmax y estabilidad
+numérica</h3>
+<p><span class="math display">\text{softmax}(z)_i =
+\frac{e^{z_i}}{\sum_j e^{z_j}}</span></p>
+<p>Para evitar overflow numérico, se resta el máximo:</p>
+<p><span class="math display">\text{softmax}(z)_i = \frac{e^{z_i -
+\max(z)}}{\sum_j e^{z_j - \max(z)}}</span></p>
+<h3 id="concatenacion-multi-head">5.5 Concatenación multi-head</h3>
+<p>Si cada head produce una salida de dimensión <span class="math inline">d_v = d_k</span>, la concatenación tiene dimensión
+<span class="math inline">h \cdot d_v</span>, y la proyección <span class="math inline">W^O</span> la reduce de vuelta a <span class="math inline">d_\text{model}</span>:</p>
+<p><span class="math display">W^O \in \mathbb{R}^{(h \cdot d_v) \times
+d_\text{model}}</span></p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-sonificacion">
+<h2 id="sonificacion">6. Sonificación</h2>
+<h3 id="mapeo-audio">6.1 Mapeo audio</h3>
+<table class="styled-table">
+<colgroup>
+<col style="width: 22%" />
+<col style="width: 22%" />
+<col style="width: 54%" />
+</colgroup>
+<thead>
+<tr>
+<th>Evento</th>
+<th>Sonido</th>
+<th>Parámetro mapeado</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Cálculo de atención</strong></td>
+<td>Secuencia de notas</td>
+<td>Una nota por token, frecuencia según su posición</td>
+</tr>
+<tr>
+<td><strong>Peso de atención alto</strong></td>
+<td>Nota más fuerte y aguda</td>
+<td>Volumen y pitch proporcionales al peso <span class="math inline">\alpha_{ij}</span></td>
+</tr>
+<tr>
+<td><strong>Cambio de head</strong></td>
+<td>Cambio de timbre</td>
+<td>Cada head tiene un timbre distinto</td>
+</tr>
+<tr>
+<td><strong>Temperatura baja</strong></td>
+<td>Sonido puntual</td>
+<td>Pocas notas dominantes</td>
+</tr>
+<tr>
+<td><strong>Temperatura alta</strong></td>
+<td>Sonido difuso</td>
+<td>Muchas notas suaves simultáneas</td>
+</tr>
+</tbody>
+</table>
+<h3 id="interpretacion-auditiva">6.2 Interpretación auditiva</h3>
+<p>Cuando un token concentra su atención en uno solo (temperatura baja),
+escucharás una nota clara y definida. Con temperatura alta, el sonido se
+vuelve un coro difuso de muchas notas suaves.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-guia-paso-a-paso">
+<h2 id="guia-paso-a-paso">7. Guía Paso a Paso</h2>
+<h3 id="primera-exploracion">7.1 Primera exploración</h3>
+<ol type="1">
+<li>Deja la frase por defecto “el gato se sienta en la alfombra”</li>
+<li>Pulsa <strong>Calcular</strong></li>
+<li>Observa el heatmap: cada fila es un token query, cada columna un
+token key</li>
+<li>Pasa el mouse sobre las celdas para ver los valores exactos</li>
+<li>Nota qué tokens reciben más atención (columnas más brillantes)</li>
+</ol>
+<h3 id="explorar-multi-head">7.2 Explorar multi-head</h3>
+<ol type="1">
+<li>Haz clic en los tabs H0, H1, H2, H3</li>
+<li>Compara los patrones: cada head atiende a relaciones diferentes</li>
+<li>Un head puede atender posiciones cercanas, otro puede conectar
+sujeto-verbo</li>
+<li>Nota cómo “se” y “sienta” pueden tener alta atención mutua en algún
+head</li>
+</ol>
+<h3 id="experimentar-con-temperatura">7.3 Experimentar con
+temperatura</h3>
+<ol type="1">
+<li>Pon temperatura = 0.1: observa cómo el heatmap se vuelve casi
+binario (una celda brillante por fila)</li>
+<li>Pon temperatura = 5.0: el heatmap se vuelve casi uniforme (todas las
+celdas similares)</li>
+<li>Vuelve a temperatura = 1.0: balance entre concentración y
+cobertura</li>
+<li>Compara la entropía media en cada caso</li>
+</ol>
+<h3 id="variar-dimensiones">7.4 Variar dimensiones</h3>
+<ol type="1">
+<li>Reduce <span class="math inline">d_k</span> a 4: representación muy
+comprimida, atención menos discriminativa</li>
+<li>Aumenta <span class="math inline">d_k</span> a 32: más capacidad
+para distinguir relaciones</li>
+<li>Pon 1 head con <span class="math inline">d_k</span> = 32 vs 8 heads
+con <span class="math inline">d_k</span> = 4: ¿cuál produce patrones más
+interesantes?</li>
+</ol>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-conceptos-avanzados">
+<h2 id="conceptos-avanzados">8. Conceptos Avanzados</h2>
+<h3 id="self-attention-vs-cross-attention">8.1 Self-attention vs
+Cross-attention</h3>
+<p>En <strong>self-attention</strong> (lo que muestra esta simulación),
+Q, K, V provienen de la misma secuencia. En
+<strong>cross-attention</strong> (usado en encoders-decoders), Q viene
+de una secuencia y K, V de otra — por ejemplo, el decoder atendiendo al
+encoder en traducción.</p>
+<h3 id="causal-masking">8.2 Causal masking</h3>
+<p>En modelos generativos (GPT), se aplica una máscara triangular para
+que cada token solo pueda atender a tokens anteriores:</p>
+<p><span class="math display">\text{mask}_{ij} = \begin{cases} 0 &
+\text{si } j \leq i \\ -\infty & \text{si } j > i
+\end{cases}</span></p>
+<p>Esto previene que el modelo “mire el futuro” durante la
+generación.</p>
+<h3 id="positional-encoding">8.3 Positional encoding</h3>
+<p>La atención pura es <strong>invariante al orden</strong> (no
+distingue “el gato come” de “come gato el”). El positional encoding
+inyecta información de posición:</p>
+<p><span class="math display">PE_{(pos, 2i)} =
+\sin\!\left(\frac{pos}{10000^{2i/d}}\right), \quad PE_{(pos, 2i+1)} =
+\cos\!\left(\frac{pos}{10000^{2i/d}}\right)</span></p>
+<h3 id="complejidad-computacional">8.4 Complejidad computacional</h3>
+<p>La atención tiene complejidad <span class="math inline">O(n^2
+d)</span> donde <span class="math inline">n</span> es la longitud de la
+secuencia. Esto la hace costosa para secuencias largas. Variantes como
+Linformer, Performer, y Flash Attention reducen esta complejidad.</p>
+<h3 id="interpretabilidad">8.5 Interpretabilidad</h3>
+<p>Los pesos de atención se usan frecuentemente para “explicar”
+decisiones del modelo, pero esto es controverso. Jain &amp; Wallace
+(2019) mostraron que los pesos de atención no siempre correlacionan con
+la importancia de los tokens para la predicción. Los mapas de atención
+son informativos pero no son explicaciones causales.</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-ejercicios">
+<h2 id="ejercicios">9. Ejercicios</h2>
+<h3 id="ejercicio-1-sujeto-verbo">Ejercicio 1: Sujeto-verbo</h3>
+<p>Escribe la frase “la reina mando al rey a dormir”. Explora los heads
+buscando uno donde “reina” y “mando” tengan alta atención mutua. ¿Qué
+head captura mejor la relación sujeto-verbo?</p>
+<h3 id="ejercicio-2-temperatura-extrema">Ejercicio 2: Temperatura
+extrema</h3>
+<p>Con la frase “el gato se sienta en la alfombra”, calcula la atención
+con temperatura 0.1 y con temperatura 5.0. Calcula la entropía teórica
+máxima para 7 tokens (<span class="math inline">\log_2 7 \approx
+2.81</span>). ¿Qué tan cerca está la entropía de cada caso del
+máximo?</p>
+<h3 id="ejercicio-3-un-solo-head-vs-muchos">Ejercicio 3: Un solo head vs
+muchos</h3>
+<p>Compara 1 head con <span class="math inline">d_k = 32</span> (<span class="math inline">d_\text{model} = 32</span>) contra 8 heads con <span class="math inline">d_k = 4</span> (<span class="math inline">d_\text{model} = 32</span>). Ambos tienen el mismo
+<span class="math inline">d_\text{model}</span>. ¿Cuál produce patrones
+de atención más variados? ¿Por qué el multi-head es preferido en la
+práctica?</p>
+<h3 id="ejercicio-4-auto-atencion">Ejercicio 4: Auto-atención</h3>
+<p>¿Qué token de la diagonal del heatmap tiene el mayor valor? La
+diagonal representa la auto-atención (un token atendiéndose a sí mismo).
+¿Hay heads donde la diagonal es dominante y otros donde no?</p>
+<h3 id="ejercicio-5-frase-bilingue">Ejercicio 5: Frase bilingüe</h3>
+<p>Prueba la frase en inglés “the cat sat on the mat near me”. Compara
+los patrones de atención con la versión en español. ¿Hay similitudes en
+la estructura de atención a pesar del cambio de idioma?</p>
+<h3 id="ejercicio-6-dimension-y-discriminacion">Ejercicio 6: Dimensión y
+discriminación</h3>
+<p>Fija 4 heads y varía <span class="math inline">d_k</span> de 4 a 32.
+Para cada valor, observa la distribución de atención de “gato” hacia los
+demás tokens. ¿A partir de qué <span class="math inline">d_k</span> la
+atención se vuelve más selectiva (concentrada en pocos tokens)?</p>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-glosario">
+<h2 id="glosario">10. Glosario</h2>
+<table class="styled-table">
+<colgroup>
+<col style="width: 42%" />
+<col style="width: 57%" />
+</colgroup>
+<thead>
+<tr>
+<th>Término</th>
+<th>Definición</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Atención</strong></td>
+<td>Mecanismo que permite a cada token ponderar la importancia de todos
+los demás tokens</td>
+</tr>
+<tr>
+<td><strong>Query (Q)</strong></td>
+<td>Vector que representa “qué busca” un token</td>
+</tr>
+<tr>
+<td><strong>Key (K)</strong></td>
+<td>Vector que representa “qué ofrece” un token</td>
+</tr>
+<tr>
+<td><strong>Value (V)</strong></td>
+<td>Vector que contiene el “contenido” de un token</td>
+</tr>
+<tr>
+<td><strong>Head</strong></td>
+<td>Una instancia independiente de atención con sus propias matrices Q,
+K, V</td>
+</tr>
+<tr>
+<td><strong>Multi-Head Attention</strong></td>
+<td>Múltiples heads en paralelo, concatenados y proyectados</td>
+</tr>
+<tr>
+<td><strong><span class="math inline">d_k</span></strong></td>
+<td>Dimensión de los vectores Query y Key en cada head</td>
+</tr>
+<tr>
+<td><strong><span class="math inline">d_\text{model}</span></strong></td>
+<td>Dimensión total del modelo (<span class="math inline">= h \times
+d_k</span>)</td>
+</tr>
+<tr>
+<td><strong>Softmax</strong></td>
+<td>Función que convierte scores en probabilidades normalizadas (suman
+1)</td>
+</tr>
+<tr>
+<td><strong>Temperatura</strong></td>
+<td>Parámetro que controla la “agudeza” del softmax (<span class="math inline">T < 1</span>: sharp, <span class="math inline">T
+> 1</span>: flat)</td>
+</tr>
+<tr>
+<td><strong>Heatmap</strong></td>
+<td>Representación matricial donde el color indica la magnitud de cada
+valor</td>
+</tr>
+<tr>
+<td><strong>Score de atención</strong></td>
+<td>Producto punto entre Query y Key: <span class="math inline">s_{ij} =
+q_i \cdot k_j</span></td>
+</tr>
+<tr>
+<td><strong>Entropía</strong></td>
+<td>Medida de dispersión de una distribución: <span class="math inline">H = -\sum p_i \log_2 p_i</span></td>
+</tr>
+<tr>
+<td><strong>Self-attention</strong></td>
+<td>Atención donde Q, K, V provienen de la misma secuencia</td>
+</tr>
+<tr>
+<td><strong>Cross-attention</strong></td>
+<td>Atención donde Q viene de una secuencia y K, V de otra</td>
+</tr>
+<tr>
+<td><strong>Causal masking</strong></td>
+<td>Máscara que impide atender a tokens futuros</td>
+</tr>
+<tr>
+<td><strong>Positional encoding</strong></td>
+<td>Vectores sinusoidales que inyectan información de posición</td>
+</tr>
+<tr>
+<td><strong>Transformer</strong></td>
+<td>Arquitectura de red neuronal basada enteramente en mecanismos de
+atención</td>
+</tr>
+</tbody>
+</table>
+<hr class="section-divider" />
+
+</section>
+<section id="sec-referencias">
+<h2 id="referencias">11. Referencias</h2>
+<ol type="1">
+<li>Vaswani, A. et al. (2017). “Attention Is All You Need.”
+<em>NeurIPS</em>.</li>
+<li>Bahdanau, D., Cho, K. &amp; Bengio, Y. (2015). “Neural Machine
+Translation by Jointly Learning to Align and Translate.”
+<em>ICLR</em>.</li>
+<li>Jain, S. &amp; Wallace, B.C. (2019). “Attention is not Explanation.”
+<em>NAACL</em>.</li>
+<li>Clark, K. et al. (2019). “What Does BERT Look At? An Analysis of
+BERT’s Attention.” <em>BlackboxNLP Workshop</em>.</li>
+<li>Vig, J. (2019). “A Multiscale Visualization of Attention in the
+Transformer Model.” <em>ACL Demo</em>.</li>
+<li>Dao, T. et al. (2022). “FlashAttention: Fast and Memory-Efficient
+Exact Attention with IO-Awareness.” <em>NeurIPS</em>.</li>
+</ol>
+
+</section>
+        </main>
+    </div>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.math.inline').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: false, throwOnError: false }); }
+        catch(e) {}
+    });
+    document.querySelectorAll('.math.display').forEach(function(el) {
+        try { katex.render(el.textContent, el, { displayMode: true, throwOnError: false }); }
+        catch(e) {}
+    });
+});
+</script>
+
+    
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const links = document.querySelectorAll('.sidebar a');
+    const sections = document.querySelectorAll('section[id]');
+    function updateActive() {
+        let current = '';
+        sections.forEach(sec => {
+            if (window.scrollY >= sec.offsetTop - 150) current = sec.id;
+        });
+        links.forEach(link => {
+            link.classList.remove('active');
+            const href = link.getAttribute('href').substring(1);
+            if (href === current || 'sec-' + href === current) link.classList.add('active');
+        });
+    }
+    window.addEventListener('scroll', updateActive);
+    updateActive();
+});
+</script>
+
+</body>
+</html>
