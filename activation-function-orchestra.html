@@ -63,6 +63,29 @@
         .explain-section p:last-child { margin-bottom: 0; }
         .explain-section .hl { color: var(--accent); font-weight: 500; }
         .explain-section .eq { font-family: 'Times New Roman', serif; font-style: italic; color: var(--text-primary); background: var(--bg-primary); padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+        /* === MOBILE === */
+        @media (max-width: 768px) {
+            body { overflow-y: auto; height: auto; }
+            .header { flex-wrap: wrap; gap: 0.5rem; padding: 0.5rem 1rem; }
+            .header h1 { font-size: 0.95rem; }
+            .breadcrumb { font-size: 0.7rem; }
+            .header-stats { width: 100%; justify-content: flex-start; font-size: 0.68rem; gap: 8px; flex-wrap: wrap; }
+            .main { flex-direction: column; height: auto; min-height: calc(100vh - 80px); }
+            .canvas-container { width: 100%; height: 50vh; min-height: 280px; flex: none; }
+            .controls { width: 100%; min-width: unset; border-left: none; border-top: 1px solid var(--border); max-height: none; }
+            .btn { padding: 0.55rem 0.85rem; font-size: 0.82rem; min-height: 44px; }
+            .btn-sm { padding: 0.4rem 0.65rem; font-size: 0.74rem; min-height: 38px; }
+            input[type="range"]::-webkit-slider-thumb { width: 22px; height: 22px; }
+            input[type="range"] { height: 6px; }
+            select { padding: 0.55rem; font-size: 0.82rem; min-height: 44px; }
+        }
+        @media (max-width: 480px) {
+            .header-stats { display: none; }
+            .canvas-container { height: 40vh; min-height: 240px; }
+            .controls { padding: 1rem; }
+            .control-section { padding: 0.85rem; }
+            .equation-box { font-size: 0.95rem; padding: 0.6rem 0.8rem; }
+        }
     </style>
 </head>
 <body>
@@ -773,6 +796,28 @@
     //  INIT
     // ═══════════════════════════════════════════════════
     requestAnimationFrame(loop);
+
+    // Touch support for canvas
+    function addTouchSupport(canvas) {
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const t = e.touches[0];
+            canvas.dispatchEvent(new MouseEvent('mousedown', {
+                clientX: t.clientX, clientY: t.clientY
+            }));
+        }, { passive: false });
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            const t = e.touches[0];
+            canvas.dispatchEvent(new MouseEvent('mousemove', {
+                clientX: t.clientX, clientY: t.clientY
+            }));
+        }, { passive: false });
+        canvas.addEventListener('touchend', e => {
+            canvas.dispatchEvent(new MouseEvent('mouseup', {}));
+        });
+    }
+    addTouchSupport(canvas);
     </script>
 </body>
 </html>

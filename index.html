@@ -27,6 +27,11 @@
         .glow-text { text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
         .ai-symbol { font-family: 'JetBrains Mono', monospace; font-size: 1.2rem; }
         .module-divider { border-color: rgba(255,255,255,0.06); }
+        @media (max-width: 480px) {
+            .card { margin: 0; }
+            header h1 { font-size: 1.5rem; }
+            .preview-canvas { height: 120px; }
+        }
     </style>
 </head>
 <body class="bg-black text-gray-100 min-h-screen">
