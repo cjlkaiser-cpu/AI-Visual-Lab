@@ -320,11 +320,14 @@ li > strong:first-child, p > strong:first-child {
     .main-content { padding: 0.75rem; }
     section { padding: 1rem; }
     header h1 { font-size: 1.3rem; }
+    header p { font-size: 0.85rem; }
     h2 { font-size: 1.15rem; }
     p, li { font-size: 0.95rem; }
     .equation-box { font-size: 0.9rem; overflow-x: auto; }
-    table { font-size: 0.8rem; }
-    td, th { padding: 0.4rem; }
+    table { font-size: 0.8rem; display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    td, th { padding: 0.4rem; white-space: nowrap; }
+    pre, .diagram { font-size: 0.75rem; }
+    .katex { font-size: 0.95em; }
 }
 
 
